@@ -1,6 +1,7 @@
 import * as vfs from '../core/vfs.js';
 import * as dialogs from '../core/dialogs.js';
 import { iconHTML } from '../core/icons.js';
+import { openWindow } from '../core/wm.js';
 
 function formatBytes(bytes) {
   if (bytes === 0) return '0 B';
@@ -24,7 +25,7 @@ export const fileManagerApp = {
   
   launch: async function(body, args, ctx) {
     let currentPath = args.path || '/home/user';
-    let viewMode = 'list'; // 'list' or 'grid'
+    let viewMode = 'list';
     let selectedNames = new Set();
     let currentItems = [];
     let contextMenu = null;
@@ -33,14 +34,21 @@ export const fileManagerApp = {
       <div class="fm-app">
         <div class="app-toolbar fm-toolbar">
           <button class="toolbar-btn btn-up" title="Up"><svg class="icon"><use href="#i-up"/></svg></button>
-          <button class="toolbar-btn btn-new" title="New Folder"><svg class="icon"><use href="#i-folder"/></svg><span style="font-size:14px;font-weight:bold;margin-left:-2px;">+</span></button>
+          <button class="toolbar-btn btn-new" title="New Folder"><svg class="icon"><use href="#i-folder"/></svg><span style="font-size:14px;font-weight:bold;margin-left:-4px;margin-top:-2px;">+</span></button>
           <div class="toolbar-sep"></div>
           <button class="toolbar-btn btn-view" title="Toggle View"><svg class="icon"><use href="#i-list"/></svg></button>
         </div>
         
         <div class="fm-breadcrumbs"></div>
         
-        <div class="fm-list-area app-list"></div>
+        <div class="fm-list-area">
+          <div class="fm-list-header" style="display:none;">
+            <div>Name</div>
+            <div style="text-align:right;">Size</div>
+            <div style="text-align:right;">Date Modified</div>
+          </div>
+          <div class="fm-list"></div>
+        </div>
         
         <div class="app-statusbar">
           <div class="sb-cell grow sb-status">Ready</div>
@@ -50,14 +58,14 @@ export const fileManagerApp = {
     `;
 
     const elCrumbs = body.querySelector('.fm-breadcrumbs');
-    const elList = body.querySelector('.fm-list-area');
+    const elListArea = body.querySelector('.fm-list-area');
+    const elHeader = body.querySelector('.fm-list-header');
+    const elList = body.querySelector('.fm-list');
     const elStatus = body.querySelector('.sb-status');
     const elCount = body.querySelector('.sb-count');
     const btnUp = body.querySelector('.btn-up');
     const btnNew = body.querySelector('.btn-new');
     const btnView = body.querySelector('.btn-view');
-
-    // ---- Render Helpers ----
 
     const renderBreadcrumbs = () => {
       elCrumbs.innerHTML = '';
@@ -99,13 +107,22 @@ export const fileManagerApp = {
 
     const render = () => {
       elList.innerHTML = '';
-      elList.className = 'fm-list-area app-list ' + (viewMode === 'grid' ? 'fm-grid' : 'fm-list');
       
-      btnView.innerHTML = `<svg class="icon"><use href="#i-${viewMode === 'list' ? 'grid' : 'list'}"/></svg>`;
+      if (viewMode === 'list') {
+        elListArea.className = 'fm-list-area';
+        elHeader.style.display = 'grid';
+        elList.className = 'fm-list';
+        btnView.innerHTML = `<svg class="icon"><use href="#i-grid"/></svg>`;
+      } else {
+        elListArea.className = 'fm-list-area fm-grid';
+        elHeader.style.display = 'none';
+        elList.className = 'fm-grid';
+        btnView.innerHTML = `<svg class="icon"><use href="#i-list"/></svg>`;
+      }
 
       if (currentItems.length === 0) {
         elList.innerHTML = `
-          <div class="app-empty" style="grid-column: 1/-1;">
+          <div class="app-empty" style="grid-column: 1/-1; padding: 40px;">
             <svg class="icon"><use href="#i-folder"/></svg>
             <div>Folder is empty</div>
           </div>`;
@@ -115,15 +132,13 @@ export const fileManagerApp = {
 
       currentItems.forEach(item => {
         const isSel = selectedNames.has(item.name);
+        const iconType = item.kind === 'dir' ? 'folder' : 'file';
         
         if (viewMode === 'list') {
           const row = document.createElement('div');
           row.className = 'app-list-row' + (isSel ? ' selected' : '');
-          
-          const iconType = item.kind === 'dir' ? 'folder' : 'file';
-          
           row.innerHTML = `
-            <div class="row-name">${iconHTML(iconType)} <span>${item.name}</span></div>
+            <div class="row-name">${iconHTML(iconType, 18)} <span>${item.name}</span></div>
             <div class="row-meta">${item.kind === 'dir' ? 'Folder' : formatBytes(item.size)}</div>
             <div class="row-meta">${formatDate(item.mtime)}</div>
           `;
@@ -152,8 +167,6 @@ export const fileManagerApp = {
         } else {
           const gridItem = document.createElement('div');
           gridItem.className = 'fm-grid-item' + (isSel ? ' selected' : '');
-          const iconType = item.kind === 'dir' ? 'folder' : 'file';
-          
           gridItem.innerHTML = `
             ${iconHTML(iconType, 48)}
             <div class="fm-grid-label">${item.name}</div>
@@ -186,8 +199,6 @@ export const fileManagerApp = {
       updateStatus();
     };
 
-    // ---- Actions ----
-
     const navigate = async (path) => {
       try {
         const items = await vfs.list(path);
@@ -206,14 +217,17 @@ export const fileManagerApp = {
       if (item.kind === 'dir') {
         navigate(currentPath === '/' ? '/' + item.name : currentPath + '/' + item.name);
       } else {
-        // Stub for future apps (Notepad, Gallery, etc.)
-        dialogs.alert('Open File', `Would open "${item.name}" with the default app. (App not built yet)`);
+        const fullPath = currentPath === '/' ? '/' + item.name : currentPath + '/' + item.name;
+        const ext = item.name.split('.').pop().toLowerCase();
+        
+        // Route to Notepad for text files
+        if (['txt', 'md', 'js', 'json', 'css', 'html', 'log'].includes(ext)) {
+          openWindow('notepad', { path: fullPath });
+        } else {
+          dialogs.alert('Open File', `Would open "${item.name}" with the default app. (App not built yet)`);
+        }
       }
     };
-
-    const handleRefresh = () => navigate(currentPath);
-
-    // ---- Event Listeners ----
 
     btnUp.onclick = () => {
       if (currentPath === '/') return;
@@ -237,25 +251,21 @@ export const fileManagerApp = {
       render();
     };
 
-    // Click empty space to deselect
-    elList.addEventListener('mousedown', (e) => {
-      if (e.target === elList) {
+    elListArea.addEventListener('mousedown', (e) => {
+      if (e.target === elListArea || e.target === elList) {
         selectedNames.clear();
         render();
       }
     });
 
-    // Listen for VFS changes in this directory
     const unsub = vfs.on('change', (path) => {
       if (path === currentPath) {
         navigate(currentPath);
       }
     });
 
-    // Context Menu logic
     const showContextMenu = (x, y) => {
       if (contextMenu) contextMenu.remove();
-      
       contextMenu = document.createElement('div');
       contextMenu.className = 'fm-ctx-menu';
       
@@ -309,7 +319,6 @@ export const fileManagerApp = {
 
       document.body.appendChild(contextMenu);
       
-      // Keep in viewport
       const rect = contextMenu.getBoundingClientRect();
       if (x + rect.width > window.innerWidth) x -= rect.width;
       if (y + rect.height > window.innerHeight) y -= rect.height;
@@ -326,14 +335,12 @@ export const fileManagerApp = {
     };
     document.addEventListener('pointerdown', closeContextMenu);
 
-    // Cleanup listener when window closes
     ctx.onCleanup(() => {
       unsub();
       document.removeEventListener('pointerdown', closeContextMenu);
       if (contextMenu) contextMenu.remove();
     });
 
-    // Boot the app
     navigate(currentPath);
   }
 };

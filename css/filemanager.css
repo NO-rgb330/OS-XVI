@@ -7,6 +7,7 @@
   flex-direction: column;
   height: 100%;
   background: var(--bg-window);
+  position: relative;
 }
 
 /* Toolbar */
@@ -30,7 +31,7 @@
   overflow-x: auto;
   white-space: nowrap;
   user-select: none;
-  scrollbar-width: none; /* Hide scrollbar for clean look */
+  scrollbar-width: none;
 }
 .fm-breadcrumbs::-webkit-scrollbar { display: none; }
 
@@ -64,10 +65,10 @@
   flex-direction: column;
 }
 
-/* List View Header */
+/* List View Header (Sticky) */
 .fm-list-header {
   display: grid;
-  grid-template-columns: 1fr 120px 160px;
+  grid-template-columns: 1fr 100px 160px;
   padding: 6px 12px;
   background: var(--surface);
   border-bottom: 1px solid var(--bd-soft);
@@ -75,6 +76,9 @@
   font-weight: 600;
   color: var(--tx-muted);
   user-select: none;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 /* List View Rows */
@@ -84,30 +88,54 @@
 }
 .fm-list .app-list-row {
   display: grid;
-  grid-template-columns: 1fr 120px 160px;
+  grid-template-columns: 1fr 100px 160px;
   align-items: center;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--bd-soft);
+  padding: 6px 12px;
+  border-bottom: 1px solid transparent;
+  cursor: default;
+  user-select: none;
+}
+.fm-list .app-list-row:hover {
+  background: var(--hover-bg);
+  border-bottom-color: var(--bd-soft);
+}
+.fm-list .app-list-row.selected {
+  background: var(--sel-bg);
+  color: var(--sel-ink);
+  border-bottom-color: var(--bd-soft);
 }
 .fm-list .row-meta {
   text-align: right;
   color: var(--tx-muted);
   font-size: 11px;
 }
+.fm-list .app-list-row.selected .row-meta {
+  color: var(--sel-ink);
+  opacity: 0.8;
+}
 .fm-list .row-name {
   font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+.fm-list .row-name span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .fm-list .row-name .icon {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 /* Grid View */
 .fm-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-  gap: 16px;
-  padding: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 12px;
+  padding: 16px;
   align-content: start;
 }
 .fm-grid .fm-grid-item {
@@ -140,6 +168,15 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Marquee Selection Box */
+.fm-marquee {
+  position: absolute;
+  border: 1px solid var(--ink);
+  background: rgba(128, 128, 128, 0.15);
+  pointer-events: none;
+  z-index: 100;
 }
 
 /* Context Menu */

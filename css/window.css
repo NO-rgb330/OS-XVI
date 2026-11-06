@@ -5,7 +5,7 @@
 /* The layer is transparent and click-through; windows opt back in. */
 #window-layer {
   position: fixed;
-  inset: var(--panel-h) 0 0 0;
+  inset: 0 0 var(--panel-h) 0;
   pointer-events: none;
   z-index: 100;
 }
@@ -119,7 +119,6 @@
   overflow: hidden;
   background: var(--bg-window);
 }
-/* App modules style their own chrome inside .window-body. */
 
 /* ---- Resize handles (8 directions) ---- */
 .window-resize { position: absolute; z-index: 1; }
@@ -150,9 +149,6 @@
   cursor: inherit !important;
 }
 
-/* ---- Focus dimming: inactive windows get a subtle dim of the body ---- */
 .window:not(.focused) .window-body {
   filter: grayscale(1);
 }
-/* (In a monochrome UI this is a no-op visually, but it makes the intent explicit
-   and prevents a future app from sneaking in a hue that would break the rule.) */

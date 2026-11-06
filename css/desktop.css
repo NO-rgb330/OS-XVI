@@ -5,7 +5,7 @@
 /* ---- Desktop (wallpaper + icons) ---- */
 #desktop {
   position: fixed;
-  inset: var(--panel-h) 0 0 0;
+  inset: 0 0 var(--panel-h) 0;
   background: var(--bg-desktop);
   background-size: cover;
   background-position: center;
@@ -69,15 +69,16 @@
   word-break: break-word;
 }
 
-/* ---- Top panel ---- */
+/* ---- Top panel (moved to bottom) ---- */
 #panel {
   position: fixed;
-  top: 0;
+  bottom: 0;
   left: 0;
   right: 0;
   height: var(--panel-h);
   background: var(--bg-panel);
-  border-bottom: 1px solid var(--bd);
+  border-top: 1px solid var(--bd);
+  border-bottom: none;
   display: flex;
   align-items: stretch;
   gap: 2px;

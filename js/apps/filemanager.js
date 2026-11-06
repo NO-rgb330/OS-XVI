@@ -10,7 +10,6 @@ function formatBytes(bytes) {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
-
 function formatDate(ts) {
   if (!ts) return '';
   const d = new Date(ts);
@@ -69,7 +68,6 @@ export const fileManagerApp = {
 
     const renderBreadcrumbs = () => {
       elCrumbs.innerHTML = '';
-      
       const rootBtn = document.createElement('span');
       rootBtn.className = 'fm-crumb' + (currentPath === '/' ? ' active' : '');
       rootBtn.textContent = 'Root';
@@ -77,7 +75,6 @@ export const fileManagerApp = {
       elCrumbs.appendChild(rootBtn);
 
       if (currentPath === '/') return;
-      
       const parts = currentPath.split('/').filter(Boolean);
       let builtPath = '';
       
@@ -98,11 +95,7 @@ export const fileManagerApp = {
 
     const updateStatus = () => {
       elCount.textContent = `${currentItems.length} items`;
-      if (selectedNames.size > 0) {
-        elStatus.textContent = `${selectedNames.size} selected`;
-      } else {
-        elStatus.textContent = 'Ready';
-      }
+      elStatus.textContent = selectedNames.size > 0 ? `${selectedNames.size} selected` : 'Ready';
     };
 
     const render = () => {
@@ -137,8 +130,9 @@ export const fileManagerApp = {
         if (viewMode === 'list') {
           const row = document.createElement('div');
           row.className = 'app-list-row' + (isSel ? ' selected' : '');
+          row.dataset.name = item.name;
           row.innerHTML = `
-            <div class="row-name">${iconHTML(iconType, 18)} <span>${item.name}</span></div>
+            <div class="row-name">${iconHTML(iconType, 16)} <span>${item.name}</span></div>
             <div class="row-meta">${item.kind === 'dir' ? 'Folder' : formatBytes(item.size)}</div>
             <div class="row-meta">${formatDate(item.mtime)}</div>
           `;
@@ -150,23 +144,17 @@ export const fileManagerApp = {
             else selectedNames.add(item.name);
             render();
           });
-          
           row.addEventListener('dblclick', () => handleOpen(item));
           row.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (!selectedNames.has(item.name)) {
-              selectedNames.clear();
-              selectedNames.add(item.name);
-              render();
-            }
+            e.preventDefault(); e.stopPropagation();
+            if (!selectedNames.has(item.name)) { selectedNames.clear(); selectedNames.add(item.name); render(); }
             showContextMenu(e.clientX, e.clientY);
           });
-
           elList.appendChild(row);
         } else {
           const gridItem = document.createElement('div');
           gridItem.className = 'fm-grid-item' + (isSel ? ' selected' : '');
+          gridItem.dataset.name = item.name;
           gridItem.innerHTML = `
             ${iconHTML(iconType, 48)}
             <div class="fm-grid-label">${item.name}</div>
@@ -179,23 +167,15 @@ export const fileManagerApp = {
             else selectedNames.add(item.name);
             render();
           });
-          
           gridItem.addEventListener('dblclick', () => handleOpen(item));
           gridItem.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (!selectedNames.has(item.name)) {
-              selectedNames.clear();
-              selectedNames.add(item.name);
-              render();
-            }
+            e.preventDefault(); e.stopPropagation();
+            if (!selectedNames.has(item.name)) { selectedNames.clear(); selectedNames.add(item.name); render(); }
             showContextMenu(e.clientX, e.clientY);
           });
-
           elList.appendChild(gridItem);
         }
       });
-      
       updateStatus();
     };
 
@@ -219,8 +199,6 @@ export const fileManagerApp = {
       } else {
         const fullPath = currentPath === '/' ? '/' + item.name : currentPath + '/' + item.name;
         const ext = item.name.split('.').pop().toLowerCase();
-        
-        // Route to Notepad for text files
         if (['txt', 'md', 'js', 'json', 'css', 'html', 'log'].includes(ext)) {
           openWindow('notepad', { path: fullPath });
         } else {
@@ -228,6 +206,94 @@ export const fileManagerApp = {
         }
       }
     };
+
+    // ---- Marquee Selection Logic ----
+    let isDragging = false;
+    let dragStart = { x: 0, y: 0 };
+    let marqueeBox = null;
+
+    elListArea.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return; // Only left click
+      if (e.target.closest('.app-list-row') || e.target.closest('.fm-grid-item')) return; // Clicked on item
+
+      isDragging = true;
+      const rect = elListArea.getBoundingClientRect();
+      dragStart = { 
+        x: e.clientX - rect.left + elListArea.scrollLeft, 
+        y: e.clientY - rect.top + elListArea.scrollTop 
+      };
+
+      if (!e.ctrlKey && !e.metaKey) {
+        selectedNames.clear();
+        render(); // Instant deselect
+      }
+
+      marqueeBox = document.createElement('div');
+      marqueeBox.className = 'fm-marquee';
+      marqueeBox.style.left = dragStart.x + 'px';
+      marqueeBox.style.top = dragStart.y + 'px';
+      elListArea.appendChild(marqueeBox);
+    });
+
+    const onMouseMove = (e) => {
+      if (!isDragging) return;
+      const rect = elListArea.getBoundingClientRect();
+      const curX = e.clientX - rect.left + elListArea.scrollLeft;
+      const curY = e.clientY - rect.top + elListArea.scrollTop;
+
+      const left = Math.min(dragStart.x, curX);
+      const top = Math.min(dragStart.y, curY);
+      const width = Math.abs(curX - dragStart.x);
+      const height = Math.abs(curY - dragStart.y);
+
+      if (marqueeBox) {
+        marqueeBox.style.left = left + 'px';
+        marqueeBox.style.top = top + 'px';
+        marqueeBox.style.width = width + 'px';
+        marqueeBox.style.height = height + 'px';
+      }
+
+      // Check intersections
+      const boxRect = { left, top, right: left + width, bottom: top + height };
+      let changed = false;
+      
+      const itemEls = elList.querySelectorAll('.app-list-row, .fm-grid-item');
+      itemEls.forEach(el => {
+        const elRect = el.getBoundingClientRect();
+        const elRel = {
+          left: elRect.left - rect.left + elListArea.scrollLeft,
+          top: elRect.top - rect.top + elListArea.scrollTop,
+          right: elRect.right - rect.left + elListArea.scrollLeft,
+          bottom: elRect.bottom - rect.top + elListArea.scrollTop
+        };
+        
+        const isInside = !(boxRect.right < elRel.left || boxRect.left > elRel.right || boxRect.bottom < elRel.top || boxRect.top > elRel.bottom);
+        const name = el.dataset.name;
+        
+        if (isInside && !selectedNames.has(name)) {
+          selectedNames.add(name);
+          el.classList.add('selected');
+          changed = true;
+        } else if (!isInside && selectedNames.has(name) && !e.ctrlKey && !e.metaKey) {
+          selectedNames.delete(name);
+          el.classList.remove('selected');
+          changed = true;
+        }
+      });
+      
+      if (changed) updateStatus();
+    };
+
+    const onMouseUp = () => {
+      if (!isDragging) return;
+      isDragging = false;
+      if (marqueeBox) { marqueeBox.remove(); marqueeBox = null; }
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+
+    // ---- End Marquee ----
 
     btnUp.onclick = () => {
       if (currentPath === '/') return;
@@ -251,17 +317,8 @@ export const fileManagerApp = {
       render();
     };
 
-    elListArea.addEventListener('mousedown', (e) => {
-      if (e.target === elListArea || e.target === elList) {
-        selectedNames.clear();
-        render();
-      }
-    });
-
     const unsub = vfs.on('change', (path) => {
-      if (path === currentPath) {
-        navigate(currentPath);
-      }
+      if (path === currentPath) navigate(currentPath);
     });
 
     const showContextMenu = (x, y) => {
@@ -296,47 +353,37 @@ export const fileManagerApp = {
       
       items.forEach(item => {
         if (item.type === 'sep') {
-          const sep = document.createElement('div');
-          sep.className = 'fm-ctx-sep';
-          contextMenu.appendChild(sep);
-          return;
+          const sep = document.createElement('div'); sep.className = 'fm-ctx-sep'; contextMenu.appendChild(sep); return;
         }
         const btn = document.createElement('div');
         btn.className = 'fm-ctx-item' + (item.danger ? ' danger' : '');
-        if (item.disabled) {
-          btn.style.opacity = '0.4';
-          btn.style.pointerEvents = 'none';
-        } else {
-          btn.onclick = () => {
-            contextMenu.remove();
-            contextMenu = null;
-            item.action();
-          };
+        if (item.disabled) { btn.style.opacity = '0.4'; btn.style.pointerEvents = 'none'; }
+        else {
+          btn.onclick = () => { contextMenu.remove(); contextMenu = null; item.action(); };
         }
         btn.textContent = item.label;
         contextMenu.appendChild(btn);
       });
 
       document.body.appendChild(contextMenu);
-      
       const rect = contextMenu.getBoundingClientRect();
       if (x + rect.width > window.innerWidth) x -= rect.width;
       if (y + rect.height > window.innerHeight) y -= rect.height;
-      
       contextMenu.style.left = x + 'px';
       contextMenu.style.top = y + 'px';
     };
 
     const closeContextMenu = (e) => {
       if (contextMenu && !contextMenu.contains(e.target)) {
-        contextMenu.remove();
-        contextMenu = null;
+        contextMenu.remove(); contextMenu = null;
       }
     };
     document.addEventListener('pointerdown', closeContextMenu);
 
     ctx.onCleanup(() => {
       unsub();
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
       document.removeEventListener('pointerdown', closeContextMenu);
       if (contextMenu) contextMenu.remove();
     });

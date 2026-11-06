@@ -2,10 +2,13 @@ import { register } from './core/registry.js';
 import { initPanel } from './core/panel.js';
 import { openWindow, blurAll } from './core/wm.js';
 import * as vfs from './core/vfs.js';
+import * as dialogs from './core/dialogs.js';
 import { seed } from './seed.js';
+import { fileManagerApp } from './apps/filemanager.js';
+import { iconHTML } from './core/icons.js';
 
 const APPS = [
-  { id: 'files',      name: 'Files',        icon: 'folder',    defaultSize: [820, 540], launch: placeholder },
+  fileManagerApp,
   { id: 'notepad',    name: 'Notepad',      icon: 'notepad',   defaultSize: [640, 480], launch: placeholder },
   { id: 'terminal',   name: 'Terminal',     icon: 'terminal',  defaultSize: [720, 440], launch: placeholder },
   { id: 'calculator', name: 'Calculator',   icon: 'calc',      defaultSize: [320, 420], singleton: true, launch: placeholder },
@@ -21,40 +24,72 @@ function placeholder(body, args, ctx) {
     </div>`;
 }
 
+async function initDesktopIcons() {
+  const container = document.getElementById('desktop-icons');
+  const iconData = [
+    { name: 'Files', appId: 'files', icon: 'folder' },
+    { name: 'welcome.txt', path: '/home/user/Documents/welcome.txt', icon: 'file-text' }
+  ];
+
+  container.replaceChildren();
+  for (const data of iconData) {
+    const el = document.createElement('div');
+    el.className = 'desktop-icon';
+    el.innerHTML = `
+      ${iconHTML(data.icon, 48)}
+      <div class="desktop-icon-label">${data.name}</div>
+    `;
+    
+    el.ondblclick = () => {
+      if (data.appId) openWindow(data.appId);
+      else dialogs.alert('Open File', `Would open ${data.path}`);
+    };
+    
+    // Single click selection
+    el.onclick = (e) => {
+      document.querySelectorAll('.desktop-icon').forEach(i => i.classList.remove('selected'));
+      el.classList.add('selected');
+    };
+    
+    container.appendChild(el);
+  }
+}
+
 async function boot() {
   const splash = document.getElementById('splash');
   const status = document.getElementById('splash-status');
 
-  // 1. Register Apps
   for (const app of APPS) register(app);
 
-  // 2. Mount VFS
   status.textContent = 'Mounting filesystem…';
   try {
     await vfs.mount();
     await seed();
-    window.vfs = vfs; // Expose for debugging
+    window.vfs = vfs;
+    window.dialogs = dialogs;
   } catch (err) {
     console.error(err);
     status.textContent = 'VFS Mount Failed: ' + err.message;
-    return; // Stop boot if VFS fails, otherwise the OS will be broken
+    return;
   }
 
-  // 3. Start Shell
   status.textContent = 'Starting shell…';
   initPanel();
+  await initDesktopIcons();
   
-  // Artificial delay so the user sees the splash text change (feels more "OS-like")
   await new Promise((r) => setTimeout(r, 150));
 
-  // 4. Hide Splash
   splash.classList.add('hide');
   setTimeout(() => splash.remove(), 300);
 
-  // 5. Global Events
-  document.getElementById('desktop').addEventListener('pointerdown', () => blurAll());
+  // Deselect desktop icons when clicking empty desktop
+  document.getElementById('desktop').addEventListener('pointerdown', (e) => {
+    blurAll();
+    if (e.target.id === 'desktop') {
+      document.querySelectorAll('.desktop-icon').forEach(i => i.classList.remove('selected'));
+    }
+  });
 
-  // Expose for devtools tinkering.
   window.__wm = { openWindow };
 }
 

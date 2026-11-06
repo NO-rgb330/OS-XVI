@@ -1,6 +1,8 @@
 import { register } from './core/registry.js';
 import { initPanel } from './core/panel.js';
 import { openWindow, blurAll } from './core/wm.js';
+import * as vfs from './core/vfs.js';
+import { seed } from './seed.js';
 
 const APPS = [
   { id: 'files',      name: 'Files',        icon: 'folder',    defaultSize: [820, 540], launch: placeholder },
@@ -23,20 +25,33 @@ async function boot() {
   const splash = document.getElementById('splash');
   const status = document.getElementById('splash-status');
 
+  // 1. Register Apps
   for (const app of APPS) register(app);
 
+  // 2. Mount VFS
   status.textContent = 'Mounting filesystem…';
-  // Step 1: await vfs.mount() — stubbed for now.
-  await new Promise((r) => setTimeout(r, 250));
+  try {
+    await vfs.mount();
+    await seed();
+    window.vfs = vfs; // Expose for debugging
+  } catch (err) {
+    console.error(err);
+    status.textContent = 'VFS Mount Failed: ' + err.message;
+    return; // Stop boot if VFS fails, otherwise the OS will be broken
+  }
 
+  // 3. Start Shell
   status.textContent = 'Starting shell…';
   initPanel();
+  
+  // Artificial delay so the user sees the splash text change (feels more "OS-like")
   await new Promise((r) => setTimeout(r, 150));
 
+  // 4. Hide Splash
   splash.classList.add('hide');
   setTimeout(() => splash.remove(), 300);
 
-  // Clicking the bare desktop blurs the focused window.
+  // 5. Global Events
   document.getElementById('desktop').addEventListener('pointerdown', () => blurAll());
 
   // Expose for devtools tinkering.

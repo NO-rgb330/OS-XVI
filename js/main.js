@@ -5,11 +5,12 @@ import * as vfs from './core/vfs.js';
 import * as dialogs from './core/dialogs.js';
 import { seed } from './seed.js';
 import { fileManagerApp } from './apps/filemanager.js';
+import { notepadApp } from './apps/notepad.js';
 import { iconHTML } from './core/icons.js';
 
 const APPS = [
   fileManagerApp,
-  { id: 'notepad',    name: 'Notepad',      icon: 'notepad',   defaultSize: [640, 480], launch: placeholder },
+  notepadApp,
   { id: 'terminal',   name: 'Terminal',     icon: 'terminal',  defaultSize: [720, 440], launch: placeholder },
   { id: 'calculator', name: 'Calculator',   icon: 'calc',      defaultSize: [320, 420], singleton: true, launch: placeholder },
   { id: 'gallery',    name: 'Gallery',      icon: 'gallery',   defaultSize: [800, 560], launch: placeholder },
@@ -28,7 +29,7 @@ async function initDesktopIcons() {
   const container = document.getElementById('desktop-icons');
   const iconData = [
     { name: 'Files', appId: 'files', icon: 'folder' },
-    { name: 'welcome.txt', path: '/home/user/Documents/welcome.txt', icon: 'file-text' }
+    { name: 'welcome.txt', appId: 'notepad', args: { path: '/home/user/Documents/welcome.txt' }, icon: 'file-text' }
   ];
 
   container.replaceChildren();
@@ -41,11 +42,9 @@ async function initDesktopIcons() {
     `;
     
     el.ondblclick = () => {
-      if (data.appId) openWindow(data.appId);
-      else dialogs.alert('Open File', `Would open ${data.path}`);
+      if (data.appId) openWindow(data.appId, data.args || {});
     };
     
-    // Single click selection
     el.onclick = (e) => {
       document.querySelectorAll('.desktop-icon').forEach(i => i.classList.remove('selected'));
       el.classList.add('selected');
@@ -82,7 +81,6 @@ async function boot() {
   splash.classList.add('hide');
   setTimeout(() => splash.remove(), 300);
 
-  // Deselect desktop icons when clicking empty desktop
   document.getElementById('desktop').addEventListener('pointerdown', (e) => {
     blurAll();
     if (e.target.id === 'desktop') {

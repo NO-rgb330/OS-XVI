@@ -163,7 +163,7 @@ export function blurAll() {
   emit({ type: 'focus', id: null });
 }
 
-function minimizeWindow(id) {
+export function minimizeWindow(id) {
   const rec = windows.get(id);
   if (!rec) return;
   rec.state = 'minimized';

@@ -19,13 +19,20 @@ export function openWindow(appId, args = {}) {
       if (w.app.id === appId) { focusWindow(w.id); return w; }
     }
   }
+  
   const size = args.size || app.defaultSize || [640, 480];
   const offset = (windows.size % 8) * 24;
+  
+  // Account for bottom panel
+  const panelH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-h')) || 30;
+  const availH = window.innerHeight - panelH;
+  
   const rect = {
     x: Math.max(16, Math.round((window.innerWidth - size[0]) / 2) + offset),
-    y: Math.max(16, Math.round((window.innerHeight - size[1]) / 2) + offset),
+    y: Math.max(16, Math.round((availH - size[1]) / 2) + offset),
     w: size[0], h: size[1]
   };
+  
   const rec = {
     id: 'w' + (++nextId),
     app, args, rect, state: 'normal',
@@ -96,12 +103,18 @@ function startDrag(e, rec) {
   const startX = e.clientX, startY = e.clientY;
   const x0 = rec.rect.x, y0 = rec.rect.y;
   rec.el.classList.add('dragging');
+  
   const move = (ev) => {
+    const panelH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-h')) || 30;
+    const maxY = window.innerHeight - panelH - 40; 
+    
     rec.rect.x = Math.max(-rec.rect.w + 80, Math.min(window.innerWidth - 80, x0 + ev.clientX - startX));
-    rec.rect.y = Math.max(0, Math.min(window.innerHeight - 40, y0 + ev.clientY - startY));
+    rec.rect.y = Math.max(0, Math.min(maxY, y0 + ev.clientY - startY));
+    
     rec.el.style.left = rec.rect.x + 'px';
     rec.el.style.top = rec.rect.y + 'px';
   };
+  
   const up = () => {
     rec.el.classList.remove('dragging');
     document.removeEventListener('pointermove', move);

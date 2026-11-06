@@ -30,25 +30,30 @@ export function initPanel() {
       btn.innerHTML = `${iconHTML(app.icon, 22)}<span class="app-name">${app.name}</span>`;
       btn.addEventListener('click', () => {
         closeAppsMenu();
-        // dynamic import so we don't force panel to own openWindow
         import('./wm.js').then(({ openWindow }) => openWindow(app.id));
       });
       appsGrid.appendChild(btn);
     }
   }
+  
   function openAppsMenu() {
     renderAppsMenu();
     appsMenu.hidden = false;
     appsBtn.setAttribute('aria-expanded', 'true');
     const r = appsBtn.getBoundingClientRect();
+    
+    // Bottom panel: open upwards
     appsMenu.style.left = r.left + 'px';
-    appsMenu.style.top = (r.bottom + 2) + 'px';
+    appsMenu.style.bottom = (window.innerHeight - r.top + 2) + 'px';
+    appsMenu.style.top = 'auto';
     appsMenu.style.minWidth = '340px';
   }
+  
   function closeAppsMenu() {
     appsMenu.hidden = true;
     appsBtn.setAttribute('aria-expanded', 'false');
   }
+  
   appsBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     if (appsMenu.hidden) openAppsMenu(); else closeAppsMenu();

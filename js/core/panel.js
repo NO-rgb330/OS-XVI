@@ -4,6 +4,7 @@ import { iconHTML } from './icons.js';
 import { esc } from './util.js';
 import { showMenu } from './contextmenu.js';
 import { hasAppIcon, addAppIcon, removeAppIcon } from './desktop.js';
+import { showLogin } from './login.js';
 
 export function initPanel() {
   const appsBtn = document.getElementById('apps-btn');
@@ -11,6 +12,14 @@ export function initPanel() {
   const appsGrid = document.getElementById('apps-grid');
   const tasklist = document.getElementById('tasklist');
   const clock = document.getElementById('clock');
+  const sessionBtn = document.getElementById('session-btn');
+
+  // ---- Lock Screen ----
+  if (sessionBtn) {
+    sessionBtn.addEventListener('click', () => {
+      showLogin(true);
+    });
+  }
 
   // ---- Clock (aligned to the minute boundary) ----
   function tick() {

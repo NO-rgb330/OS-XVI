@@ -10,7 +10,8 @@ let panelH = null;
 const windows = new Map();
 const listeners = new Set();
 
-let snapPreview = null;
+let flyout = null;
+let hideTimer = null;
 
 const getPanelH = () =>
   (panelH ??= parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-h'), 10) || 30);
@@ -26,6 +27,109 @@ function topVisible() {
   return best;
 }
 
+// ---- Snap Layout Definitions ----
+const SNAP_LAYOUTS = [
+  // 1. Two Columns
+  { w: 2, h: 1, zones: [ { x: 0, y: 0, w: 1, h: 1 }, { x: 1, y: 0, w: 1, h: 1 } ] },
+  // 2. Left 1, Right 2
+  { w: 2, h: 2, zones: [ { x: 0, y: 0, w: 1, h: 2 }, { x: 1, y: 0, w: 1, h: 1 }, { x: 1, y: 1, w: 1, h: 1 } ] },
+  // 3. Left 2, Right 1
+  { w: 2, h: 2, zones: [ { x: 0, y: 0, w: 1, h: 1 }, { x: 0, y: 1, w: 1, h: 1 }, { x: 1, y: 0, w: 1, h: 2 } ] },
+  // 4. Four Squares
+  { w: 2, h: 2, zones: [ { x: 0, y: 0, w: 1, h: 1 }, { x: 1, y: 0, w: 1, h: 1 }, { x: 0, y: 1, w: 1, h: 1 }, { x: 1, y: 1, w: 1, h: 1 } ] },
+  // 5. Three Columns
+  { w: 3, h: 1, zones: [ { x: 0, y: 0, w: 1, h: 1 }, { x: 1, y: 0, w: 1, h: 1 }, { x: 2, y: 0, w: 1, h: 1 } ] },
+  // 6. Top 1, Bottom 2
+  { w: 2, h: 2, zones: [ { x: 0, y: 0, w: 2, h: 1 }, { x: 0, y: 1, w: 1, h: 1 }, { x: 1, y: 1, w: 1, h: 1 } ] }
+];
+
+// ---- Flyout Logic ----
+function getFlyout() {
+  if (!flyout) {
+    flyout = document.createElement('div');
+    flyout.id = 'snap-flyout';
+    document.body.appendChild(flyout);
+    
+    flyout.addEventListener('mouseenter', () => clearTimeout(hideTimer));
+    flyout.addEventListener('mouseleave', () => { hideTimer = setTimeout(hideFlyout, 200); });
+  }
+  return flyout;
+}
+
+function hideFlyout() {
+  if (flyout) flyout.classList.remove('show');
+}
+
+function showFlyout(rec, anchorEl) {
+  clearTimeout(hideTimer);
+  const f = getFlyout();
+  f.innerHTML = '';
+  
+  SNAP_LAYOUTS.forEach(layoutData => {
+    const el = document.createElement('div');
+    el.className = 'snap-layout';
+    el.style.gridTemplateColumns = `repeat(${layoutData.w}, 1fr)`;
+    el.style.gridTemplateRows = `repeat(${layoutData.h}, 1fr)`;
+    
+    layoutData.zones.forEach(zone => {
+      const z = document.createElement('div');
+      z.className = 'snap-zone';
+      z.style.gridColumn = `${zone.x + 1} / span ${zone.w}`;
+      z.style.gridRow = `${zone.y + 1} / span ${zone.h}`;
+      z.onclick = (e) => {
+        e.stopPropagation();
+        applySnap(rec, layoutData, zone);
+        hideFlyout();
+      };
+      el.appendChild(z);
+    });
+    f.appendChild(el);
+  });
+  
+  // Position below anchor
+  const rect = anchorEl.getBoundingClientRect();
+  f.style.top = (rect.bottom + 6) + 'px';
+  
+  // Center horizontally, clamp to screen edges
+  let left = rect.left + rect.width / 2 - (f.offsetWidth || 260) / 2;
+  if (left < 10) left = 10;
+  if (left + (f.offsetWidth || 260) > window.innerWidth - 10) left = window.innerWidth - (f.offsetWidth || 260) - 10;
+  
+  f.style.left = left + 'px';
+  f.classList.add('show');
+}
+
+function applySnap(rec, layout, zone) {
+  if (rec.state !== 'snapped' && rec.state !== 'maximized') {
+    rec.preSnapRect = { ...rec.rect };
+  }
+  
+  const availH = window.innerHeight - getPanelH();
+  const w = window.innerWidth;
+  
+  const rx = w / layout.w;
+  const ry = availH / layout.h;
+  
+  rec.rect = {
+    x: Math.round(zone.x * rx),
+    y: Math.round(zone.y * ry),
+    w: Math.round(zone.w * rx),
+    h: Math.round(zone.h * ry)
+  };
+  
+  rec.state = 'snapped';
+  rec.el.classList.remove('maximized');
+  applyRect(rec);
+  
+  const btn = rec.el.querySelector('.window-btn-max');
+  const icon = btn.querySelector('use');
+  icon.setAttribute('href', '#i-restore');
+  btn.title = 'Restore';
+  
+  emit({ type: 'state', id: rec.id });
+}
+
+// ---- Core Window Logic ----
 export function openWindow(appId, args = {}) {
   const app = getApp(appId);
   if (!app) return null;
@@ -49,7 +153,7 @@ export function openWindow(appId, args = {}) {
       y: Math.max(16, Math.round((availH - h) / 2) + offset),
       w, h
     },
-    preSnapRect: null, // Stores the original size when snapped
+    preSnapRect: null,
     z: ++nextZ, el: null, bodyEl: null,
     cleanups: [], beforeClose: null, onFocus: null, closed: false, closing: false
   };
@@ -102,15 +206,34 @@ function buildWindowEl(rec) {
     ${['n', 's', 'e', 'w', 'nw', 'ne', 'sw', 'se'].map((d) =>
       `<div class="window-resize window-resize-${d}" data-dir="${d}"></div>`).join('')}
   `;
+  
   el.querySelector('.window-title').textContent = rec.title;
   rec.bodyEl = el.querySelector('.window-body');
-  el.querySelector('.window-btn-min').addEventListener('click', (e) => { e.stopPropagation(); minimizeWindow(rec.id); });
-  el.querySelector('.window-btn-max').addEventListener('click', (e) => { e.stopPropagation(); toggleMaximize(rec.id); });
-  el.querySelector('.window-btn-close').addEventListener('click', (e) => { e.stopPropagation(); closeWindow(rec.id); });
+  
+  const minBtn = el.querySelector('.window-btn-min');
+  const maxBtn = el.querySelector('.window-btn-max');
+  const closeBtn = el.querySelector('.window-btn-close');
+
+  minBtn.addEventListener('click', (e) => { e.stopPropagation(); minimizeWindow(rec.id); });
+  closeBtn.addEventListener('click', (e) => { e.stopPropagation(); closeWindow(rec.id); });
+  
+  maxBtn.addEventListener('mouseenter', () => {
+    if (rec.state !== 'maximized') showFlyout(rec, maxBtn);
+  });
+  maxBtn.addEventListener('mouseleave', () => {
+    hideTimer = setTimeout(hideFlyout, 200);
+  });
+  maxBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    hideFlyout();
+    toggleMaximize(rec.id);
+  });
+
   el.addEventListener('pointerdown', () => focusWindow(rec.id), true);
   const tb = el.querySelector('.window-titlebar');
   tb.addEventListener('pointerdown', (e) => startDrag(e, rec, tb));
   tb.addEventListener('dblclick', (e) => { if (!e.target.closest('.window-btn')) toggleMaximize(rec.id); });
+  
   el.querySelectorAll('.window-resize').forEach((h) => {
     h.addEventListener('pointerdown', (e) => startResize(e, rec, h));
   });
@@ -145,78 +268,34 @@ function trackPointer(e, target, cls, rec, move, endCb) {
 function startDrag(e, rec, tb) {
   if (e.button !== 0 || rec.state === 'maximized' || e.target.closest('.window-btn')) return;
   
-  if (!snapPreview) {
-    snapPreview = document.createElement('div');
-    snapPreview.id = 'snap-preview';
-    snapPreview.style.display = 'none';
-    document.getElementById('window-layer').appendChild(snapPreview);
+  // If snapped, unsnap it back to its pre-snap size before dragging
+  if (rec.state === 'snapped' && rec.preSnapRect) {
+      rec.state = 'normal';
+      rec.rect = { ...rec.preSnapRect };
+      rec.preSnapRect = null;
+      applyRect(rec);
+      
+      // Move window so mouse stays on titlebar
+      rec.rect.x = e.clientX - rec.rect.w / 2;
+      rec.rect.y = Math.max(0, e.clientY - 15);
+      rec.el.style.left = rec.rect.x + 'px';
+      rec.el.style.top = rec.rect.y + 'px';
+      
+      const maxBtn = rec.el.querySelector('.window-btn-max');
+      const icon = maxBtn.querySelector('use');
+      icon.setAttribute('href', '#i-max');
+      maxBtn.title = 'Maximize';
   }
 
   const startX = e.clientX, startY = e.clientY;
-  let currentSnap = null;
-  const availH = window.innerHeight - getPanelH();
-  
-  // If we were already snapped, we start fresh from a normal state
   const x0 = rec.rect.x, y0 = rec.rect.y;
-  const w0 = rec.rect.w, h0 = rec.rect.h;
-
+  const maxY = window.innerHeight - getPanelH() - 40;
+  
   trackPointer(e, tb, 'dragging', rec, (ev) => {
-    const dx = ev.clientX - startX, dy = ev.clientY - startY;
-    
-    // Window movement
-    if (!currentSnap) {
-      rec.rect.x = Math.max(-rec.rect.w + 80, Math.min(window.innerWidth - 80, x0 + dx));
-      rec.rect.y = Math.max(0, Math.min(availH - 40, y0 + dy));
-      rec.el.style.left = rec.rect.x + 'px';
-      rec.el.style.top = rec.rect.y + 'px';
-    }
-
-    // Snapping detection
-    if (ev.clientX < 20) currentSnap = 'left';
-    else if (ev.clientX > window.innerWidth - 20) currentSnap = 'right';
-    else if (ev.clientY < 20) currentSnap = 'max';
-    else currentSnap = null;
-
-    // Preview UI
-    if (currentSnap) {
-      snapPreview.style.display = 'block';
-      if (currentSnap === 'left') {
-        snapPreview.style.left = '0px';
-        snapPreview.style.top = '0px';
-        snapPreview.style.width = (window.innerWidth / 2) + 'px';
-        snapPreview.style.height = availH + 'px';
-      } else if (currentSnap === 'right') {
-        snapPreview.style.left = (window.innerWidth / 2) + 'px';
-        snapPreview.style.top = '0px';
-        snapPreview.style.width = (window.innerWidth / 2) + 'px';
-        snapPreview.style.height = availH + 'px';
-      } else {
-        snapPreview.style.left = '0px';
-        snapPreview.style.top = '0px';
-        snapPreview.style.width = window.innerWidth + 'px';
-        snapPreview.style.height = availH + 'px';
-      }
-    } else {
-      snapPreview.style.display = 'none';
-    }
-  }, () => {
-    snapPreview.style.display = 'none';
-    if (currentSnap) {
-      if (!rec.preSnapRect) rec.preSnapRect = { x: x0, y: y0, w: w0, h: h0 };
-      
-      if (currentSnap === 'max') {
-        toggleMaximize(rec.id);
-      } else {
-        rec.state = 'snapped';
-        rec.rect = {
-          x: currentSnap === 'left' ? 0 : window.innerWidth / 2,
-          y: 0,
-          w: window.innerWidth / 2,
-          h: availH
-        };
-        applyRect(rec);
-      }
-    }
+    rec.rect.x = Math.max(-rec.rect.w + 80, Math.min(window.innerWidth - 80, x0 + ev.clientX - startX));
+    rec.rect.y = Math.max(0, Math.min(maxY, y0 + ev.clientY - startY));
+    rec.el.style.left = rec.rect.x + 'px';
+    rec.el.style.top = rec.rect.y + 'px';
   });
 }
 
@@ -226,6 +305,7 @@ function startResize(e, rec, handle) {
   const dir = handle.dataset.dir;
   const startX = e.clientX, startY = e.clientY;
   const { x, y, w, h } = rec.rect;
+  
   trackPointer(e, handle, 'resizing', rec, (ev) => {
     const dx = ev.clientX - startX, dy = ev.clientY - startY;
     let nx = x, ny = y, nw = w, nh = h;
@@ -235,6 +315,16 @@ function startResize(e, rec, handle) {
     if (dir.includes('n')) { nh = Math.max(MIN_H, h - dy); ny = y + (h - nh); }
     rec.rect = { x: nx, y: ny, w: nw, h: nh };
     applyRect(rec);
+  }, () => {
+    // If it was snapped, resizing it breaks the snap state permanently
+    if (rec.state === 'snapped') {
+        rec.state = 'normal';
+        rec.preSnapRect = null;
+        const maxBtn = rec.el.querySelector('.window-btn-max');
+        const icon = maxBtn.querySelector('use');
+        icon.setAttribute('href', '#i-max');
+        maxBtn.title = 'Maximize';
+    }
   });
 }
 
@@ -282,14 +372,20 @@ function toggleMaximize(id) {
   if (!rec) return;
   const btn = rec.el.querySelector('.window-btn-max');
   const icon = btn.querySelector('use');
-  if (rec.state === 'maximized') {
+  
+  if (rec.state === 'maximized' || rec.state === 'snapped') {
     rec.state = 'normal';
     rec.el.classList.remove('maximized');
+    if (rec.preSnapRect) {
+        rec.rect = { ...rec.preSnapRect };
+        rec.preSnapRect = null;
+    }
     icon.setAttribute('href', '#i-max');
     btn.title = 'Maximize';
     applyRect(rec);
   } else {
     rec.el.classList.remove('minimized');
+    rec.preSnapRect = { ...rec.rect };
     rec.state = 'maximized';
     rec.el.classList.add('maximized');
     icon.setAttribute('href', '#i-restore');

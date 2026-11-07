@@ -53,6 +53,7 @@ h1 { font-weight: 300; }`);
           <button class="toolbar-btn btn-save" disabled>${iconHTML('file-text', 14)} Save</button>
           <div class="toolbar-sep"></div>
           <button class="toolbar-btn btn-new">${iconHTML('file-plus', 14)} New File</button>
+          <button class="toolbar-btn btn-toggle-preview" title="Toggle Preview">${iconHTML('grid', 14)} Hide Preview</button>
           <div style="flex:1"></div>
           <span class="muted" style="font-size:11px" id="webcraft-status">Ready</span>
         </div>
@@ -74,9 +75,6 @@ h1 { font-weight: 300; }`);
           <div class="ide-main" id="webcraft-preview-pane" style="flex: 1 1 50%; background: var(--paper);">
             <div class="ide-bottom-header" style="background: var(--surface); border-bottom: 1px solid var(--bd-soft);">
               <span>Preview</span>
-              <button class="toolbar-btn btn-toggle-preview" title="Minimize Preview" style="padding: 0 4px; height: 20px;">
-                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
-              </button>
             </div>
             <iframe id="webcraft-preview" class="ide-preview" sandbox="allow-scripts allow-modals"></iframe>
           </div>
@@ -103,14 +101,12 @@ h1 { font-weight: 300; }`);
         previewContainer.style.display = 'none';
         editorContainer.parentElement.style.flex = '1 1 100%'; // Editor takes full width
         editorContainer.parentElement.style.borderRight = 'none';
-        btnTogglePreview.innerHTML = `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;
-        btnTogglePreview.title = "Expand Preview";
+        btnTogglePreview.innerHTML = `${iconHTML('grid', 14)} Show Preview`;
       } else {
         previewContainer.style.display = 'flex';
         editorContainer.parentElement.style.flex = '1 1 50%';
         editorContainer.parentElement.style.borderRight = '1px solid var(--bd-soft)';
-        btnTogglePreview.innerHTML = `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>`;
-        btnTogglePreview.title = "Minimize Preview";
+        btnTogglePreview.innerHTML = `${iconHTML('grid', 14)} Hide Preview`;
       }
     };
 

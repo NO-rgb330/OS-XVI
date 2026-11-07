@@ -9,7 +9,7 @@ const PROJECT_DIR = '/home/user/Projects';
 export const serpentApp = {
   id: 'serpent',
   name: 'Serpent',
-  icon: 'terminal',
+  icon: 'python',
   defaultSize: [900, 600],
 
   async launch(body, args, ctx) {

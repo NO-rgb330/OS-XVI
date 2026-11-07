@@ -1,0 +1,8273 @@
+# COMPLETE WEB DEVELOPMENT CHEAT SHEET
+## HTML5, CSS3 AND JAVASCRIPT
+**Level:** Beginner → Advanced  
+**Technologies:** HTML, CSS, JavaScript (ES6+)  
+**Purpose:** Complete syntax reference and practical programming guide
+
+---
+
+# TABLE OF CONTENTS
+
+## PART I: HTML
+1. HTML Fundamentals
+2. HTML Document Structure
+3. HTML Tags and Elements
+4. HTML Attributes
+5. Text Formatting
+6. Headings and Paragraphs
+7. Links and Navigation
+8. Images and Media
+9. Lists
+10. Tables
+11. Forms and Input Elements
+12. Semantic HTML
+13. HTML5 Features
+14. Audio and Video
+15. Canvas and SVG
+16. Iframes
+17. Metadata and SEO
+18. HTML Accessibility
+19. HTML Entities
+20. HTML Best Practices
+
+## PART II: CSS
+21. CSS Fundamentals
+22. CSS Selectors
+23. CSS Combinators
+24. CSS Specificity
+25. CSS Colours
+26. Text and Typography
+27. Backgrounds
+28. Borders and Outlines
+29. The CSS Box Model
+30. Width, Height and Sizing
+31. Display Properties
+32. Positioning
+33. Flexbox
+34. CSS Grid
+35. Margins and Padding
+36. Overflow and Visibility
+37. Pseudo-Classes
+38. Pseudo-Elements
+39. Transitions
+40. Transformations
+41. Animations
+42. Responsive Design
+43. Media Queries
+44. CSS Variables
+45. Functions in CSS
+46. Filters and Effects
+47. Shadows
+48. CSS Units
+49. CSS Functions and Modern Features
+50. CSS Best Practices
+
+## PART III: JAVASCRIPT
+51. JavaScript Fundamentals
+52. Variables and Data Types
+53. Operators
+54. Strings
+55. Numbers and Mathematics
+56. Conditions
+57. Loops
+58. Arrays
+59. Objects
+60. Functions
+61. Arrow Functions
+62. Scope and Closures
+63. Array Methods
+64. Object Methods
+65. Destructuring
+66. Spread and Rest Operators
+67. Classes and OOP
+68. Inheritance
+69. Error Handling
+70. DOM Manipulation
+71. DOM Selectors
+72. DOM Events
+73. Event Listeners
+74. Forms and Validation
+75. Timers and Intervals
+76. Local Storage and Session Storage
+77. JSON
+78. Fetch API
+79. Promises
+80. Async and Await
+81. Modules
+82. Regular Expressions
+83. Browser APIs
+84. Canvas API
+85. WebSockets
+86. Web Workers
+87. JavaScript Security
+88. Debugging and Testing
+
+## PART IV: COMBINED WEB DEVELOPMENT
+89. Connecting HTML, CSS and JavaScript
+90. Website Project Structure
+91. Creating Components
+92. Dynamic Website Examples
+93. Common Website Functions
+94. Useful Browser Developer Tools
+95. Performance Optimisation
+96. Accessibility
+97. Deployment and Hosting
+98. Common Errors
+99. Complete Example Projects
+
+---
+
+# PART I: HTML
+
+# 1. HTML FUNDAMENTALS
+
+HTML stands for HyperText Markup Language.
+
+HTML defines the structure of a webpage using elements called tags.
+
+HTML is not a programming language. It is a markup language.
+
+## 1.1 Creating an HTML file
+
+HTML files normally use the `.html` extension.
+
+Examples:
+
+```text
+index.html
+about.html
+contact.html
+dashboard.html
+```
+
+## 1.2 Basic HTML syntax
+
+```html
+<tagname>Content goes here</tagname>
+```
+
+Example:
+
+```html
+<h1>Hello World</h1>
+```
+
+This creates a level-one heading.
+
+Most HTML elements have:
+- An opening tag.
+- Content.
+- A closing tag.
+
+Some elements are void elements and do not have closing tags.
+
+Examples:
+
+```html
+<img src="image.png" alt="An image">
+<br>
+<hr>
+<input type="text">
+```
+
+## 1.3 HTML comments
+
+```html
+<!-- This is an HTML comment -->
+```
+
+Multiline:
+
+```html
+<!--
+This is a
+multiline comment.
+-->
+```
+
+Comments are not displayed on the webpage.
+
+---
+
+# 2. HTML DOCUMENT STRUCTURE
+
+Every normal HTML document should contain a basic structure.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>My Website</title>
+
+</head>
+
+<body>
+
+    <h1>Hello World</h1>
+
+    <p>Welcome to my website.</p>
+
+</body>
+
+</html>
+```
+
+## 2.1 Explanation
+
+| Element | Purpose |
+|---|---|
+| `<!DOCTYPE html>` | Declares an HTML5 document |
+| `<html>` | Root element |
+| `<head>` | Contains metadata and linked resources |
+| `<meta>` | Provides document metadata |
+| `<title>` | Sets browser tab title |
+| `<body>` | Contains visible webpage content |
+
+## 2.2 Connecting CSS
+
+External stylesheet:
+
+```html
+<link rel="stylesheet" href="style.css">
+```
+
+Usually placed inside `<head>`.
+
+Internal CSS:
+
+```html
+<style>
+    body {
+        background: black;
+        color: white;
+    }
+</style>
+```
+
+Inline CSS:
+
+```html
+<h1 style="color: red;">Hello</h1>
+```
+
+External CSS is generally preferred for larger websites.
+
+## 2.3 Connecting JavaScript
+
+External JavaScript:
+
+```html
+<script src="script.js"></script>
+```
+
+A common approach is to use `defer`:
+
+```html
+<script src="script.js" defer></script>
+```
+
+This downloads the script while HTML is being parsed and executes it after parsing is complete.
+
+Alternatively:
+
+```html
+<script>
+    console.log("Hello World");
+</script>
+```
+
+---
+
+# 3. HTML TAGS AND ELEMENTS
+
+## 3.1 Basic tags
+
+| Tag | Purpose |
+|---|---|
+| `<html>` | HTML document |
+| `<head>` | Document metadata |
+| `<body>` | Visible content |
+| `<title>` | Browser tab title |
+| `<h1>` | Main heading |
+| `<h2>` | Second-level heading |
+| `<h3>` | Third-level heading |
+| `<h4>` | Fourth-level heading |
+| `<h5>` | Fifth-level heading |
+| `<h6>` | Sixth-level heading |
+| `<p>` | Paragraph |
+| `<br>` | Line break |
+| `<hr>` | Horizontal thematic break |
+| `<div>` | Generic block container |
+| `<span>` | Generic inline container |
+
+Example:
+
+```html
+<div>
+    <h1>My Website</h1>
+
+    <p>This is a paragraph.</p>
+
+    <span>Inline text</span>
+</div>
+```
+
+## 3.2 Block elements
+
+Block elements normally begin on a new line and occupy the available width.
+
+Examples:
+
+```html
+<div>Block one</div>
+<p>Block two</p>
+<h1>Heading</h1>
+<section>Section</section>
+```
+
+## 3.3 Inline elements
+
+Inline elements normally occupy only the space needed by their content.
+
+Examples:
+
+```html
+<span>Text</span>
+<strong>Important</strong>
+<em>Emphasised</em>
+<a href="#">Link</a>
+```
+
+---
+
+# 4. HTML ATTRIBUTES
+
+Attributes provide additional information about elements.
+
+Syntax:
+
+```html
+<tag attribute="value">Content</tag>
+```
+
+Example:
+
+```html
+<p class="description" id="intro">
+    Welcome.
+</p>
+```
+
+## 4.1 Common HTML attributes
+
+| Attribute | Purpose |
+|---|---|
+| `id` | Unique element identifier |
+| `class` | Assigns CSS classes |
+| `style` | Inline CSS |
+| `title` | Additional information |
+| `hidden` | Hides an element |
+| `lang` | Language |
+| `dir` | Text direction |
+| `tabindex` | Keyboard focus order |
+| `contenteditable` | Makes content editable |
+| `draggable` | Controls drag capability |
+| `data-*` | Stores custom data attributes |
+| `role` | Accessibility role |
+| `aria-*` | Accessibility information |
+
+Example:
+
+```html
+<div
+    id="container"
+    class="main-container"
+    data-user="Nathan"
+    title="Main container">
+
+    Hello!
+
+</div>
+```
+
+## 4.2 ID versus class
+
+ID:
+
+```html
+<h1 id="main-title">Welcome</h1>
+```
+
+Class:
+
+```html
+<p class="description">Hello</p>
+<p class="description">World</p>
+```
+
+An ID should identify one unique element within a document. Classes can be reused.
+
+---
+
+# 5. TEXT FORMATTING
+
+| Tag | Purpose |
+|---|---|
+| `<b>` | Stylistically bold text |
+| `<strong>` | Important text |
+| `<i>` | Alternate voice or mood |
+| `<em>` | Emphasised text |
+| `<u>` | Underlined text |
+| `<s>` | No longer accurate or relevant text |
+| `<del>` | Deleted text |
+| `<ins>` | Inserted text |
+| `<mark>` | Highlighted text |
+| `<small>` | Smaller text |
+| `<sub>` | Subscript |
+| `<sup>` | Superscript |
+| `<code>` | Code fragment |
+| `<pre>` | Preformatted text |
+| `<kbd>` | Keyboard input |
+| `<samp>` | Sample output |
+| `<var>` | Variable |
+| `<blockquote>` | Block quotation |
+| `<q>` | Inline quotation |
+| `<cite>` | Work title citation |
+| `<abbr>` | Abbreviation |
+| `<time>` | Date or time |
+
+Examples:
+
+```html
+<strong>Important information</strong>
+
+<em>Emphasised information</em>
+
+<mark>Highlighted text</mark>
+
+H<sub>2</sub>O
+
+x<sup>2</sup>
+
+<del>Old price</del>
+
+<ins>New price</ins>
+```
+
+Code formatting:
+
+```html
+<pre>
+    <code>
+        print("Hello World")
+    </code>
+</pre>
+```
+
+Keyboard input:
+
+```html
+<p>Press <kbd>Ctrl</kbd> + <kbd>S</kbd> to save.</p>
+```
+
+---
+
+# 6. HEADINGS AND PARAGRAPHS
+
+HTML provides six heading levels.
+
+```html
+<h1>Main Heading</h1>
+
+<h2>Section Heading</h2>
+
+<h3>Subsection</h3>
+
+<h4>Smaller Heading</h4>
+
+<h5>Smaller Heading</h5>
+
+<h6>Smallest Heading</h6>
+```
+
+Paragraph:
+
+```html
+<p>This is a paragraph.</p>
+```
+
+Line break:
+
+```html
+<p>Hello<br>World</p>
+```
+
+Horizontal divider:
+
+```html
+<hr>
+```
+
+Use headings according to document structure, not merely their visual appearance.
+
+---
+
+# 7. LINKS AND NAVIGATION
+
+The `<a>` element creates hyperlinks.
+
+## 7.1 Basic link
+
+```html
+<a href="https://example.com">Visit Website</a>
+```
+
+## 7.2 Open in new tab
+
+```html
+<a href="https://example.com" target="_blank" rel="noopener">
+    Open Website
+</a>
+```
+
+## 7.3 Internal page navigation
+
+```html
+<a href="about.html">About</a>
+<a href="contact.html">Contact</a>
+```
+
+## 7.4 Jump to an element
+
+```html
+<a href="#section2">Go to Section 2</a>
+
+<h2 id="section2">Section 2</h2>
+```
+
+## 7.5 Email link
+
+```html
+<a href="mailto:example@email.com">Email Us</a>
+```
+
+## 7.6 Telephone link
+
+```html
+<a href="tel:+6512345678">Call Us</a>
+```
+
+## 7.7 Download link
+
+```html
+<a href="document.pdf" download>Download PDF</a>
+```
+
+## 7.8 Link attributes
+
+| Attribute | Purpose |
+|---|---|
+| `href` | Destination |
+| `target` | Where to open |
+| `rel` | Relationship/security hints |
+| `download` | Suggest downloading |
+| `hreflang` | Language of linked resource |
+| `type` | Media type hint |
+
+---
+
+# 8. IMAGES AND MEDIA
+
+## 8.1 Images
+
+```html
+<img src="image.png" alt="Description">
+```
+
+Common attributes:
+
+| Attribute | Purpose |
+|---|---|
+| `src` | Image source |
+| `alt` | Alternative text |
+| `width` | Image width |
+| `height` | Image height |
+| `loading` | Loading behaviour |
+| `decoding` | Image decoding hint |
+| `srcset` | Multiple image sources |
+| `sizes` | Responsive image sizing |
+
+Example:
+
+```html
+<img
+    src="landscape.jpg"
+    alt="Mountain landscape"
+    width="800"
+    height="500"
+    loading="lazy">
+```
+
+## 8.2 Responsive images
+
+```html
+<img
+    src="small.jpg"
+    srcset="
+        small.jpg 480w,
+        medium.jpg 800w,
+        large.jpg 1200w
+    "
+    sizes="(max-width: 600px) 480px, 800px"
+    alt="Landscape">
+```
+
+## 8.3 Figure and caption
+
+```html
+<figure>
+    <img src="image.jpg" alt="A landscape">
+
+    <figcaption>
+        A beautiful landscape.
+    </figcaption>
+</figure>
+```
+
+## 8.4 Audio
+
+```html
+<audio controls>
+    <source src="audio.mp3" type="audio/mpeg">
+    Your browser does not support audio.
+</audio>
+```
+
+Useful attributes:
+
+- `controls`
+- `autoplay`
+- `loop`
+- `muted`
+- `preload`
+
+## 8.5 Video
+
+```html
+<video width="640" height="360" controls>
+    <source src="video.mp4" type="video/mp4">
+    Your browser does not support video.
+</video>
+```
+
+Other attributes:
+
+```html
+<video
+    controls
+    autoplay
+    muted
+    loop
+    playsinline
+    poster="thumbnail.jpg">
+
+    <source src="video.mp4" type="video/mp4">
+
+</video>
+```
+
+Autoplay with sound is generally restricted by browsers.
+
+## 8.6 Video subtitles
+
+```html
+<video controls>
+    <source src="video.mp4" type="video/mp4">
+
+    <track
+        src="subtitles.vtt"
+        kind="subtitles"
+        srclang="en"
+        label="English">
+</video>
+```
+
+---
+
+# 9. LISTS
+
+## 9.1 Unordered list
+
+```html
+<ul>
+    <li>Apple</li>
+    <li>Banana</li>
+    <li>Orange</li>
+</ul>
+```
+
+## 9.2 Ordered list
+
+```html
+<ol>
+    <li>First</li>
+    <li>Second</li>
+    <li>Third</li>
+</ol>
+```
+
+## 9.3 Ordered list attributes
+
+```html
+<ol start="5">
+    <li>Five</li>
+    <li>Six</li>
+</ol>
+```
+
+Reverse order:
+
+```html
+<ol reversed>
+    <li>Three</li>
+    <li>Two</li>
+    <li>One</li>
+</ol>
+```
+
+Different numbering:
+
+```html
+<ol type="A">
+    <li>First</li>
+    <li>Second</li>
+</ol>
+```
+
+Possible types:
+
+- `1`
+- `A`
+- `a`
+- `I`
+- `i`
+
+## 9.4 Description lists
+
+```html
+<dl>
+    <dt>HTML</dt>
+    <dd>Defines webpage structure.</dd>
+
+    <dt>CSS</dt>
+    <dd>Controls webpage appearance.</dd>
+</dl>
+```
+
+---
+
+# 10. TABLES
+
+Tables organise information into rows and columns.
+
+## 10.1 Basic table
+
+```html
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Age</th>
+    </tr>
+
+    <tr>
+        <td>Nathan</td>
+        <td>13</td>
+    </tr>
+</table>
+```
+
+## 10.2 Table elements
+
+| Tag | Purpose |
+|---|---|
+| `<table>` | Table container |
+| `<tr>` | Table row |
+| `<th>` | Header cell |
+| `<td>` | Data cell |
+| `<thead>` | Header section |
+| `<tbody>` | Main table content |
+| `<tfoot>` | Footer section |
+| `<caption>` | Table title |
+| `<colgroup>` | Column group |
+| `<col>` | Column properties |
+
+## 10.3 Complete table
+
+```html
+<table>
+    <caption>Student Records</caption>
+
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Age</th>
+            <th>Class</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        <tr>
+            <td>Nathan</td>
+            <td>13</td>
+            <td>1E</td>
+        </tr>
+
+        <tr>
+            <td>Alex</td>
+            <td>14</td>
+            <td>2A</td>
+        </tr>
+    </tbody>
+
+    <tfoot>
+        <tr>
+            <td colspan="3">Total: 2 students</td>
+        </tr>
+    </tfoot>
+</table>
+```
+
+## 10.4 colspan
+
+Combines columns.
+
+```html
+<td colspan="2">Combined columns</td>
+```
+
+## 10.5 rowspan
+
+Combines rows.
+
+```html
+<td rowspan="2">Combined rows</td>
+```
+
+## 10.6 Table accessibility
+
+```html
+<th scope="col">Name</th>
+<th scope="row">Nathan</th>
+```
+
+Use appropriate table headers and captions.
+
+---
+
+# 11. FORMS AND INPUT ELEMENTS
+
+Forms collect information from users.
+
+## 11.1 Basic form
+
+```html
+<form action="/submit" method="POST">
+
+    <label for="username">Username:</label>
+
+    <input
+        type="text"
+        id="username"
+        name="username">
+
+    <button type="submit">Submit</button>
+
+</form>
+```
+
+## 11.2 Form attributes
+
+| Attribute | Purpose |
+|---|---|
+| `action` | Submission destination |
+| `method` | GET or POST |
+| `enctype` | Encoding type |
+| `autocomplete` | Autofill behaviour |
+| `novalidate` | Disable built-in validation |
+| `target` | Response destination |
+| `name` | Form name |
+| `accept-charset` | Character encoding |
+
+## 11.3 Input types
+
+| Type | Purpose |
+|---|---|
+| `text` | Text input |
+| `password` | Password input |
+| `email` | Email input |
+| `number` | Numeric input |
+| `tel` | Telephone input |
+| `url` | URL input |
+| `search` | Search field |
+| `date` | Date picker |
+| `time` | Time picker |
+| `datetime-local` | Local date and time |
+| `month` | Month picker |
+| `week` | Week picker |
+| `color` | Colour picker |
+| `range` | Slider |
+| `checkbox` | Checkbox |
+| `radio` | Radio button |
+| `file` | File upload |
+| `hidden` | Hidden input |
+| `submit` | Submit button |
+| `reset` | Reset form |
+| `button` | General button |
+| `image` | Image submit button |
+
+Examples:
+
+```html
+<input type="text" placeholder="Enter username">
+
+<input type="password" placeholder="Password">
+
+<input type="email" placeholder="Email address">
+
+<input type="number" min="1" max="100">
+
+<input type="date">
+
+<input type="color">
+
+<input type="range" min="0" max="100">
+
+<input type="checkbox">
+
+<input type="radio" name="gender" value="male">
+
+<input type="file">
+```
+
+## 11.4 Common input attributes
+
+| Attribute | Purpose |
+|---|---|
+| `placeholder` | Hint text |
+| `value` | Initial value |
+| `required` | Mandatory input |
+| `disabled` | Disable input |
+| `readonly` | Prevent editing |
+| `checked` | Initially checked |
+| `selected` | Initially selected option |
+| `min` | Minimum |
+| `max` | Maximum |
+| `step` | Increment |
+| `minlength` | Minimum characters |
+| `maxlength` | Maximum characters |
+| `pattern` | Regex validation |
+| `multiple` | Allow multiple values/files |
+| `accept` | Allowed file types |
+| `autofocus` | Initially focused |
+| `autocomplete` | Autofill hint |
+
+Example:
+
+```html
+<input
+    type="text"
+    minlength="3"
+    maxlength="20"
+    required
+    placeholder="Username">
+```
+
+## 11.5 Textarea
+
+```html
+<textarea
+    rows="5"
+    cols="30"
+    placeholder="Write something...">
+</textarea>
+```
+
+## 11.6 Dropdown menu
+
+```html
+<select name="country">
+
+    <option value="sg">Singapore</option>
+
+    <option value="my">Malaysia</option>
+
+    <option value="au">Australia</option>
+
+</select>
+```
+
+Preselected option:
+
+```html
+<option value="sg" selected>Singapore</option>
+```
+
+## 11.7 Radio buttons
+
+```html
+<label>
+    <input type="radio" name="choice" value="yes">
+    Yes
+</label>
+
+<label>
+    <input type="radio" name="choice" value="no">
+    No
+</label>
+```
+
+Radio buttons with the same `name` belong to the same group.
+
+## 11.8 Checkboxes
+
+```html
+<label>
+    <input type="checkbox" name="subscribe">
+    Subscribe
+</label>
+```
+
+## 11.9 Fieldsets
+
+Group related form inputs.
+
+```html
+<fieldset>
+
+    <legend>Personal Information</legend>
+
+    <label for="name">Name:</label>
+
+    <input id="name" name="name" type="text">
+
+</fieldset>
+```
+
+## 11.10 File uploads
+
+```html
+<input
+    type="file"
+    accept=".jpg,.png,.pdf"
+    multiple>
+```
+
+File uploads generally require a server to store or process the uploaded data.
+
+---
+
+# 12. SEMANTIC HTML
+
+Semantic HTML uses elements that describe the meaning of their content.
+
+| Element | Purpose |
+|---|---|
+| `<header>` | Introductory header |
+| `<nav>` | Navigation |
+| `<main>` | Main content |
+| `<section>` | Thematic section |
+| `<article>` | Independent content |
+| `<aside>` | Related side content |
+| `<footer>` | Footer |
+| `<figure>` | Self-contained media |
+| `<figcaption>` | Media caption |
+| `<details>` | Expandable content |
+| `<summary>` | Expandable heading |
+| `<address>` | Contact information |
+| `<time>` | Date or time |
+| `<search>` | Search-related section |
+
+Example:
+
+```html
+<header>
+    <h1>My Website</h1>
+
+    <nav>
+        <a href="/">Home</a>
+        <a href="/about.html">About</a>
+    </nav>
+</header>
+
+<main>
+
+    <section>
+        <h2>About Us</h2>
+
+        <p>Welcome to our website.</p>
+    </section>
+
+    <article>
+        <h2>Latest News</h2>
+
+        <p>News article content.</p>
+    </article>
+
+    <aside>
+        Related information.
+    </aside>
+
+</main>
+
+<footer>
+    Copyright 2026
+</footer>
+```
+
+## 12.1 Details and summary
+
+Creates a native expandable section.
+
+```html
+<details>
+    <summary>Click to expand</summary>
+
+    <p>Hidden information.</p>
+</details>
+```
+
+---
+
+# 13. HTML5 FEATURES
+
+## 13.1 Data attributes
+
+Store custom information in HTML.
+
+```html
+<button data-user-id="123" data-role="admin">
+    User
+</button>
+```
+
+Access them with JavaScript:
+
+```javascript
+const button = document.querySelector("button");
+
+console.log(button.dataset.userId);
+console.log(button.dataset.role);
+```
+
+## 13.2 Progress bar
+
+```html
+<progress value="70" max="100"></progress>
+```
+
+## 13.3 Meter
+
+```html
+<meter value="0.7" min="0" max="1"></meter>
+```
+
+## 13.4 Dialog
+
+```html
+<dialog id="myDialog">
+    <p>Hello!</p>
+
+    <button id="closeDialog">Close</button>
+</dialog>
+```
+
+JavaScript:
+
+```javascript
+const dialog = document.querySelector("#myDialog");
+
+dialog.showModal();
+
+document.querySelector("#closeDialog").addEventListener("click", () => {
+    dialog.close();
+});
+```
+
+## 13.5 Template element
+
+Stores HTML that is not rendered until cloned using JavaScript.
+
+```html
+<template id="cardTemplate">
+    <div class="card">
+        <h2>Title</h2>
+        <p>Description</p>
+    </div>
+</template>
+```
+
+JavaScript:
+
+```javascript
+const template = document.querySelector("#cardTemplate");
+
+const clone = template.content.cloneNode(true);
+
+document.body.appendChild(clone);
+```
+
+## 13.6 Custom elements
+
+HTML supports custom elements through Web Components.
+
+Example:
+
+```html
+<my-element></my-element>
+```
+
+JavaScript:
+
+```javascript
+class MyElement extends HTMLElement {
+    connectedCallback() {
+        this.textContent = "Hello from a custom element!";
+    }
+}
+
+customElements.define("my-element", MyElement);
+```
+
+---
+
+# 14. CANVAS AND SVG
+
+## 14.1 HTML Canvas
+
+Canvas provides a drawing surface controlled through JavaScript.
+
+```html
+<canvas id="myCanvas" width="500" height="300"></canvas>
+```
+
+JavaScript:
+
+```javascript
+const canvas = document.querySelector("#myCanvas");
+
+const ctx = canvas.getContext("2d");
+
+ctx.fillStyle = "red";
+
+ctx.fillRect(50, 50, 100, 100);
+```
+
+Canvas can draw:
+- Shapes
+- Text
+- Images
+- Animations
+- Games
+- Visualisations
+
+## 14.2 SVG
+
+SVG stands for Scalable Vector Graphics.
+
+Example:
+
+```html
+<svg width="200" height="200" viewBox="0 0 200 200">
+
+    <circle
+        cx="100"
+        cy="100"
+        r="80"
+        fill="blue">
+
+    </circle>
+
+</svg>
+```
+
+Other SVG elements:
+
+```html
+<rect x="10" y="10" width="100" height="50" fill="red"/>
+
+<circle cx="50" cy="50" r="20" fill="blue"/>
+
+<ellipse cx="100" cy="100" rx="50" ry="25"/>
+
+<line x1="0" y1="0" x2="100" y2="100" stroke="black"/>
+
+<polygon points="50,0 100,100 0,100"/>
+
+<polyline points="0,0 50,50 100,0"/>
+```
+
+---
+
+# 15. IFRAMES
+
+An iframe embeds another webpage or document.
+
+```html
+<iframe
+    src="https://example.com"
+    width="600"
+    height="400"
+    title="Example website">
+</iframe>
+```
+
+Common attributes:
+
+- `src`
+- `width`
+- `height`
+- `title`
+- `loading`
+- `sandbox`
+- `allow`
+- `referrerpolicy`
+
+Example with sandbox:
+
+```html
+<iframe
+    src="https://example.com"
+    sandbox
+    title="Restricted embedded page">
+</iframe>
+```
+
+Sandbox permissions can be selectively granted. Be careful when allowing scripts and same-origin access together.
+
+---
+
+# 16. METADATA AND SEO
+
+Metadata provides information about a webpage.
+
+## 16.1 Page title
+
+```html
+<title>My Website</title>
+```
+
+## 16.2 Description
+
+```html
+<meta
+    name="description"
+    content="A website about programming.">
+```
+
+## 16.3 Viewport
+
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+```
+
+## 16.4 Keywords
+
+```html
+<meta name="keywords" content="Python, HTML, CSS, JavaScript">
+```
+
+Keywords metadata is not a major modern Google ranking factor.
+
+## 16.5 Author
+
+```html
+<meta name="author" content="Nathan">
+```
+
+## 16.6 Open Graph metadata
+
+Used by social platforms when sharing links.
+
+```html
+<meta property="og:title" content="My Website">
+
+<meta property="og:description" content="Welcome!">
+
+<meta property="og:image" content="preview.png">
+
+<meta property="og:url" content="https://example.com">
+```
+
+## 16.7 Favicon
+
+```html
+<link rel="icon" href="favicon.ico">
+```
+
+---
+
+# 17. HTML ACCESSIBILITY
+
+Accessibility makes websites usable by people with different abilities and assistive technologies.
+
+## 17.1 Alternative text
+
+```html
+<img src="dog.jpg" alt="A brown dog sitting">
+```
+
+Decorative images can use an empty alternative:
+
+```html
+<img src="decoration.png" alt="">
+```
+
+## 17.2 Labels
+
+```html
+<label for="email">Email:</label>
+
+<input type="email" id="email">
+```
+
+## 17.3 ARIA attributes
+
+ARIA provides additional accessibility information.
+
+```html
+<button aria-label="Close menu">
+    X
+</button>
+```
+
+Other examples:
+
+```html
+<div role="alert">
+    Invalid password.
+</div>
+```
+
+```html
+<button aria-expanded="false">
+    Menu
+</button>
+```
+
+```html
+<div aria-live="polite" id="status">
+</div>
+```
+
+Use native semantic HTML first. ARIA should supplement it rather than replace appropriate elements.
+
+## 17.4 Keyboard navigation
+
+Make interactive elements accessible using:
+- Buttons
+- Links
+- Inputs
+- Appropriate `tabindex`
+- Visible focus indicators
+
+Avoid using clickable `<div>` elements when a `<button>` would work.
+
+---
+
+# 18. HTML ENTITIES
+
+HTML entities display special characters.
+
+| Entity | Character |
+|---|---|
+| `&lt;` | < |
+| `&gt;` | > |
+| `&amp;` | & |
+| `&quot;` | " |
+| `&apos;` | ' |
+| `&nbsp;` | Non-breaking space |
+| `&copy;` | © |
+| `&reg;` | ® |
+| `&trade;` | ™ |
+| `&euro;` | € |
+| `&pound;` | £ |
+| `&yen;` | ¥ |
+| `&cent;` | ¢ |
+| `&times;` | × |
+| `&divide;` | ÷ |
+| `&plusmn;` | ± |
+| `&mdash;` | — |
+| `&ndash;` | – |
+| `&hellip;` | … |
+
+Example:
+
+```html
+<p>5 &lt; 10</p>
+
+<p>Copyright &copy; 2026</p>
+```
+
+---
+
+# PART II: CSS
+
+# 19. CSS FUNDAMENTALS
+
+CSS stands for Cascading Style Sheets.
+
+CSS controls the appearance and layout of HTML documents.
+
+## 19.1 Basic CSS syntax
+
+```css
+selector {
+    property: value;
+}
+```
+
+Example:
+
+```css
+h1 {
+    color: red;
+    font-size: 40px;
+}
+```
+
+Explanation:
+
+- `h1` is the selector.
+- `color` is the property.
+- `red` is the value.
+- Each declaration ends with a semicolon.
+
+## 19.2 CSS comments
+
+```css
+/* This is a CSS comment */
+```
+
+Multiline:
+
+```css
+/*
+This is a
+multiline comment.
+*/
+```
+
+## 19.3 External CSS
+
+HTML:
+
+```html
+<link rel="stylesheet" href="style.css">
+```
+
+CSS:
+
+```css
+body {
+    background-color: black;
+    color: white;
+}
+```
+
+---
+
+# 20. CSS SELECTORS
+
+Selectors determine which HTML elements receive styling.
+
+## 20.1 Basic selectors
+
+| Selector | Purpose |
+|---|---|
+| `*` | All elements |
+| `p` | All paragraph elements |
+| `.class` | Class selector |
+| `#id` | ID selector |
+| `h1, p` | Grouped selectors |
+
+Examples:
+
+```css
+* {
+    box-sizing: border-box;
+}
+
+p {
+    color: blue;
+}
+
+.card {
+    background: white;
+}
+
+#main {
+    width: 100%;
+}
+
+h1, h2, h3 {
+    font-family: Arial, sans-serif;
+}
+```
+
+## 20.2 Attribute selectors
+
+| Selector | Purpose |
+|---|---|
+| `[type]` | Has attribute |
+| `[type="text"]` | Exact value |
+| `[class~="box"]` | Contains word |
+| `[href^="https"]` | Starts with |
+| `[href$=".pdf"]` | Ends with |
+| `[href*="example"]` | Contains substring |
+| `[lang|="en"]` | Exact or hyphenated prefix |
+
+Examples:
+
+```css
+input[type="text"] {
+    border: 1px solid gray;
+}
+
+a[href^="https"] {
+    color: green;
+}
+
+a[href$=".pdf"] {
+    color: red;
+}
+```
+
+---
+
+# 21. CSS COMBINATORS
+
+Combinators describe relationships between elements.
+
+| Selector | Meaning |
+|---|---|
+| `A B` | Descendant |
+| `A > B` | Direct child |
+| `A + B` | Immediately following sibling |
+| `A ~ B` | Later sibling |
+
+Examples:
+
+```css
+div p {
+    color: red;
+}
+```
+
+All paragraphs inside a div.
+
+```css
+div > p {
+    color: blue;
+}
+```
+
+Only direct child paragraphs.
+
+```css
+h1 + p {
+    color: green;
+}
+```
+
+The paragraph immediately following an h1.
+
+```css
+h1 ~ p {
+    color: orange;
+}
+```
+
+All following sibling paragraphs.
+
+---
+
+# 22. CSS SPECIFICITY
+
+Specificity determines which CSS declaration wins when multiple rules apply.
+
+General priority:
+
+1. Important declarations (`!important`), subject to cascade origin and layer rules.
+2. Higher cascade-layer priority.
+3. Higher specificity.
+4. Later source order when other factors are equal.
+
+Simplified specificity ranking:
+
+| Selector | Specificity |
+|---|---|
+| `*` | 0-0-0 |
+| `p` | 0-0-1 |
+| `.box` | 0-1-0 |
+| `#main` | 1-0-0 |
+| `style=""` | Inline style priority |
+
+Example:
+
+```css
+p {
+    color: blue;
+}
+
+.text {
+    color: red;
+}
+
+#special {
+    color: green;
+}
+```
+
+HTML:
+
+```html
+<p class="text" id="special">
+    Hello
+</p>
+```
+
+The text becomes green.
+
+`!important`:
+
+```css
+p {
+    color: red !important;
+}
+```
+
+Avoid overusing `!important`.
+
+---
+
+# 23. CSS COLOURS
+
+## 23.1 Named colours
+
+```css
+color: red;
+color: blue;
+color: black;
+color: white;
+```
+
+## 23.2 Hexadecimal
+
+```css
+color: #ff0000;
+background: #000000;
+```
+
+Format:
+
+```text
+#RRGGBB
+```
+
+With alpha:
+
+```css
+color: #ff000080;
+```
+
+## 23.3 RGB
+
+```css
+color: rgb(255, 0, 0);
+```
+
+## 23.4 RGBA
+
+```css
+color: rgba(255, 0, 0, 0.5);
+```
+
+## 23.5 HSL
+
+```css
+color: hsl(0, 100%, 50%);
+```
+
+## 23.6 HSLA
+
+```css
+color: hsla(0, 100%, 50%, 0.5);
+```
+
+## 23.7 Modern colour syntax
+
+```css
+color: rgb(255 0 0 / 50%);
+
+color: hsl(0 100% 50% / 50%);
+```
+
+## 23.8 Transparency
+
+```css
+opacity: 0.5;
+```
+
+Opacity affects the entire element, including its children.
+
+---
+
+# 24. TEXT AND TYPOGRAPHY
+
+## 24.1 Text properties
+
+| Property | Purpose |
+|---|---|
+| `color` | Text colour |
+| `font-family` | Font |
+| `font-size` | Text size |
+| `font-weight` | Thickness |
+| `font-style` | Italic or normal |
+| `text-align` | Horizontal alignment |
+| `text-decoration` | Underline, strike-through |
+| `text-transform` | Capitalisation |
+| `text-indent` | First-line indentation |
+| `letter-spacing` | Character spacing |
+| `word-spacing` | Word spacing |
+| `line-height` | Line height |
+| `white-space` | Whitespace handling |
+| `text-overflow` | Overflow appearance |
+| `overflow-wrap` | Long-word wrapping |
+| `word-break` | Word-breaking behaviour |
+| `text-shadow` | Text shadow |
+| `vertical-align` | Inline alignment |
+
+Examples:
+
+```css
+p {
+    color: white;
+
+    font-family: Arial, sans-serif;
+
+    font-size: 18px;
+
+    font-weight: 600;
+
+    text-align: center;
+
+    line-height: 1.5;
+
+    letter-spacing: 1px;
+}
+```
+
+## 24.2 Font weights
+
+Common values:
+
+```css
+font-weight: 100;
+font-weight: 200;
+font-weight: 300;
+font-weight: 400;
+font-weight: 500;
+font-weight: 600;
+font-weight: 700;
+font-weight: 800;
+font-weight: 900;
+```
+
+Named values:
+
+```css
+font-weight: normal;
+font-weight: bold;
+```
+
+## 24.3 Text decoration
+
+```css
+text-decoration: underline;
+
+text-decoration: line-through;
+
+text-decoration: overline;
+
+text-decoration: none;
+```
+
+## 24.4 Text transformation
+
+```css
+text-transform: uppercase;
+
+text-transform: lowercase;
+
+text-transform: capitalize;
+```
+
+## 24.5 Text shadow
+
+```css
+text-shadow: 2px 2px 5px black;
+```
+
+Syntax:
+
+```css
+text-shadow: horizontal vertical blur colour;
+```
+
+## 24.6 Custom fonts
+
+```css
+@font-face {
+    font-family: "MyFont";
+
+    src: url("font.woff2") format("woff2");
+
+    font-weight: 400;
+
+    font-style: normal;
+}
+```
+
+Using it:
+
+```css
+body {
+    font-family: "MyFont", sans-serif;
+}
+```
+
+## 24.7 Google Fonts
+
+HTML:
+
+```html
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<link
+    href="https://fonts.googleapis.com/css2?family=Roboto&display=swap"
+    rel="stylesheet">
+```
+
+CSS:
+
+```css
+body {
+    font-family: "Roboto", sans-serif;
+}
+```
+
+---
+
+# 25. BACKGROUNDS
+
+## 25.1 Background colour
+
+```css
+body {
+    background-color: black;
+}
+```
+
+## 25.2 Background image
+
+```css
+body {
+    background-image: url("background.jpg");
+}
+```
+
+## 25.3 Background properties
+
+| Property | Purpose |
+|---|---|
+| `background-color` | Background colour |
+| `background-image` | Image or gradient |
+| `background-repeat` | Repeat behaviour |
+| `background-position` | Image position |
+| `background-size` | Image size |
+| `background-attachment` | Scroll behaviour |
+| `background-clip` | Background painting area |
+| `background-origin` | Background positioning area |
+| `background-blend-mode` | Image blending |
+
+Example:
+
+```css
+body {
+    background-image: url("background.jpg");
+
+    background-repeat: no-repeat;
+
+    background-position: center;
+
+    background-size: cover;
+
+    background-attachment: fixed;
+}
+```
+
+## 25.4 Gradients
+
+Linear gradient:
+
+```css
+background: linear-gradient(red, blue);
+```
+
+Horizontal gradient:
+
+```css
+background: linear-gradient(to right, red, blue);
+```
+
+Angled gradient:
+
+```css
+background: linear-gradient(45deg, red, blue);
+```
+
+Radial gradient:
+
+```css
+background: radial-gradient(circle, red, blue);
+```
+
+Conic gradient:
+
+```css
+background: conic-gradient(red, yellow, blue, red);
+```
+
+---
+
+# 26. BORDERS AND OUTLINES
+
+## 26.1 Border syntax
+
+```css
+border: 2px solid red;
+```
+
+Format:
+
+```text
+width style colour
+```
+
+Border styles:
+
+- `none`
+- `solid`
+- `dashed`
+- `dotted`
+- `double`
+- `groove`
+- `ridge`
+- `inset`
+- `outset`
+
+## 26.2 Individual borders
+
+```css
+border-top: 2px solid red;
+
+border-right: 2px solid blue;
+
+border-bottom: 2px solid green;
+
+border-left: 2px solid yellow;
+```
+
+## 26.3 Border radius
+
+```css
+border-radius: 10px;
+```
+
+Individual corners:
+
+```css
+border-top-left-radius: 10px;
+
+border-top-right-radius: 10px;
+
+border-bottom-left-radius: 10px;
+
+border-bottom-right-radius: 10px;
+```
+
+Circle:
+
+```css
+border-radius: 50%;
+```
+
+## 26.4 Outline
+
+```css
+outline: 2px solid blue;
+```
+
+Unlike borders, outlines do not occupy layout space.
+
+---
+
+# 27. THE CSS BOX MODEL
+
+Every element is represented by a rectangular box.
+
+The box model contains:
+
+1. Content
+2. Padding
+3. Border
+4. Margin
+
+Example:
+
+```css
+.box {
+    width: 200px;
+
+    padding: 20px;
+
+    border: 5px solid black;
+
+    margin: 10px;
+}
+```
+
+With the default `content-box`, total width:
+
+```text
+200 + 40 + 10 = 250px
+```
+
+This excludes margins.
+
+## 27.1 box-sizing
+
+Default:
+
+```css
+box-sizing: content-box;
+```
+
+Recommended common reset:
+
+```css
+* {
+    box-sizing: border-box;
+}
+```
+
+With `border-box`, padding and borders are included within the specified width and height.
+
+---
+
+# 28. WIDTH, HEIGHT AND SIZING
+
+Common properties:
+
+```css
+width: 500px;
+
+height: 300px;
+
+min-width: 200px;
+
+max-width: 1000px;
+
+min-height: 100px;
+
+max-height: 500px;
+```
+
+Responsive width:
+
+```css
+.container {
+    width: 90%;
+
+    max-width: 1200px;
+
+    margin: auto;
+}
+```
+
+Intrinsic sizing:
+
+```css
+width: min-content;
+
+width: max-content;
+
+width: fit-content;
+```
+
+Modern sizing functions:
+
+```css
+width: min(90%, 1200px);
+
+width: max(300px, 50%);
+
+width: clamp(300px, 80%, 1200px);
+```
+
+---
+
+# 29. DISPLAY PROPERTIES
+
+The `display` property determines how an element participates in layout.
+
+## 29.1 Common display values
+
+| Value | Purpose |
+|---|---|
+| `block` | Block layout |
+| `inline` | Inline layout |
+| `inline-block` | Inline with box dimensions |
+| `flex` | Flexbox container |
+| `inline-flex` | Inline flex container |
+| `grid` | Grid container |
+| `inline-grid` | Inline grid |
+| `none` | Removes element from layout |
+| `contents` | Removes element's own box |
+| `flow-root` | Creates independent block formatting context |
+| `table` | Table-like layout |
+| `list-item` | List-item layout |
+
+Examples:
+
+```css
+div {
+    display: block;
+}
+
+span {
+    display: inline;
+}
+
+button {
+    display: inline-block;
+}
+
+.container {
+    display: flex;
+}
+```
+
+Hide an element:
+
+```css
+.hidden {
+    display: none;
+}
+```
+
+Alternative:
+
+```css
+.hidden {
+    visibility: hidden;
+}
+```
+
+Difference:
+- `display: none` removes the element from layout.
+- `visibility: hidden` keeps its layout space.
+
+---
+
+# 30. POSITIONING
+
+CSS provides several positioning modes.
+
+## 30.1 Static
+
+Default positioning.
+
+```css
+.box {
+    position: static;
+}
+```
+
+## 30.2 Relative
+
+Positions an element relative to its normal position.
+
+```css
+.box {
+    position: relative;
+
+    top: 10px;
+
+    left: 20px;
+}
+```
+
+## 30.3 Absolute
+
+Positions an element relative to its nearest positioned ancestor.
+
+```css
+.parent {
+    position: relative;
+}
+
+.child {
+    position: absolute;
+
+    top: 10px;
+
+    right: 10px;
+}
+```
+
+## 30.4 Fixed
+
+Positions an element relative to the viewport.
+
+```css
+.navbar {
+    position: fixed;
+
+    top: 0;
+
+    left: 0;
+
+    width: 100%;
+}
+```
+
+## 30.5 Sticky
+
+Behaves relatively until reaching a specified scroll position.
+
+```css
+header {
+    position: sticky;
+
+    top: 0;
+}
+```
+
+## 30.6 z-index
+
+Controls stacking order within relevant stacking contexts.
+
+```css
+.box1 {
+    position: absolute;
+
+    z-index: 1;
+}
+
+.box2 {
+    position: absolute;
+
+    z-index: 2;
+}
+```
+
+A higher z-index does not always win globally because stacking contexts are isolated.
+
+---
+
+# 31. FLEXBOX
+
+Flexbox creates flexible one-dimensional layouts.
+
+Activate:
+
+```css
+.container {
+    display: flex;
+}
+```
+
+## 31.1 Main flex properties
+
+| Property | Purpose |
+|---|---|
+| `flex-direction` | Main axis direction |
+| `flex-wrap` | Allow wrapping |
+| `flex-flow` | Shorthand |
+| `justify-content` | Main-axis alignment |
+| `align-items` | Cross-axis alignment |
+| `align-content` | Align multiple lines |
+| `gap` | Space between items |
+
+## 31.2 flex-direction
+
+```css
+flex-direction: row;
+
+flex-direction: row-reverse;
+
+flex-direction: column;
+
+flex-direction: column-reverse;
+```
+
+## 31.3 justify-content
+
+```css
+justify-content: flex-start;
+
+justify-content: flex-end;
+
+justify-content: center;
+
+justify-content: space-between;
+
+justify-content: space-around;
+
+justify-content: space-evenly;
+```
+
+## 31.4 align-items
+
+```css
+align-items: stretch;
+
+align-items: flex-start;
+
+align-items: flex-end;
+
+align-items: center;
+
+align-items: baseline;
+```
+
+## 31.5 flex-wrap
+
+```css
+flex-wrap: nowrap;
+
+flex-wrap: wrap;
+
+flex-wrap: wrap-reverse;
+```
+
+## 31.6 Flex item properties
+
+| Property | Purpose |
+|---|---|
+| `flex-grow` | Growth factor |
+| `flex-shrink` | Shrink factor |
+| `flex-basis` | Initial main size |
+| `flex` | Shorthand |
+| `align-self` | Individual alignment |
+| `order` | Visual ordering |
+
+Example:
+
+```css
+.container {
+    display: flex;
+
+    gap: 20px;
+}
+
+.item {
+    flex: 1;
+}
+```
+
+## 31.7 Centering with Flexbox
+
+```css
+.container {
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    min-height: 100vh;
+}
+```
+
+---
+
+# 32. CSS GRID
+
+Grid creates two-dimensional layouts using rows and columns.
+
+Activate:
+
+```css
+.container {
+    display: grid;
+}
+```
+
+## 32.1 Defining columns
+
+```css
+.container {
+    display: grid;
+
+    grid-template-columns: 200px 200px 200px;
+}
+```
+
+Using fractional units:
+
+```css
+grid-template-columns: 1fr 1fr 1fr;
+```
+
+Using repeat:
+
+```css
+grid-template-columns: repeat(3, 1fr);
+```
+
+Automatic columns:
+
+```css
+grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+```
+
+## 32.2 Defining rows
+
+```css
+grid-template-rows: 100px 200px;
+```
+
+## 32.3 Grid gap
+
+```css
+gap: 20px;
+
+row-gap: 10px;
+
+column-gap: 20px;
+```
+
+## 32.4 Grid item positioning
+
+```css
+.item {
+    grid-column: 1 / 3;
+
+    grid-row: 1 / 2;
+}
+```
+
+Span:
+
+```css
+.item {
+    grid-column: span 2;
+}
+```
+
+## 32.5 Grid template areas
+
+```css
+.container {
+    display: grid;
+
+    grid-template-areas:
+        "header header"
+        "sidebar content"
+        "footer footer";
+
+    grid-template-columns: 200px 1fr;
+}
+
+.header {
+    grid-area: header;
+}
+
+.sidebar {
+    grid-area: sidebar;
+}
+
+.content {
+    grid-area: content;
+}
+
+.footer {
+    grid-area: footer;
+}
+```
+
+---
+
+# 33. MARGINS AND PADDING
+
+## 33.1 Margin
+
+Space outside an element.
+
+```css
+margin: 20px;
+```
+
+Individual sides:
+
+```css
+margin-top: 10px;
+
+margin-right: 20px;
+
+margin-bottom: 10px;
+
+margin-left: 20px;
+```
+
+## 33.2 Padding
+
+Space inside an element.
+
+```css
+padding: 20px;
+```
+
+Individual sides:
+
+```css
+padding-top: 10px;
+
+padding-right: 20px;
+
+padding-bottom: 10px;
+
+padding-left: 20px;
+```
+
+## 33.3 Shorthand
+
+One value:
+
+```css
+margin: 10px;
+```
+
+Two values:
+
+```css
+margin: 10px 20px;
+```
+
+Three values:
+
+```css
+margin: 10px 20px 30px;
+```
+
+Four values:
+
+```css
+margin: 10px 20px 30px 40px;
+```
+
+Order:
+
+```text
+Top Right Bottom Left
+```
+
+## 33.4 Automatic centering
+
+```css
+.container {
+    width: 80%;
+
+    margin-left: auto;
+
+    margin-right: auto;
+}
+```
+
+Or:
+
+```css
+.container {
+    margin: 0 auto;
+}
+```
+
+---
+
+# 34. OVERFLOW AND VISIBILITY
+
+## 34.1 Overflow
+
+| Value | Purpose |
+|---|---|
+| `visible` | Content can overflow |
+| `hidden` | Clip overflow |
+| `scroll` | Always provide scrollbars where applicable |
+| `auto` | Scrollbars when needed |
+| `clip` | Clip without scrolling |
+
+Examples:
+
+```css
+.container {
+    overflow: hidden;
+}
+```
+
+Horizontal:
+
+```css
+overflow-x: auto;
+```
+
+Vertical:
+
+```css
+overflow-y: scroll;
+```
+
+## 34.2 Cursor
+
+```css
+cursor: pointer;
+
+cursor: default;
+
+cursor: not-allowed;
+
+cursor: grab;
+
+cursor: grabbing;
+
+cursor: wait;
+
+cursor: text;
+
+cursor: crosshair;
+```
+
+## 34.3 Pointer events
+
+```css
+pointer-events: none;
+```
+
+Prevents the element from being a pointer-event target.
+
+```css
+pointer-events: auto;
+```
+
+Restores normal pointer targeting.
+
+## 34.4 User selection
+
+```css
+user-select: none;
+```
+
+```css
+user-select: text;
+```
+
+---
+
+# 35. PSEUDO-CLASSES
+
+Pseudo-classes style elements in particular states.
+
+## 35.1 Common pseudo-classes
+
+| Selector | Purpose |
+|---|---|
+| `:hover` | Pointer hovering |
+| `:active` | Active interaction |
+| `:focus` | Focused element |
+| `:focus-visible` | Keyboard-style visible focus |
+| `:focus-within` | Container contains focused element |
+| `:visited` | Visited link |
+| `:link` | Unvisited link |
+| `:checked` | Checked control |
+| `:disabled` | Disabled control |
+| `:enabled` | Enabled control |
+| `:required` | Required form input |
+| `:optional` | Optional input |
+| `:valid` | Valid input |
+| `:invalid` | Invalid input |
+| `:read-only` | Read-only input |
+| `:placeholder-shown` | Visible placeholder |
+| `:first-child` | First child |
+| `:last-child` | Last child |
+| `:nth-child()` | Child by position |
+| `:nth-of-type()` | Element by type position |
+| `:not()` | Exclude selector |
+| `:is()` | Match selector list |
+| `:where()` | Match selector list with zero specificity |
+| `:has()` | Relational selector |
+| `:root` | Document root |
+
+Examples:
+
+```css
+button:hover {
+    background: blue;
+}
+
+button:active {
+    transform: scale(0.95);
+}
+
+input:focus {
+    outline: 2px solid blue;
+}
+
+li:first-child {
+    color: red;
+}
+
+li:nth-child(2) {
+    color: green;
+}
+
+li:nth-child(odd) {
+    background: lightgray;
+}
+
+.card:not(.active) {
+    opacity: 0.5;
+}
+
+form:has(input:invalid) {
+    border: 1px solid red;
+}
+```
+
+---
+
+# 36. PSEUDO-ELEMENTS
+
+Pseudo-elements style specific parts of elements.
+
+| Selector | Purpose |
+|---|---|
+| `::before` | Insert generated content before |
+| `::after` | Insert generated content after |
+| `::first-letter` | First letter |
+| `::first-line` | First line |
+| `::selection` | Selected text |
+| `::placeholder` | Placeholder text |
+| `::marker` | List marker |
+| `::backdrop` | Backdrop of certain top-layer elements |
+| `::file-selector-button` | File input button |
+
+Examples:
+
+```css
+h1::before {
+    content: "★ ";
+}
+
+h1::after {
+    content: "!";
+}
+
+p::first-letter {
+    font-size: 30px;
+}
+
+::selection {
+    background: yellow;
+
+    color: black;
+}
+
+input::placeholder {
+    color: gray;
+}
+```
+
+---
+
+# 37. CSS TRANSITIONS
+
+Transitions smoothly animate changes in CSS properties.
+
+Syntax:
+
+```css
+transition: property duration timing-function delay;
+```
+
+Example:
+
+```css
+button {
+    background: blue;
+
+    transition: background 0.3s ease;
+}
+
+button:hover {
+    background: red;
+}
+```
+
+## 37.1 Transition properties
+
+| Property | Purpose |
+|---|---|
+| `transition-property` | Property to animate |
+| `transition-duration` | Animation duration |
+| `transition-timing-function` | Animation speed curve |
+| `transition-delay` | Delay |
+| `transition` | Shorthand |
+
+Timing functions:
+
+```css
+transition-timing-function: linear;
+
+transition-timing-function: ease;
+
+transition-timing-function: ease-in;
+
+transition-timing-function: ease-out;
+
+transition-timing-function: ease-in-out;
+```
+
+Custom curve:
+
+```css
+transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+```
+
+Example:
+
+```css
+.card {
+    transform: translateY(0);
+
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+```
+
+---
+
+# 38. CSS TRANSFORMATIONS
+
+The `transform` property changes an element's visual geometry.
+
+## 38.1 Translate
+
+```css
+transform: translateX(20px);
+
+transform: translateY(20px);
+
+transform: translate(20px, 30px);
+```
+
+## 38.2 Rotate
+
+```css
+transform: rotate(45deg);
+```
+
+## 38.3 Scale
+
+```css
+transform: scale(1.5);
+
+transform: scaleX(2);
+
+transform: scaleY(0.5);
+```
+
+## 38.4 Skew
+
+```css
+transform: skew(20deg);
+
+transform: skewX(20deg);
+
+transform: skewY(10deg);
+```
+
+## 38.5 Multiple transformations
+
+```css
+transform: translateX(20px) rotate(45deg) scale(1.2);
+```
+
+## 38.6 Transform origin
+
+```css
+transform-origin: center;
+
+transform-origin: top left;
+```
+
+## 38.7 3D transformations
+
+```css
+transform: rotateX(45deg);
+
+transform: rotateY(45deg);
+
+transform: rotateZ(45deg);
+
+transform: translateZ(50px);
+```
+
+Perspective:
+
+```css
+.parent {
+    perspective: 800px;
+}
+```
+
+---
+
+# 39. CSS ANIMATIONS
+
+CSS animations can change properties over time.
+
+## 39.1 Defining keyframes
+
+```css
+@keyframes move {
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(200px);
+    }
+}
+```
+
+Applying:
+
+```css
+.box {
+    animation: move 2s ease infinite;
+}
+```
+
+## 39.2 Animation properties
+
+| Property | Purpose |
+|---|---|
+| `animation-name` | Keyframe name |
+| `animation-duration` | Duration |
+| `animation-delay` | Delay |
+| `animation-iteration-count` | Number of repetitions |
+| `animation-direction` | Direction |
+| `animation-fill-mode` | Before/after behaviour |
+| `animation-play-state` | Running or paused |
+| `animation-timing-function` | Speed curve |
+| `animation` | Shorthand |
+
+## 39.3 Animation direction
+
+```css
+animation-direction: normal;
+
+animation-direction: reverse;
+
+animation-direction: alternate;
+
+animation-direction: alternate-reverse;
+```
+
+## 39.4 Animation repetition
+
+```css
+animation-iteration-count: 1;
+
+animation-iteration-count: 5;
+
+animation-iteration-count: infinite;
+```
+
+## 39.5 Complete animation
+
+```css
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: fadeIn 0.5s ease forwards;
+}
+```
+
+## 39.6 Reduced motion
+
+Respect users who prefer reduced animations.
+
+```css
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+
+        transition-duration: 0.01ms !important;
+    }
+}
+```
+
+---
+
+# 40. RESPONSIVE DESIGN
+
+Responsive design makes websites adapt to different screen sizes.
+
+## 40.1 Viewport metadata
+
+HTML:
+
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+```
+
+## 40.2 Flexible widths
+
+```css
+.container {
+    width: 90%;
+
+    max-width: 1200px;
+
+    margin: auto;
+}
+```
+
+## 40.3 Responsive images
+
+```css
+img {
+    max-width: 100%;
+
+    height: auto;
+}
+```
+
+## 40.4 Media queries
+
+```css
+@media (max-width: 768px) {
+
+    .container {
+        width: 100%;
+    }
+
+}
+```
+
+Common breakpoints are design choices, not fixed rules:
+
+```css
+/* Small devices */
+@media (max-width: 480px) { }
+
+/* Tablets */
+@media (max-width: 768px) { }
+
+/* Laptops */
+@media (max-width: 1024px) { }
+
+/* Desktops */
+@media (min-width: 1200px) { }
+```
+
+## 40.5 Orientation
+
+```css
+@media (orientation: landscape) {
+    body {
+        background: black;
+    }
+}
+```
+
+## 40.6 Hover support
+
+```css
+@media (hover: hover) {
+    button:hover {
+        background: blue;
+    }
+}
+```
+
+## 40.7 Combining queries
+
+```css
+@media (min-width: 600px) and (max-width: 1000px) {
+    .container {
+        width: 80%;
+    }
+}
+```
+
+---
+
+# 41. CSS VARIABLES
+
+CSS custom properties store reusable values.
+
+## 41.1 Defining variables
+
+```css
+:root {
+    --primary-color: #3498db;
+
+    --background: #111111;
+
+    --text-color: white;
+
+    --spacing: 20px;
+}
+```
+
+## 41.2 Using variables
+
+```css
+button {
+    background: var(--primary-color);
+
+    padding: var(--spacing);
+}
+```
+
+## 41.3 Fallback values
+
+```css
+color: var(--unknown-color, white);
+```
+
+If the variable is missing or invalid, white is used.
+
+## 41.4 Changing variables
+
+```css
+:root {
+    --theme-color: blue;
+}
+
+.dark-theme {
+    --theme-color: black;
+}
+```
+
+CSS variables can be changed through JavaScript:
+
+```javascript
+document.documentElement.style.setProperty(
+    "--theme-color",
+    "red"
+);
+```
+
+---
+
+# 42. CSS FUNCTIONS
+
+CSS has many built-in functions.
+
+## 42.1 calc()
+
+Performs mathematical calculations.
+
+```css
+width: calc(100% - 40px);
+```
+
+## 42.2 min()
+
+Returns the smallest argument.
+
+```css
+width: min(90%, 1000px);
+```
+
+## 42.3 max()
+
+Returns the largest argument.
+
+```css
+width: max(300px, 50%);
+```
+
+## 42.4 clamp()
+
+Constrains a value between a minimum and maximum.
+
+```css
+font-size: clamp(16px, 4vw, 32px);
+```
+
+## 42.5 var()
+
+Uses CSS variables.
+
+```css
+color: var(--primary-color);
+```
+
+## 42.6 attr()
+
+Uses an attribute value in supported CSS contexts.
+
+```css
+.tooltip::after {
+    content: attr(data-tooltip);
+}
+```
+
+## 42.7 url()
+
+References external resources.
+
+```css
+background-image: url("image.jpg");
+```
+
+## 42.8 Gradient functions
+
+```css
+linear-gradient(red, blue);
+
+radial-gradient(circle, red, blue);
+
+conic-gradient(red, yellow, blue);
+```
+
+## 42.9 Colour functions
+
+```css
+rgb(255 0 0);
+
+hsl(120 100% 50%);
+
+color-mix(in srgb, red 50%, blue);
+
+color(srgb 1 0 0);
+```
+
+## 42.10 CSS nesting
+
+Modern CSS supports nested rules.
+
+```css
+.card {
+    background: white;
+
+    & h2 {
+        color: black;
+    }
+
+    &:hover {
+        background: lightgray;
+    }
+}
+```
+
+---
+
+# 43. FILTERS AND EFFECTS
+
+## 43.1 Filter properties
+
+```css
+filter: blur(5px);
+
+filter: brightness(150%);
+
+filter: contrast(200%);
+
+filter: grayscale(100%);
+
+filter: sepia(100%);
+
+filter: saturate(200%);
+
+filter: hue-rotate(90deg);
+
+filter: invert(100%);
+
+filter: opacity(50%);
+```
+
+Combining filters:
+
+```css
+img {
+    filter: grayscale(100%) brightness(80%);
+}
+```
+
+## 43.2 Backdrop filter
+
+Applies effects to content behind an element.
+
+```css
+.panel {
+    backdrop-filter: blur(10px);
+
+    background: rgba(255, 255, 255, 0.1);
+}
+```
+
+## 43.3 Clip path
+
+Creates custom clipping shapes.
+
+```css
+clip-path: circle(50%);
+
+clip-path: ellipse(50% 40%);
+
+clip-path: polygon(
+    50% 0%,
+    100% 100%,
+    0% 100%
+);
+```
+
+## 43.4 Masking
+
+```css
+mask-image: linear-gradient(black, transparent);
+```
+
+---
+
+# 44. SHADOWS
+
+## 44.1 Box shadow
+
+```css
+box-shadow: 5px 5px 10px black;
+```
+
+Syntax:
+
+```text
+horizontal vertical blur spread colour
+```
+
+Inset:
+
+```css
+box-shadow: inset 0 0 10px black;
+```
+
+Multiple shadows:
+
+```css
+box-shadow:
+    0 5px 10px rgba(0, 0, 0, 0.2),
+    0 10px 20px rgba(0, 0, 0, 0.1);
+```
+
+## 44.2 Text shadow
+
+```css
+text-shadow: 2px 2px 5px black;
+```
+
+---
+
+# 45. CSS UNITS
+
+## 45.1 Absolute units
+
+| Unit | Meaning |
+|---|---|
+| `px` | CSS pixels |
+| `cm` | Centimetres |
+| `mm` | Millimetres |
+| `in` | Inches |
+| `pt` | Points |
+| `pc` | Picas |
+
+## 45.2 Relative units
+
+| Unit | Meaning |
+|---|---|
+| `%` | Percentage |
+| `em` | Relative to font size of relevant context |
+| `rem` | Relative to root font size |
+| `vw` | Viewport width percentage |
+| `vh` | Viewport height percentage |
+| `vmin` | Smaller viewport dimension |
+| `vmax` | Larger viewport dimension |
+| `ch` | Width of the zero glyph |
+| `ex` | x-height |
+| `lh` | Element line height |
+| `rlh` | Root line height |
+
+## 45.3 Newer viewport units
+
+```css
+width: 100dvw;
+
+height: 100dvh;
+
+height: 100svh;
+
+height: 100lvh;
+```
+
+- `dvh`: Dynamic viewport height.
+- `svh`: Small viewport height.
+- `lvh`: Large viewport height.
+
+## 45.4 Example
+
+```css
+.container {
+    width: 80%;
+
+    max-width: 1200px;
+
+    padding: 2rem;
+
+    font-size: 1rem;
+}
+```
+
+---
+
+# 46. OTHER IMPORTANT CSS FEATURES
+
+## 46.1 Scroll behaviour
+
+```css
+html {
+    scroll-behavior: smooth;
+}
+```
+
+## 46.2 Scroll snapping
+
+```css
+.container {
+    overflow-x: auto;
+
+    scroll-snap-type: x mandatory;
+}
+
+.item {
+    scroll-snap-align: start;
+}
+```
+
+## 46.3 Aspect ratio
+
+```css
+.video {
+    aspect-ratio: 16 / 9;
+}
+```
+
+## 46.4 Object fit
+
+```css
+img {
+    width: 300px;
+
+    height: 200px;
+
+    object-fit: cover;
+}
+```
+
+Other values:
+
+- `contain`
+- `cover`
+- `fill`
+- `none`
+- `scale-down`
+
+## 46.5 Object position
+
+```css
+object-position: center;
+
+object-position: top;
+
+object-position: 50% 30%;
+```
+
+## 46.6 Isolation
+
+```css
+.container {
+    isolation: isolate;
+}
+```
+
+Creates a new stacking context.
+
+## 46.7 Containment
+
+```css
+.widget {
+    contain: layout paint;
+}
+```
+
+Can limit layout and paint effects.
+
+## 46.8 Content visibility
+
+```css
+section {
+    content-visibility: auto;
+}
+```
+
+Can allow the browser to skip rendering work for off-screen content.
+
+---
+
+# PART III: JAVASCRIPT
+
+# 47. JAVASCRIPT FUNDAMENTALS
+
+JavaScript is a programming language used to create interactive and dynamic webpages.
+
+JavaScript can run:
+- In web browsers.
+- On servers using Node.js.
+- In desktop applications using frameworks.
+- In certain embedded environments.
+
+## 47.1 Writing JavaScript
+
+Inline:
+
+```html
+<script>
+    console.log("Hello World");
+</script>
+```
+
+External:
+
+```html
+<script src="script.js" defer></script>
+```
+
+## 47.2 Comments
+
+Single-line:
+
+```javascript
+// This is a comment
+```
+
+Multiline:
+
+```javascript
+/*
+This is a
+multiline comment.
+*/
+```
+
+## 47.3 Console output
+
+```javascript
+console.log("Hello");
+
+console.info("Information");
+
+console.warn("Warning");
+
+console.error("Error");
+
+console.table([
+    {name: "Alex", age: 15},
+    {name: "Nathan", age: 13}
+]);
+```
+
+---
+
+# 48. VARIABLES AND DATA TYPES
+
+## 48.1 Declaring variables
+
+JavaScript has three common variable declaration keywords.
+
+```javascript
+var oldVariable = 10;
+
+let variable = 20;
+
+const constant = 30;
+```
+
+Differences:
+
+| Keyword | Scope | Reassignable | Redeclarable in same scope |
+|---|---|---|---|
+| `var` | Function | Yes | Yes |
+| `let` | Block | Yes | No |
+| `const` | Block | No | No |
+
+Prefer `const` by default and use `let` when reassignment is needed. Avoid `var` in modern code.
+
+## 48.2 Data types
+
+| Type | Example |
+|---|---|
+| String | `"Hello"` |
+| Number | `100` |
+| BigInt | `123n` |
+| Boolean | `true` |
+| Undefined | `undefined` |
+| Null | `null` |
+| Symbol | `Symbol("id")` |
+| Object | `{name: "Nathan"}` |
+
+Arrays and functions are also objects in JavaScript.
+
+## 48.3 Checking types
+
+```javascript
+console.log(typeof "Hello");
+
+console.log(typeof 100);
+
+console.log(typeof true);
+```
+
+Output:
+
+```text
+string
+number
+boolean
+```
+
+Important:
+
+```javascript
+typeof null
+```
+
+Returns:
+
+```text
+object
+```
+
+This is a historical JavaScript quirk.
+
+For arrays:
+
+```javascript
+Array.isArray([1, 2, 3]);
+```
+
+## 48.4 Undefined and null
+
+```javascript
+let value;
+
+console.log(value); // undefined
+
+let empty = null;
+
+console.log(empty); // null
+```
+
+- `undefined` usually means a value has not been assigned.
+- `null` represents an intentional absence of value.
+
+---
+
+# 49. OPERATORS
+
+## 49.1 Arithmetic operators
+
+| Operator | Meaning |
+|---|---|
+| `+` | Addition |
+| `-` | Subtraction |
+| `*` | Multiplication |
+| `/` | Division |
+| `%` | Remainder |
+| `**` | Exponentiation |
+| `++` | Increment |
+| `--` | Decrement |
+
+Example:
+
+```javascript
+let a = 10;
+let b = 3;
+
+console.log(a + b);
+console.log(a - b);
+console.log(a * b);
+console.log(a / b);
+console.log(a % b);
+console.log(a ** b);
+```
+
+## 49.2 Comparison operators
+
+| Operator | Meaning |
+|---|---|
+| `==` | Loose equality |
+| `===` | Strict equality |
+| `!=` | Loose inequality |
+| `!==` | Strict inequality |
+| `>` | Greater |
+| `<` | Smaller |
+| `>=` | Greater or equal |
+| `<=` | Smaller or equal |
+
+Example:
+
+```javascript
+console.log(5 == "5");  // true
+
+console.log(5 === "5"); // false
+```
+
+Prefer strict equality (`===`) unless loose equality is specifically needed.
+
+## 49.3 Logical operators
+
+```javascript
+&&  // AND
+
+||  // OR
+
+!   // NOT
+```
+
+Example:
+
+```javascript
+let age = 18;
+
+if (age >= 18 && age < 100) {
+    console.log("Valid adult age");
+}
+```
+
+## 49.4 Assignment operators
+
+```javascript
+x = 10;
+
+x += 5;
+
+x -= 2;
+
+x *= 3;
+
+x /= 2;
+
+x %= 2;
+
+x **= 2;
+```
+
+## 49.5 Nullish coalescing
+
+```javascript
+let username = null;
+
+let displayName = username ?? "Guest";
+```
+
+Uses the right-hand value only when the left-hand value is `null` or `undefined`.
+
+## 49.6 Optional chaining
+
+```javascript
+let user = {
+    profile: {
+        name: "Nathan"
+    }
+};
+
+console.log(user.profile?.name);
+```
+
+Avoids errors when an intermediate property is missing or nullish.
+
+## 49.7 Ternary operator
+
+```javascript
+let age = 18;
+
+let status = age >= 18 ? "Adult" : "Minor";
+```
+
+## 49.8 Bitwise operators
+
+| Operator | Meaning |
+|---|---|
+| `&` | AND |
+| `|` | OR |
+| `^` | XOR |
+| `~` | NOT |
+| `<<` | Left shift |
+| `>>` | Sign-propagating right shift |
+| `>>>` | Zero-fill right shift |
+
+Example:
+
+```javascript
+let a = 5;
+let b = 3;
+
+console.log(a & b);
+console.log(a | b);
+console.log(a ^ b);
+```
+
+---
+
+# 50. STRINGS
+
+Strings store text.
+
+## 50.1 Creating strings
+
+```javascript
+let a = "Hello";
+
+let b = 'World';
+
+let c = `Hello World`;
+```
+
+## 50.2 Template literals
+
+```javascript
+let name = "Nathan";
+
+let age = 13;
+
+console.log(`My name is ${name} and I am ${age}.`);
+```
+
+Expressions:
+
+```javascript
+console.log(`Total: ${10 + 20}`);
+```
+
+## 50.3 String indexing
+
+```javascript
+let text = "JavaScript";
+
+console.log(text[0]);
+
+console.log(text[1]);
+
+console.log(text.length);
+```
+
+## 50.4 String methods
+
+| Method | Purpose |
+|---|---|
+| `.length` | String length property |
+| `.toUpperCase()` | Uppercase |
+| `.toLowerCase()` | Lowercase |
+| `.trim()` | Remove surrounding whitespace |
+| `.trimStart()` | Remove leading whitespace |
+| `.trimEnd()` | Remove trailing whitespace |
+| `.includes()` | Check substring |
+| `.startsWith()` | Check beginning |
+| `.endsWith()` | Check ending |
+| `.indexOf()` | Find first position |
+| `.lastIndexOf()` | Find last position |
+| `.slice()` | Extract part |
+| `.substring()` | Extract part |
+| `.replace()` | Replace first matching string/pattern |
+| `.replaceAll()` | Replace all matching strings |
+| `.split()` | Convert to array |
+| `.concat()` | Join strings |
+| `.repeat()` | Repeat text |
+| `.charAt()` | Get character |
+| `.charCodeAt()` | Get UTF-16 code unit |
+| `.padStart()` | Pad beginning |
+| `.padEnd()` | Pad ending |
+| `.match()` | Match regex |
+| `.matchAll()` | Get all regex matches |
+| `.search()` | Search regex |
+| `.normalize()` | Unicode normalization |
+
+Examples:
+
+```javascript
+let text = "  hello javascript  ";
+
+console.log(text.trim());
+
+console.log(text.toUpperCase());
+
+console.log(text.includes("javascript"));
+
+console.log(text.replace("hello", "welcome"));
+
+console.log(text.slice(2, 7));
+```
+
+## 50.5 Splitting strings
+
+```javascript
+let fruits = "apple,banana,orange";
+
+let result = fruits.split(",");
+
+console.log(result);
+```
+
+## 50.6 Joining strings
+
+```javascript
+let words = ["Hello", "World"];
+
+console.log(words.join(" "));
+```
+
+---
+
+# 51. NUMBERS AND MATHEMATICS
+
+## 51.1 Number conversion
+
+```javascript
+Number("123");
+
+parseInt("123");
+
+parseFloat("3.14");
+
+String(100);
+
+Boolean(1);
+```
+
+## 51.2 Number checks
+
+```javascript
+Number.isNaN(NaN);
+
+Number.isFinite(100);
+
+Number.isInteger(10);
+
+Number.isSafeInteger(100);
+```
+
+## 51.3 Number formatting
+
+```javascript
+let number = 3.14159;
+
+console.log(number.toFixed(2));
+
+console.log(number.toPrecision(3));
+
+console.log(number.toString());
+```
+
+## 51.4 Math object
+
+| Function/property | Purpose |
+|---|---|
+| `Math.abs(x)` | Absolute value |
+| `Math.round(x)` | Round |
+| `Math.floor(x)` | Round down |
+| `Math.ceil(x)` | Round up |
+| `Math.trunc(x)` | Remove decimal |
+| `Math.max()` | Maximum |
+| `Math.min()` | Minimum |
+| `Math.sqrt(x)` | Square root |
+| `Math.cbrt(x)` | Cube root |
+| `Math.pow(x,y)` | Power |
+| `Math.random()` | Random number |
+| `Math.sin(x)` | Sine |
+| `Math.cos(x)` | Cosine |
+| `Math.tan(x)` | Tangent |
+| `Math.log(x)` | Natural logarithm |
+| `Math.log10(x)` | Base-10 logarithm |
+| `Math.exp(x)` | Exponential |
+| `Math.sign(x)` | Sign |
+| `Math.PI` | Pi |
+| `Math.E` | Euler's number |
+
+Examples:
+
+```javascript
+console.log(Math.sqrt(25));
+
+console.log(Math.round(4.6));
+
+console.log(Math.floor(4.9));
+
+console.log(Math.max(10, 20, 30));
+
+console.log(Math.min(10, 20, 30));
+```
+
+Random integer from 1 to 100:
+
+```javascript
+let randomNumber = Math.floor(Math.random() * 100) + 1;
+```
+
+---
+
+# 52. CONDITIONS
+
+## 52.1 if
+
+```javascript
+let age = 18;
+
+if (age >= 18) {
+    console.log("Adult");
+}
+```
+
+## 52.2 if else
+
+```javascript
+if (age >= 18) {
+    console.log("Adult");
+} else {
+    console.log("Minor");
+}
+```
+
+## 52.3 else if
+
+```javascript
+let score = 85;
+
+if (score >= 90) {
+    console.log("A");
+} else if (score >= 80) {
+    console.log("B");
+} else {
+    console.log("C");
+}
+```
+
+## 52.4 switch
+
+```javascript
+let command = "start";
+
+switch (command) {
+
+    case "start":
+        console.log("Starting");
+        break;
+
+    case "stop":
+        console.log("Stopping");
+        break;
+
+    default:
+        console.log("Unknown command");
+
+}
+```
+
+## 52.5 Truthy and falsy values
+
+Falsy values include:
+
+```javascript
+false
+
+0
+
+-0
+
+0n
+
+""
+
+null
+
+undefined
+
+NaN
+```
+
+Most other values are truthy, including empty arrays and empty objects.
+
+Example:
+
+```javascript
+let username = "";
+
+if (username) {
+    console.log("Username exists");
+} else {
+    console.log("Empty username");
+}
+```
+
+---
+
+# 53. LOOPS
+
+## 53.1 for loop
+
+```javascript
+for (let i = 0; i < 5; i++) {
+    console.log(i);
+}
+```
+
+Syntax:
+
+```javascript
+for (initialisation; condition; update) {
+    // Code
+}
+```
+
+## 53.2 while loop
+
+```javascript
+let i = 0;
+
+while (i < 5) {
+    console.log(i);
+
+    i++;
+}
+```
+
+## 53.3 do while
+
+Runs at least once.
+
+```javascript
+let i = 0;
+
+do {
+    console.log(i);
+
+    i++;
+
+} while (i < 5);
+```
+
+## 53.4 for...of
+
+Loops through iterable values.
+
+```javascript
+let fruits = ["Apple", "Banana", "Orange"];
+
+for (let fruit of fruits) {
+    console.log(fruit);
+}
+```
+
+## 53.5 for...in
+
+Loops through enumerable property keys.
+
+```javascript
+let person = {
+    name: "Nathan",
+    age: 13
+};
+
+for (let key in person) {
+    console.log(key, person[key]);
+}
+```
+
+For arrays, prefer `for...of` or array methods.
+
+## 53.6 break
+
+```javascript
+for (let i = 0; i < 10; i++) {
+
+    if (i === 5) {
+        break;
+    }
+
+    console.log(i);
+}
+```
+
+## 53.7 continue
+
+```javascript
+for (let i = 0; i < 10; i++) {
+
+    if (i === 5) {
+        continue;
+    }
+
+    console.log(i);
+}
+```
+
+---
+
+# 54. ARRAYS
+
+Arrays store multiple values in an ordered collection.
+
+## 54.1 Creating arrays
+
+```javascript
+let numbers = [1, 2, 3, 4];
+
+let names = ["Alex", "Nathan"];
+
+let mixed = [10, "Hello", true];
+```
+
+## 54.2 Accessing elements
+
+```javascript
+let fruits = ["Apple", "Banana", "Orange"];
+
+console.log(fruits[0]);
+
+console.log(fruits[1]);
+```
+
+Last element:
+
+```javascript
+console.log(fruits[fruits.length - 1]);
+```
+
+Modern alternative:
+
+```javascript
+console.log(fruits.at(-1));
+```
+
+## 54.3 Changing elements
+
+```javascript
+fruits[0] = "Mango";
+```
+
+## 54.4 Array properties
+
+```javascript
+console.log(fruits.length);
+```
+
+## 54.5 Array methods
+
+| Method | Purpose |
+|---|---|
+| `.push()` | Add to end |
+| `.pop()` | Remove from end |
+| `.shift()` | Remove from beginning |
+| `.unshift()` | Add to beginning |
+| `.splice()` | Insert/remove elements |
+| `.slice()` | Extract elements |
+| `.concat()` | Combine arrays |
+| `.join()` | Convert to string |
+| `.indexOf()` | Find index |
+| `.lastIndexOf()` | Find last index |
+| `.includes()` | Check existence |
+| `.reverse()` | Reverse in place |
+| `.sort()` | Sort in place |
+| `.toSorted()` | Return sorted copy |
+| `.toReversed()` | Return reversed copy |
+| `.fill()` | Fill with value |
+| `.copyWithin()` | Copy array elements internally |
+| `.flat()` | Flatten nested arrays |
+| `.flatMap()` | Map and flatten |
+| `.forEach()` | Execute for each element |
+| `.map()` | Transform elements |
+| `.filter()` | Select elements |
+| `.reduce()` | Accumulate values |
+| `.reduceRight()` | Accumulate from right |
+| `.find()` | Find first matching element |
+| `.findIndex()` | Find first matching index |
+| `.findLast()` | Find last matching element |
+| `.findLastIndex()` | Find last matching index |
+| `.some()` | Check if any match |
+| `.every()` | Check if all match |
+| `.entries()` | Index-value iterator |
+| `.keys()` | Index iterator |
+| `.values()` | Value iterator |
+
+Examples:
+
+```javascript
+let numbers = [1, 2, 3];
+
+numbers.push(4);
+
+numbers.pop();
+
+numbers.unshift(0);
+
+numbers.shift();
+
+console.log(numbers);
+```
+
+## 54.6 Sorting arrays
+
+```javascript
+let numbers = [10, 5, 30, 2];
+
+numbers.sort((a, b) => a - b);
+
+console.log(numbers);
+```
+
+Descending:
+
+```javascript
+numbers.sort((a, b) => b - a);
+```
+
+Important: Default `.sort()` compares values as strings, so provide a comparator for numeric sorting.
+
+## 54.7 Removing duplicates
+
+```javascript
+let numbers = [1, 2, 2, 3, 3];
+
+let unique = [...new Set(numbers)];
+
+console.log(unique);
+```
+
+## 54.8 Nested arrays
+
+```javascript
+let matrix = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
+];
+
+console.log(matrix[0][0]);
+```
+
+---
+
+# 55. OBJECTS
+
+Objects store information using key-value pairs.
+
+## 55.1 Creating objects
+
+```javascript
+let person = {
+    name: "Nathan",
+
+    age: 13,
+
+    country: "Singapore"
+};
+```
+
+## 55.2 Accessing properties
+
+Dot notation:
+
+```javascript
+console.log(person.name);
+```
+
+Bracket notation:
+
+```javascript
+console.log(person["age"]);
+```
+
+## 55.3 Changing properties
+
+```javascript
+person.age = 14;
+```
+
+## 55.4 Adding properties
+
+```javascript
+person.school = "BPGHS";
+```
+
+## 55.5 Removing properties
+
+```javascript
+delete person.country;
+```
+
+## 55.6 Object methods
+
+```javascript
+let person = {
+    name: "Nathan",
+
+    greet() {
+        console.log(`Hello, I am ${this.name}`);
+    }
+};
+
+person.greet();
+```
+
+## 55.7 Object utility methods
+
+```javascript
+Object.keys(person);
+
+Object.values(person);
+
+Object.entries(person);
+
+Object.assign({}, person);
+
+Object.hasOwn(person, "name");
+
+Object.freeze(person);
+
+Object.seal(person);
+```
+
+## 55.8 Object destructuring
+
+```javascript
+let { name, age } = person;
+
+console.log(name);
+```
+
+## 55.9 Nested objects
+
+```javascript
+let user = {
+    name: "Nathan",
+
+    profile: {
+        age: 13,
+
+        school: "BPGHS"
+    }
+};
+
+console.log(user.profile.school);
+```
+
+---
+
+# 56. FUNCTIONS
+
+Functions are reusable blocks of JavaScript code.
+
+## 56.1 Function declaration
+
+```javascript
+function greet() {
+    console.log("Hello!");
+}
+
+greet();
+```
+
+## 56.2 Parameters
+
+```javascript
+function greet(name) {
+    console.log(`Hello ${name}`);
+}
+
+greet("Nathan");
+```
+
+## 56.3 Multiple parameters
+
+```javascript
+function add(a, b) {
+    return a + b;
+}
+
+console.log(add(10, 20));
+```
+
+## 56.4 Return
+
+```javascript
+function square(number) {
+    return number * number;
+}
+```
+
+## 56.5 Default parameters
+
+```javascript
+function greet(name = "Guest") {
+    console.log(`Hello ${name}`);
+}
+```
+
+## 56.6 Rest parameters
+
+```javascript
+function add(...numbers) {
+    return numbers.reduce((a, b) => a + b, 0);
+}
+
+console.log(add(1, 2, 3, 4));
+```
+
+## 56.7 Function expressions
+
+```javascript
+const greet = function() {
+    console.log("Hello");
+};
+
+greet();
+```
+
+## 56.8 Arrow functions
+
+```javascript
+const greet = () => {
+    console.log("Hello");
+};
+```
+
+Short version:
+
+```javascript
+const add = (a, b) => a + b;
+```
+
+Single parameter:
+
+```javascript
+const square = x => x * x;
+```
+
+Returning an object:
+
+```javascript
+const createUser = name => ({
+    name: name
+});
+```
+
+Arrow functions do not have their own `this` binding.
+
+---
+
+# 57. SCOPE AND CLOSURES
+
+## 57.1 Global scope
+
+```javascript
+let username = "Nathan";
+
+function greet() {
+    console.log(username);
+}
+```
+
+## 57.2 Function scope
+
+```javascript
+function example() {
+    let secret = "Hello";
+}
+```
+
+The variable is unavailable outside the function.
+
+## 57.3 Block scope
+
+```javascript
+if (true) {
+    let value = 10;
+
+    const other = 20;
+}
+```
+
+`let` and `const` are block-scoped.
+
+## 57.4 Closures
+
+A closure allows a function to remember variables from its outer scope.
+
+```javascript
+function counter() {
+
+    let count = 0;
+
+    return function() {
+
+        count++;
+
+        return count;
+
+    };
+
+}
+
+const increment = counter();
+
+console.log(increment());
+
+console.log(increment());
+```
+
+Output:
+
+```text
+1
+2
+```
+
+---
+
+# 58. ARRAY METHODS IN DETAIL
+
+These are among the most important JavaScript methods.
+
+## 58.1 map()
+
+Creates a new array by transforming each element.
+
+```javascript
+let numbers = [1, 2, 3];
+
+let result = numbers.map(x => x * 2);
+
+console.log(result);
+```
+
+Output:
+
+```text
+[2, 4, 6]
+```
+
+## 58.2 filter()
+
+Creates a new array containing matching elements.
+
+```javascript
+let numbers = [1, 2, 3, 4, 5, 6];
+
+let even = numbers.filter(x => x % 2 === 0);
+
+console.log(even);
+```
+
+## 58.3 reduce()
+
+Combines array elements into one result.
+
+```javascript
+let numbers = [1, 2, 3, 4];
+
+let total = numbers.reduce((sum, number) => sum + number, 0);
+
+console.log(total);
+```
+
+## 58.4 forEach()
+
+Executes a function for each element.
+
+```javascript
+let names = ["Alex", "Nathan", "John"];
+
+names.forEach(name => {
+    console.log(name);
+});
+```
+
+## 58.5 find()
+
+Returns the first matching element.
+
+```javascript
+let numbers = [10, 20, 30, 40];
+
+let result = numbers.find(x => x > 20);
+
+console.log(result);
+```
+
+## 58.6 some()
+
+Checks if at least one element matches.
+
+```javascript
+let numbers = [1, 3, 5, 8];
+
+console.log(numbers.some(x => x % 2 === 0));
+```
+
+## 58.7 every()
+
+Checks if all elements match.
+
+```javascript
+let numbers = [2, 4, 6];
+
+console.log(numbers.every(x => x % 2 === 0));
+```
+
+---
+
+# 59. DESTRUCTURING
+
+Destructuring extracts values from arrays and objects.
+
+## 59.1 Array destructuring
+
+```javascript
+let numbers = [10, 20, 30];
+
+let [a, b, c] = numbers;
+
+console.log(a);
+```
+
+Skipping elements:
+
+```javascript
+let [first, , third] = numbers;
+```
+
+Default values:
+
+```javascript
+let [x = 10, y = 20] = [5];
+```
+
+## 59.2 Object destructuring
+
+```javascript
+let person = {
+    name: "Nathan",
+    age: 13
+};
+
+let { name, age } = person;
+```
+
+Renaming:
+
+```javascript
+let { name: username } = person;
+```
+
+Default values:
+
+```javascript
+let { country = "Singapore" } = person;
+```
+
+## 59.3 Nested destructuring
+
+```javascript
+let user = {
+    profile: {
+        name: "Nathan"
+    }
+};
+
+let {
+    profile: {
+        name
+    }
+} = user;
+```
+
+---
+
+# 60. SPREAD AND REST OPERATORS
+
+Both use `...`, but their purposes differ.
+
+## 60.1 Spread operator
+
+Expands iterable values.
+
+```javascript
+let a = [1, 2, 3];
+
+let b = [...a, 4, 5];
+
+console.log(b);
+```
+
+Combining arrays:
+
+```javascript
+let combined = [...a, ...b];
+```
+
+Copying objects:
+
+```javascript
+let person = {
+    name: "Nathan"
+};
+
+let copy = {
+    ...person,
+    age: 13
+};
+```
+
+Function arguments:
+
+```javascript
+let numbers = [10, 20, 30];
+
+console.log(Math.max(...numbers));
+```
+
+Spread copies are shallow.
+
+## 60.2 Rest operator
+
+Collects remaining arguments.
+
+```javascript
+function add(...numbers) {
+    return numbers.reduce((a, b) => a + b, 0);
+}
+```
+
+Object destructuring:
+
+```javascript
+let {
+    name,
+    ...otherDetails
+} = {
+    name: "Nathan",
+    age: 13,
+    country: "Singapore"
+};
+```
+
+---
+
+# 61. CLASSES AND OBJECT-ORIENTED PROGRAMMING
+
+## 61.1 Creating classes
+
+```javascript
+class Person {
+
+    constructor(name, age) {
+
+        this.name = name;
+
+        this.age = age;
+
+    }
+
+    greet() {
+
+        console.log(`Hello, I am ${this.name}`);
+
+    }
+
+}
+
+const person = new Person("Nathan", 13);
+
+person.greet();
+```
+
+## 61.2 Constructor
+
+The `constructor()` method initialises new objects.
+
+```javascript
+class Player {
+
+    constructor(health) {
+
+        this.health = health;
+
+    }
+
+}
+```
+
+## 61.3 Instance methods
+
+```javascript
+class Calculator {
+
+    add(a, b) {
+
+        return a + b;
+
+    }
+
+}
+```
+
+## 61.4 Static methods
+
+```javascript
+class Calculator {
+
+    static add(a, b) {
+
+        return a + b;
+
+    }
+
+}
+
+console.log(Calculator.add(10, 20));
+```
+
+## 61.5 Getters and setters
+
+```javascript
+class Person {
+
+    constructor(age) {
+
+        this._age = age;
+
+    }
+
+    get age() {
+
+        return this._age;
+
+    }
+
+    set age(value) {
+
+        if (value < 0) {
+
+            throw new Error("Invalid age");
+
+        }
+
+        this._age = value;
+
+    }
+
+}
+```
+
+## 61.6 Private fields
+
+```javascript
+class BankAccount {
+
+    #balance = 0;
+
+    deposit(amount) {
+
+        this.#balance += amount;
+
+    }
+
+    getBalance() {
+
+        return this.#balance;
+
+    }
+
+}
+```
+
+Private fields cannot be accessed directly from outside the class.
+
+---
+
+# 62. INHERITANCE
+
+A class can inherit from another class.
+
+```javascript
+class Animal {
+
+    constructor(name) {
+
+        this.name = name;
+
+    }
+
+    speak() {
+
+        console.log("Animal sound");
+
+    }
+
+}
+
+class Dog extends Animal {
+
+    speak() {
+
+        console.log("Woof!");
+
+    }
+
+}
+
+const dog = new Dog("Buddy");
+
+dog.speak();
+```
+
+## 62.1 super()
+
+Calls the parent constructor or parent method.
+
+```javascript
+class Animal {
+
+    constructor(name) {
+
+        this.name = name;
+
+    }
+
+}
+
+class Dog extends Animal {
+
+    constructor(name, breed) {
+
+        super(name);
+
+        this.breed = breed;
+
+    }
+
+}
+```
+
+---
+
+# 63. ERROR HANDLING
+
+## 63.1 try and catch
+
+```javascript
+try {
+
+    let result = 10 / 0;
+
+    console.log(result);
+
+} catch (error) {
+
+    console.error(error);
+
+}
+```
+
+JavaScript division by zero normally produces `Infinity`, not an exception.
+
+## 63.2 finally
+
+```javascript
+try {
+
+    console.log("Running");
+
+} catch (error) {
+
+    console.log("Error");
+
+} finally {
+
+    console.log("Finished");
+
+}
+```
+
+## 63.3 throw
+
+```javascript
+function validateAge(age) {
+
+    if (age < 0) {
+
+        throw new Error("Age cannot be negative");
+
+    }
+
+}
+```
+
+## 63.4 Custom errors
+
+```javascript
+class LoginError extends Error {
+
+    constructor(message) {
+
+        super(message);
+
+        this.name = "LoginError";
+
+    }
+
+}
+```
+
+---
+
+# 64. DOM MANIPULATION
+
+DOM stands for Document Object Model.
+
+The DOM represents an HTML document as a tree of objects that JavaScript can access and modify.
+
+Example HTML:
+
+```html
+<h1 id="title">Hello</h1>
+```
+
+JavaScript:
+
+```javascript
+const title = document.getElementById("title");
+
+title.textContent = "Welcome!";
+```
+
+## 64.1 DOM object hierarchy
+
+```text
+window
+  |
+  document
+  |
+  html
+  |
+  +-- head
+  |
+  +-- body
+       |
+       +-- h1
+       |
+       +-- p
+       |
+       +-- button
+```
+
+## 64.2 Selecting elements
+
+| Method | Purpose |
+|---|---|
+| `getElementById()` | Select by ID |
+| `getElementsByClassName()` | Select by class |
+| `getElementsByTagName()` | Select by tag |
+| `querySelector()` | First matching CSS selector |
+| `querySelectorAll()` | All matching CSS selectors |
+
+Examples:
+
+```javascript
+document.getElementById("title");
+
+document.getElementsByClassName("card");
+
+document.getElementsByTagName("p");
+
+document.querySelector(".card");
+
+document.querySelectorAll("p");
+```
+
+## 64.3 Changing text
+
+```javascript
+const title = document.querySelector("h1");
+
+title.textContent = "New Heading";
+```
+
+## 64.4 Changing HTML
+
+```javascript
+const container = document.querySelector(".container");
+
+container.innerHTML = "<h1>Hello</h1>";
+```
+
+Important: Never place untrusted user input directly into `innerHTML`. Use `textContent` or safely constructed DOM nodes instead.
+
+## 64.5 Changing CSS
+
+```javascript
+const box = document.querySelector(".box");
+
+box.style.backgroundColor = "red";
+
+box.style.color = "white";
+
+box.style.padding = "20px";
+```
+
+## 64.6 Changing classes
+
+```javascript
+const box = document.querySelector(".box");
+
+box.classList.add("active");
+
+box.classList.remove("hidden");
+
+box.classList.toggle("dark");
+
+box.classList.contains("active");
+```
+
+## 64.7 Attributes
+
+```javascript
+const image = document.querySelector("img");
+
+image.setAttribute("src", "new-image.png");
+
+image.getAttribute("src");
+
+image.removeAttribute("alt");
+
+image.hasAttribute("src");
+```
+
+## 64.8 Creating elements
+
+```javascript
+const paragraph = document.createElement("p");
+
+paragraph.textContent = "New paragraph";
+
+document.body.appendChild(paragraph);
+```
+
+## 64.9 Removing elements
+
+```javascript
+const element = document.querySelector(".box");
+
+element.remove();
+```
+
+## 64.10 Appending elements
+
+```javascript
+container.appendChild(element);
+```
+
+Modern alternative:
+
+```javascript
+container.append(element);
+```
+
+## 64.11 Inserting elements
+
+```javascript
+container.prepend(element);
+```
+
+```javascript
+container.before(element);
+```
+
+```javascript
+container.after(element);
+```
+
+## 64.12 Cloning elements
+
+```javascript
+const clone = element.cloneNode(true);
+
+container.appendChild(clone);
+```
+
+`true` also clones descendants.
+
+---
+
+# 65. DOM EVENTS
+
+Events allow JavaScript to respond to user interactions and browser activity.
+
+## 65.1 Common events
+
+| Event | Purpose |
+|---|---|
+| `click` | Mouse click or equivalent activation |
+| `dblclick` | Double-click |
+| `mousedown` | Mouse button pressed |
+| `mouseup` | Mouse button released |
+| `mousemove` | Mouse movement |
+| `mouseover` | Pointer enters element or descendant |
+| `mouseout` | Pointer leaves element or descendant |
+| `mouseenter` | Pointer enters element |
+| `mouseleave` | Pointer leaves element |
+| `keydown` | Key pressed |
+| `keyup` | Key released |
+| `input` | Input value changes |
+| `change` | Value committed or changed |
+| `submit` | Form submitted |
+| `focus` | Element receives focus |
+| `blur` | Element loses focus |
+| `load` | Resource loaded |
+| `DOMContentLoaded` | HTML parsed |
+| `scroll` | Scrolling |
+| `resize` | Viewport resized |
+| `dragstart` | Drag begins |
+| `dragover` | Drag passes over target |
+| `drop` | Item dropped |
+| `touchstart` | Touch begins |
+| `touchend` | Touch ends |
+| `pointerdown` | Pointer pressed |
+| `pointerup` | Pointer released |
+
+## 65.2 Inline event handler
+
+```html
+<button onclick="alert('Hello')">
+    Click Me
+</button>
+```
+
+This works, but event listeners are usually better for maintainability and security.
+
+## 65.3 addEventListener()
+
+```javascript
+const button = document.querySelector("button");
+
+button.addEventListener("click", function() {
+
+    alert("Button clicked!");
+
+});
+```
+
+Arrow function:
+
+```javascript
+button.addEventListener("click", () => {
+
+    console.log("Clicked");
+
+});
+```
+
+## 65.4 Removing event listeners
+
+```javascript
+function handleClick() {
+
+    console.log("Clicked");
+
+}
+
+button.addEventListener("click", handleClick);
+
+button.removeEventListener("click", handleClick);
+```
+
+The same function reference must be used to remove the listener.
+
+## 65.5 Event object
+
+```javascript
+button.addEventListener("click", event => {
+
+    console.log(event);
+
+    console.log(event.target);
+
+});
+```
+
+## 65.6 Prevent default behaviour
+
+```javascript
+form.addEventListener("submit", event => {
+
+    event.preventDefault();
+
+    console.log("Submission intercepted");
+
+});
+```
+
+## 65.7 Event propagation
+
+Events can travel through the DOM.
+
+- Capturing phase
+- Target phase
+- Bubbling phase
+
+Stop propagation:
+
+```javascript
+event.stopPropagation();
+```
+
+Prevent default:
+
+```javascript
+event.preventDefault();
+```
+
+These do different things.
+
+## 65.8 Event delegation
+
+Attach one event listener to a parent instead of many children.
+
+```javascript
+document.querySelector("#list").addEventListener("click", event => {
+
+    if (event.target.matches("button")) {
+
+        console.log("Button clicked");
+
+    }
+
+});
+```
+
+Useful for dynamically created elements.
+
+---
+
+# 66. FORMS AND VALIDATION
+
+## 66.1 Reading input values
+
+HTML:
+
+```html
+<input id="username" type="text">
+
+<button id="submit">Submit</button>
+```
+
+JavaScript:
+
+```javascript
+const input = document.querySelector("#username");
+
+const button = document.querySelector("#submit");
+
+button.addEventListener("click", () => {
+
+    console.log(input.value);
+
+});
+```
+
+## 66.2 Listening for input changes
+
+```javascript
+input.addEventListener("input", () => {
+
+    console.log(input.value);
+
+});
+```
+
+## 66.3 Form submission
+
+```javascript
+const form = document.querySelector("form");
+
+form.addEventListener("submit", event => {
+
+    event.preventDefault();
+
+    const formData = new FormData(form);
+
+    console.log(formData.get("username"));
+
+});
+```
+
+## 66.4 Checking validity
+
+```javascript
+const email = document.querySelector("#email");
+
+console.log(email.validity.valid);
+
+console.log(email.checkValidity());
+
+console.log(email.validationMessage);
+```
+
+## 66.5 Custom validation
+
+```javascript
+const input = document.querySelector("#username");
+
+if (input.value.length < 3) {
+
+    input.setCustomValidity("Minimum 3 characters");
+
+} else {
+
+    input.setCustomValidity("");
+
+}
+```
+
+## 66.6 FormData
+
+```javascript
+const data = new FormData(form);
+
+const entries = Object.fromEntries(data.entries());
+
+console.log(entries);
+```
+
+---
+
+# 67. TIMERS AND INTERVALS
+
+## 67.1 setTimeout()
+
+Executes code after a delay.
+
+```javascript
+setTimeout(() => {
+
+    console.log("Executed after 2 seconds");
+
+}, 2000);
+```
+
+## 67.2 clearTimeout()
+
+```javascript
+const timer = setTimeout(() => {
+
+    console.log("Hello");
+
+}, 5000);
+
+clearTimeout(timer);
+```
+
+## 67.3 setInterval()
+
+Repeatedly executes code.
+
+```javascript
+const interval = setInterval(() => {
+
+    console.log("Repeating");
+
+}, 1000);
+```
+
+## 67.4 clearInterval()
+
+```javascript
+clearInterval(interval);
+```
+
+## 67.5 Creating a countdown
+
+```javascript
+let seconds = 10;
+
+const timer = setInterval(() => {
+
+    console.log(seconds);
+
+    seconds--;
+
+    if (seconds < 0) {
+
+        clearInterval(timer);
+
+        console.log("Finished");
+
+    }
+
+}, 1000);
+```
+
+Timers are not exact clocks. Use timestamps when accurate elapsed-time calculations matter.
+
+---
+
+# 68. LOCAL STORAGE AND SESSION STORAGE
+
+Web Storage allows websites to save small amounts of data in the browser.
+
+## 68.1 localStorage
+
+Data persists across browser sessions until removed.
+
+Save:
+
+```javascript
+localStorage.setItem("username", "Nathan");
+```
+
+Retrieve:
+
+```javascript
+let username = localStorage.getItem("username");
+```
+
+Remove:
+
+```javascript
+localStorage.removeItem("username");
+```
+
+Clear:
+
+```javascript
+localStorage.clear();
+```
+
+## 68.2 sessionStorage
+
+Data is generally retained for the lifetime of the browser tab's page session.
+
+```javascript
+sessionStorage.setItem("token", "12345");
+
+sessionStorage.getItem("token");
+
+sessionStorage.removeItem("token");
+```
+
+## 68.3 Storing objects
+
+Storage values are strings.
+
+Convert objects using JSON:
+
+```javascript
+const user = {
+    name: "Nathan",
+    age: 13
+};
+
+localStorage.setItem("user", JSON.stringify(user));
+```
+
+Retrieve:
+
+```javascript
+const savedUser = JSON.parse(
+    localStorage.getItem("user")
+);
+```
+
+Storage is not a secure place for passwords, session secrets or sensitive data. Users can inspect and modify it.
+
+---
+
+# 69. JSON
+
+JSON stands for JavaScript Object Notation.
+
+It is widely used for exchanging data.
+
+## 69.1 JavaScript object
+
+```javascript
+const user = {
+    name: "Nathan",
+    age: 13
+};
+```
+
+## 69.2 Convert to JSON
+
+```javascript
+const json = JSON.stringify(user);
+
+console.log(json);
+```
+
+## 69.3 Convert JSON to object
+
+```javascript
+const object = JSON.parse(json);
+
+console.log(object.name);
+```
+
+## 69.4 Pretty JSON
+
+```javascript
+JSON.stringify(user, null, 4);
+```
+
+## 69.5 Handling JSON errors
+
+```javascript
+try {
+
+    const data = JSON.parse("{invalid}");
+
+} catch (error) {
+
+    console.error("Invalid JSON");
+
+}
+```
+
+---
+
+# 70. FETCH API
+
+The Fetch API allows JavaScript to communicate with servers.
+
+## 70.1 GET request
+
+```javascript
+fetch("https://jsonplaceholder.typicode.com/users")
+    .then(response => {
+
+        if (!response.ok) {
+            throw new Error("HTTP error: " + response.status);
+        }
+
+        return response.json();
+
+    })
+    .then(data => {
+
+        console.log(data);
+
+    })
+    .catch(error => {
+
+        console.error(error);
+
+    });
+```
+
+## 70.2 POST request
+
+```javascript
+fetch("https://jsonplaceholder.typicode.com/posts", {
+
+    method: "POST",
+
+    headers: {
+        "Content-Type": "application/json"
+    },
+
+    body: JSON.stringify({
+
+        title: "Hello",
+
+        body: "My first post",
+
+        userId: 1
+
+    })
+
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
+
+## 70.3 Common fetch options
+
+| Option | Purpose |
+|---|---|
+| `method` | HTTP method |
+| `headers` | Request headers |
+| `body` | Request body |
+| `mode` | Request mode |
+| `credentials` | Credential behaviour |
+| `cache` | Cache behaviour |
+| `redirect` | Redirect behaviour |
+| `signal` | Abort signal |
+
+## 70.4 Important HTTP status codes
+
+| Code | Meaning |
+|---|---|
+| 200 | OK |
+| 201 | Created |
+| 204 | No Content |
+| 301 | Permanent redirect |
+| 302 | Temporary redirect |
+| 304 | Not modified |
+| 400 | Bad request |
+| 401 | Unauthorized |
+| 403 | Forbidden |
+| 404 | Not found |
+| 405 | Method not allowed |
+| 409 | Conflict |
+| 429 | Too many requests |
+| 500 | Internal server error |
+| 502 | Bad gateway |
+| 503 | Service unavailable |
+| 504 | Gateway timeout |
+
+Fetch normally rejects on network-level failures, not simply because the server returned a 404 or 500. Check `response.ok`.
+
+---
+
+# 71. PROMISES
+
+Promises represent operations that may complete in the future.
+
+## 71.1 Promise states
+
+- Pending
+- Fulfilled
+- Rejected
+
+## 71.2 Creating a promise
+
+```javascript
+const promise = new Promise((resolve, reject) => {
+
+    const success = true;
+
+    if (success) {
+
+        resolve("Success");
+
+    } else {
+
+        reject("Failed");
+
+    }
+
+});
+```
+
+## 71.3 then()
+
+```javascript
+promise.then(result => {
+
+    console.log(result);
+
+});
+```
+
+## 71.4 catch()
+
+```javascript
+promise.catch(error => {
+
+    console.error(error);
+
+});
+```
+
+## 71.5 finally()
+
+```javascript
+promise.finally(() => {
+
+    console.log("Finished");
+
+});
+```
+
+## 71.6 Promise.all()
+
+Waits for all promises to fulfil.
+
+```javascript
+Promise.all([
+    fetch("/api/users"),
+    fetch("/api/posts")
+])
+.then(results => console.log(results));
+```
+
+Rejects if one input promise rejects.
+
+## 71.7 Promise.allSettled()
+
+Waits for every promise to settle.
+
+```javascript
+Promise.allSettled([
+    Promise.resolve("Success"),
+    Promise.reject("Error")
+])
+.then(results => console.log(results));
+```
+
+## 71.8 Promise.race()
+
+Settles with the first settled promise.
+
+```javascript
+Promise.race([
+    promise1,
+    promise2
+]);
+```
+
+## 71.9 Promise.any()
+
+Fulfils with the first fulfilled promise.
+
+```javascript
+Promise.any([
+    promise1,
+    promise2
+]);
+```
+
+---
+
+# 72. ASYNC AND AWAIT
+
+Async functions make asynchronous code easier to read.
+
+## 72.1 async
+
+```javascript
+async function greet() {
+
+    return "Hello";
+
+}
+```
+
+An async function always returns a Promise.
+
+## 72.2 await
+
+```javascript
+async function getData() {
+
+    const response = await fetch("/api/data");
+
+    const data = await response.json();
+
+    console.log(data);
+
+}
+```
+
+## 72.3 Error handling
+
+```javascript
+async function getData() {
+
+    try {
+
+        const response = await fetch("/api/data");
+
+        if (!response.ok) {
+            throw new Error("Request failed");
+        }
+
+        const data = await response.json();
+
+        console.log(data);
+
+    } catch (error) {
+
+        console.error(error);
+
+    }
+
+}
+```
+
+## 72.4 Parallel operations
+
+```javascript
+async function loadData() {
+
+    const [users, posts] = await Promise.all([
+
+        fetch("/api/users"),
+
+        fetch("/api/posts")
+
+    ]);
+
+    console.log(users, posts);
+
+}
+```
+
+Use `Promise.all()` when independent operations can run concurrently.
+
+---
+
+# 73. JAVASCRIPT MODULES
+
+Modules divide code into reusable files.
+
+## 73.1 Exporting
+
+File: `math.js`
+
+```javascript
+export function add(a, b) {
+
+    return a + b;
+
+}
+
+export const PI = 3.14159;
+```
+
+## 73.2 Importing
+
+File: `main.js`
+
+```javascript
+import { add, PI } from "./math.js";
+
+console.log(add(10, 20));
+
+console.log(PI);
+```
+
+## 73.3 Default export
+
+```javascript
+export default function greet() {
+
+    console.log("Hello");
+
+}
+```
+
+Import:
+
+```javascript
+import greet from "./greet.js";
+```
+
+## 73.4 Renaming imports
+
+```javascript
+import { add as sum } from "./math.js";
+```
+
+## 73.5 HTML module script
+
+```html
+<script type="module" src="main.js"></script>
+```
+
+Modules are automatically deferred and have their own scope.
+
+---
+
+# 74. REGULAR EXPRESSIONS
+
+Regex searches and matches text patterns.
+
+## 74.1 Creating regex
+
+```javascript
+const pattern = /hello/i;
+```
+
+Flags:
+
+| Flag | Meaning |
+|---|---|
+| `g` | Global |
+| `i` | Case-insensitive |
+| `m` | Multiline |
+| `s` | Dot matches line terminators |
+| `u` | Unicode-aware |
+| `y` | Sticky |
+| `d` | Match indices |
+
+## 74.2 Regex symbols
+
+| Symbol | Meaning |
+|---|---|
+| `.` | Any character except line terminators by default |
+| `^` | Start |
+| `$` | End |
+| `*` | Zero or more |
+| `+` | One or more |
+| `?` | Optional |
+| `{n}` | Exactly n |
+| `{n,m}` | Between n and m |
+| `[]` | Character set |
+| `[^]` | Negated character set |
+| `\d` | Digit |
+| `\D` | Non-digit |
+| `\w` | Word character |
+| `\W` | Non-word character |
+| `\s` | Whitespace |
+| `\S` | Non-whitespace |
+| `()` | Capturing group |
+| `(?:)` | Non-capturing group |
+| `|` | OR |
+| `\b` | Word boundary |
+
+## 74.3 test()
+
+```javascript
+const pattern = /^\d+$/;
+
+console.log(pattern.test("123"));
+```
+
+## 74.4 match()
+
+```javascript
+const text = "I have 123 apples";
+
+console.log(text.match(/\d+/));
+```
+
+## 74.5 replace()
+
+```javascript
+let text = "Hello World";
+
+console.log(text.replace("World", "Nathan"));
+```
+
+## 74.6 split()
+
+```javascript
+let text = "apple,banana,orange";
+
+console.log(text.split(","));
+```
+
+---
+
+# 75. BROWSER APIs
+
+JavaScript has access to many browser APIs.
+
+## 75.1 Window API
+
+```javascript
+window.innerWidth;
+
+window.innerHeight;
+
+window.location.href;
+
+window.location.reload();
+
+window.history.back();
+
+window.history.forward();
+```
+
+## 75.2 Location API
+
+```javascript
+console.log(location.href);
+
+console.log(location.hostname);
+
+console.log(location.pathname);
+
+console.log(location.protocol);
+
+console.log(location.search);
+
+console.log(location.hash);
+```
+
+Navigate:
+
+```javascript
+location.href = "https://example.com";
+```
+
+## 75.3 Navigator API
+
+```javascript
+console.log(navigator.language);
+
+console.log(navigator.onLine);
+
+console.log(navigator.userAgent);
+```
+
+Some browser properties may be restricted or unreliable as device-identification methods.
+
+## 75.4 Clipboard API
+
+Copy:
+
+```javascript
+await navigator.clipboard.writeText("Hello World");
+```
+
+Read:
+
+```javascript
+const text = await navigator.clipboard.readText();
+```
+
+Clipboard access generally requires a secure context and user permission or activation.
+
+## 75.5 Geolocation API
+
+```javascript
+navigator.geolocation.getCurrentPosition(position => {
+
+    console.log(position.coords.latitude);
+
+    console.log(position.coords.longitude);
+
+});
+```
+
+Requires user permission and a secure context in normal browser use.
+
+## 75.6 Fullscreen API
+
+```javascript
+document.documentElement.requestFullscreen();
+```
+
+Exit:
+
+```javascript
+document.exitFullscreen();
+```
+
+Fullscreen requests generally need user activation.
+
+## 75.7 Notifications API
+
+```javascript
+const permission = await Notification.requestPermission();
+
+if (permission === "granted") {
+
+    new Notification("Hello!");
+
+}
+```
+
+Requires user permission and a secure context.
+
+## 75.8 Intersection Observer
+
+Detects when an element enters or leaves a visible area.
+
+```javascript
+const observer = new IntersectionObserver(entries => {
+
+    entries.forEach(entry => {
+
+        if (entry.isIntersecting) {
+
+            console.log("Element visible");
+
+        }
+
+    });
+
+});
+
+observer.observe(document.querySelector(".box"));
+```
+
+Useful for:
+- Lazy loading
+- Scroll animations
+- Visibility detection
+
+## 75.9 Mutation Observer
+
+Detects changes to the DOM.
+
+```javascript
+const observer = new MutationObserver(mutations => {
+
+    console.log(mutations);
+
+});
+
+observer.observe(document.body, {
+
+    childList: true,
+
+    subtree: true,
+
+    attributes: true
+
+});
+```
+
+## 75.10 Resize Observer
+
+Detects element size changes.
+
+```javascript
+const observer = new ResizeObserver(entries => {
+
+    for (const entry of entries) {
+
+        console.log(entry.contentRect.width);
+
+    }
+
+});
+
+observer.observe(document.querySelector(".container"));
+```
+
+---
+
+# 76. CANVAS API
+
+Canvas allows JavaScript to draw graphics.
+
+HTML:
+
+```html
+<canvas id="canvas" width="600" height="400"></canvas>
+```
+
+JavaScript:
+
+```javascript
+const canvas = document.querySelector("#canvas");
+
+const ctx = canvas.getContext("2d");
+```
+
+## 76.1 Draw rectangles
+
+```javascript
+ctx.fillStyle = "red";
+
+ctx.fillRect(50, 50, 100, 100);
+```
+
+Outline:
+
+```javascript
+ctx.strokeStyle = "blue";
+
+ctx.strokeRect(200, 50, 100, 100);
+```
+
+Clear:
+
+```javascript
+ctx.clearRect(0, 0, 600, 400);
+```
+
+## 76.2 Draw circles
+
+```javascript
+ctx.beginPath();
+
+ctx.arc(100, 100, 50, 0, Math.PI * 2);
+
+ctx.fillStyle = "blue";
+
+ctx.fill();
+```
+
+## 76.3 Draw lines
+
+```javascript
+ctx.beginPath();
+
+ctx.moveTo(50, 50);
+
+ctx.lineTo(200, 200);
+
+ctx.stroke();
+```
+
+## 76.4 Draw text
+
+```javascript
+ctx.font = "30px Arial";
+
+ctx.fillStyle = "black";
+
+ctx.fillText("Hello", 50, 100);
+```
+
+## 76.5 Draw images
+
+```javascript
+const image = new Image();
+
+image.src = "image.png";
+
+image.onload = () => {
+
+    ctx.drawImage(image, 0, 0, 200, 200);
+
+};
+```
+
+## 76.6 Canvas animation
+
+```javascript
+let x = 0;
+
+function animate() {
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillRect(x, 100, 50, 50);
+
+    x += 2;
+
+    if (x > canvas.width) {
+        x = -50;
+    }
+
+    requestAnimationFrame(animate);
+
+}
+
+animate();
+```
+
+---
+
+# 77. WEBSOCKETS
+
+WebSockets provide persistent two-way communication between browser and server.
+
+```javascript
+const socket = new WebSocket("wss://example.com/socket");
+```
+
+Connection:
+
+```javascript
+socket.addEventListener("open", () => {
+
+    console.log("Connected");
+
+});
+```
+
+Send:
+
+```javascript
+socket.send("Hello Server");
+```
+
+Receive:
+
+```javascript
+socket.addEventListener("message", event => {
+
+    console.log(event.data);
+
+});
+```
+
+Error:
+
+```javascript
+socket.addEventListener("error", error => {
+
+    console.error(error);
+
+});
+```
+
+Close:
+
+```javascript
+socket.close();
+```
+
+WebSockets are useful for:
+- Chat applications
+- Multiplayer games
+- Live dashboards
+- Real-time notifications
+- Collaborative applications
+
+---
+
+# 78. WEB WORKERS
+
+Web Workers execute JavaScript in background threads.
+
+Main JavaScript:
+
+```javascript
+const worker = new Worker("worker.js");
+
+worker.postMessage("Hello");
+
+worker.onmessage = event => {
+
+    console.log(event.data);
+
+};
+```
+
+Worker file:
+
+```javascript
+self.onmessage = event => {
+
+    console.log(event.data);
+
+    self.postMessage("Message received");
+
+};
+```
+
+Terminate:
+
+```javascript
+worker.terminate();
+```
+
+Workers cannot directly manipulate the main document DOM.
+
+---
+
+# 79. JAVASCRIPT SECURITY
+
+Security is extremely important when creating websites.
+
+## 79.1 Avoid unsafe innerHTML
+
+Unsafe:
+
+```javascript
+element.innerHTML = userInput;
+```
+
+Safer for plain text:
+
+```javascript
+element.textContent = userInput;
+```
+
+## 79.2 Avoid eval()
+
+Dangerous:
+
+```javascript
+eval(userInput);
+```
+
+Never execute arbitrary user-provided code in a normal application.
+
+## 79.3 Validate user input
+
+```javascript
+function validateUsername(name) {
+
+    return /^[a-zA-Z0-9_]{3,20}$/.test(name);
+
+}
+```
+
+## 79.4 HTTPS
+
+Use HTTPS for websites and APIs that handle sensitive information.
+
+## 79.5 API keys
+
+Do not put secret API keys in frontend JavaScript.
+
+Anything delivered to a browser can be inspected by users.
+
+Keep secret keys on a backend server.
+
+## 79.6 Authentication
+
+Never rely on frontend checks alone for access control.
+
+A hidden admin button is not security.
+
+The server must independently verify permissions.
+
+---
+
+# 80. DEBUGGING AND TESTING
+
+## 80.1 Console debugging
+
+```javascript
+console.log("Debug");
+
+console.warn("Warning");
+
+console.error("Error");
+
+console.table(data);
+```
+
+## 80.2 Breakpoints
+
+```javascript
+debugger;
+```
+
+Pauses execution when developer tools are open.
+
+## 80.3 Try/catch debugging
+
+```javascript
+try {
+
+    riskyOperation();
+
+} catch (error) {
+
+    console.error(error);
+
+}
+```
+
+## 80.4 Performance timing
+
+```javascript
+console.time("operation");
+
+for (let i = 0; i < 100000; i++) {
+
+    // Work
+
+}
+
+console.timeEnd("operation");
+```
+
+## 80.5 Assertions
+
+```javascript
+console.assert(10 > 5, "Condition failed");
+```
+
+## 80.6 Testing
+
+Example using Node.js built-in test runner:
+
+```javascript
+import test from "node:test";
+
+import assert from "node:assert/strict";
+
+function add(a, b) {
+    return a + b;
+}
+
+test("addition works", () => {
+
+    assert.equal(add(2, 3), 5);
+
+});
+```
+
+Run:
+
+```bash
+node --test
+```
+
+---
+
+# PART IV: COMBINED WEB DEVELOPMENT
+
+# 81. CONNECTING HTML, CSS AND JAVASCRIPT
+
+A normal website uses separate files.
+
+Project structure:
+
+```text
+MyWebsite/
+│
+├── index.html
+│
+├── css/
+│   └── style.css
+│
+├── js/
+│   └── script.js
+│
+└── assets/
+    ├── images/
+    ├── icons/
+    └── fonts/
+```
+
+HTML:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>My Website</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+    <script src="js/script.js" defer></script>
+
+</head>
+
+<body>
+
+    <h1 id="title">Hello World</h1>
+
+    <button id="button">Click Me</button>
+
+</body>
+
+</html>
+```
+
+CSS:
+
+```css
+body {
+    background: #111;
+
+    color: white;
+
+    font-family: Arial, sans-serif;
+
+    text-align: center;
+
+    padding: 50px;
+}
+
+button {
+    background: blue;
+
+    color: white;
+
+    padding: 12px 24px;
+
+    border: none;
+
+    cursor: pointer;
+}
+```
+
+JavaScript:
+
+```javascript
+const button = document.querySelector("#button");
+
+const title = document.querySelector("#title");
+
+button.addEventListener("click", () => {
+
+    title.textContent = "Button Clicked!";
+
+});
+```
+
+---
+
+# 82. CREATING DYNAMIC WEBSITE COMPONENTS
+
+## 82.1 Dynamic cards
+
+HTML:
+
+```html
+<div id="container"></div>
+```
+
+JavaScript:
+
+```javascript
+const container = document.querySelector("#container");
+
+const users = [
+    {
+        name: "Nathan",
+        age: 13
+    },
+    {
+        name: "Alex",
+        age: 15
+    }
+];
+
+users.forEach(user => {
+
+    const card = document.createElement("div");
+
+    const heading = document.createElement("h2");
+
+    const paragraph = document.createElement("p");
+
+    heading.textContent = user.name;
+
+    paragraph.textContent = `Age: ${user.age}`;
+
+    card.append(heading, paragraph);
+
+    card.classList.add("card");
+
+    container.appendChild(card);
+
+});
+```
+
+CSS:
+
+```css
+.card {
+    background: #222;
+
+    padding: 20px;
+
+    margin: 10px;
+
+    border-radius: 10px;
+}
+```
+
+## 82.2 Search functionality
+
+HTML:
+
+```html
+<input id="search" placeholder="Search...">
+
+<ul id="results"></ul>
+```
+
+JavaScript:
+
+```javascript
+const search = document.querySelector("#search");
+
+const results = document.querySelector("#results");
+
+const names = ["Nathan", "Alex", "John", "Michael"];
+
+function displayResults(query) {
+
+    results.replaceChildren();
+
+    const filtered = names.filter(name =>
+        name.toLowerCase().includes(query.toLowerCase())
+    );
+
+    filtered.forEach(name => {
+
+        const li = document.createElement("li");
+
+        li.textContent = name;
+
+        results.appendChild(li);
+
+    });
+
+}
+
+search.addEventListener("input", () => {
+
+    displayResults(search.value);
+
+});
+
+displayResults("");
+```
+
+## 82.3 Dark and light mode
+
+HTML:
+
+```html
+<button id="themeButton">Toggle Theme</button>
+```
+
+CSS:
+
+```css
+body {
+    background: white;
+
+    color: black;
+}
+
+body.dark {
+    background: #111;
+
+    color: white;
+}
+```
+
+JavaScript:
+
+```javascript
+const button = document.querySelector("#themeButton");
+
+button.addEventListener("click", () => {
+
+    document.body.classList.toggle("dark");
+
+});
+```
+
+## 82.4 Persistent theme
+
+```javascript
+const savedTheme = localStorage.getItem("theme");
+
+if (savedTheme === "dark") {
+
+    document.body.classList.add("dark");
+
+}
+
+button.addEventListener("click", () => {
+
+    document.body.classList.toggle("dark");
+
+    const theme = document.body.classList.contains("dark")
+        ? "dark"
+        : "light";
+
+    localStorage.setItem("theme", theme);
+
+});
+```
+
+---
+
+# 83. COMMON WEBSITE FUNCTIONS
+
+## 83.1 Show and hide elements
+
+```javascript
+element.style.display = "none";
+
+element.style.display = "block";
+```
+
+## 83.2 Toggle visibility
+
+```javascript
+element.classList.toggle("hidden");
+```
+
+## 83.3 Update text
+
+```javascript
+element.textContent = "New text";
+```
+
+## 83.4 Update images
+
+```javascript
+image.src = "new-image.jpg";
+```
+
+## 83.5 Change page title
+
+```javascript
+document.title = "New Page Title";
+```
+
+## 83.6 Reload page
+
+```javascript
+location.reload();
+```
+
+## 83.7 Navigate to another page
+
+```javascript
+location.href = "about.html";
+```
+
+## 83.8 Scroll to an element
+
+```javascript
+document.querySelector("#section").scrollIntoView({
+    behavior: "smooth"
+});
+```
+
+## 83.9 Copy text
+
+```javascript
+navigator.clipboard.writeText("Copied text");
+```
+
+## 83.10 Download a text file
+
+```javascript
+const blob = new Blob(
+    ["Hello World"],
+    {type: "text/plain"}
+);
+
+const url = URL.createObjectURL(blob);
+
+const link = document.createElement("a");
+
+link.href = url;
+
+link.download = "file.txt";
+
+link.click();
+
+URL.revokeObjectURL(url);
+```
+
+## 83.11 Generate a random ID
+
+```javascript
+const id = crypto.randomUUID();
+
+console.log(id);
+```
+
+---
+
+# 84. USEFUL BROWSER DEVELOPER TOOLS
+
+Most modern browsers include developer tools.
+
+Open using:
+
+```text
+F12
+```
+
+Or:
+
+```text
+Ctrl + Shift + I
+```
+
+On macOS:
+
+```text
+Cmd + Option + I
+```
+
+## 84.1 Elements panel
+
+Used to:
+- Inspect HTML.
+- Modify HTML.
+- Edit CSS.
+- Check computed styles.
+- Inspect element dimensions.
+- Debug layout.
+
+## 84.2 Console panel
+
+Used to:
+- Execute JavaScript.
+- View errors.
+- Print debugging information.
+- Inspect variables.
+
+## 84.3 Network panel
+
+Used to:
+- Inspect HTTP requests.
+- Check API responses.
+- Monitor file loading.
+- Inspect request headers.
+- Check status codes.
+- Identify slow resources.
+
+## 84.4 Sources panel
+
+Used to:
+- Inspect JavaScript files.
+- Set breakpoints.
+- Debug execution.
+- Step through code.
+
+## 84.5 Application panel
+
+Used to inspect:
+- Local storage.
+- Session storage.
+- Cookies.
+- IndexedDB.
+- Cache storage.
+- Service workers.
+
+## 84.6 Responsive mode
+
+Used to simulate:
+- Mobile screens.
+- Tablet screens.
+- Desktop screens.
+- Different viewport dimensions.
+
+---
+
+# 85. PERFORMANCE OPTIMISATION
+
+## 85.1 Minimise unnecessary DOM changes
+
+Avoid repeatedly rebuilding large sections of the page.
+
+## 85.2 Lazy-load images
+
+```html
+<img src="image.jpg" loading="lazy" alt="Image">
+```
+
+## 85.3 Defer JavaScript
+
+```html
+<script src="script.js" defer></script>
+```
+
+## 85.4 Minimise CSS and JavaScript files
+
+Use build tools when a project becomes large.
+
+## 85.5 Avoid unnecessary event listeners
+
+Use event delegation for large dynamic collections.
+
+## 85.6 Use requestAnimationFrame
+
+For visual animations:
+
+```javascript
+function animate() {
+
+    // Update visual state.
+
+    requestAnimationFrame(animate);
+
+}
+
+requestAnimationFrame(animate);
+```
+
+## 85.7 Avoid layout thrashing
+
+Avoid repeatedly mixing layout reads and writes.
+
+For example, reading an element's dimensions after changing its styles repeatedly can force expensive layout calculations.
+
+## 85.8 Use efficient selectors
+
+Prefer clear and targeted selectors.
+
+## 85.9 Compress assets
+
+Optimise:
+- Images.
+- Fonts.
+- JavaScript.
+- CSS.
+- Videos.
+
+---
+
+# 86. ACCESSIBILITY
+
+Important accessibility practices:
+
+1. Use semantic HTML.
+2. Provide alternative text for meaningful images.
+3. Use labels for form fields.
+4. Ensure keyboard navigation.
+5. Maintain sufficient colour contrast.
+6. Provide visible focus indicators.
+7. Avoid relying on colour alone.
+8. Use appropriate heading hierarchy.
+9. Make buttons and links understandable.
+10. Respect reduced-motion preferences.
+
+Example:
+
+```html
+<button
+    type="button"
+    aria-label="Open navigation menu"
+    aria-expanded="false">
+
+    Menu
+
+</button>
+```
+
+---
+
+# 87. DEPLOYMENT AND HOSTING
+
+A website can be hosted using several services.
+
+Common static hosting platforms include:
+
+- GitHub Pages
+- Cloudflare Pages
+- Netlify
+- Vercel
+
+## 87.1 GitHub Pages
+
+Typical workflow:
+
+1. Create a GitHub repository.
+2. Upload HTML, CSS and JavaScript.
+3. Open repository settings.
+4. Navigate to Pages.
+5. Select a deployment source.
+6. Publish the website.
+
+## 87.2 Local testing
+
+You can open `index.html` directly in a browser for simple projects.
+
+However, some features require an HTTP server, especially:
+- JavaScript modules.
+- Fetching local files.
+- Certain browser APIs.
+- Service workers.
+
+A simple local server with Python:
+
+```bash
+python -m http.server 8000
+```
+
+Open:
+
+```text
+http://localhost:8000
+```
+
+## 87.3 Important distinction
+
+Static hosting can serve frontend files, but it does not automatically provide:
+- Databases.
+- Private server-side code.
+- Secure authentication.
+- Backend API processing.
+- Server-side file storage.
+
+These require a backend or external service.
+
+---
+
+# 88. COMMON ERRORS
+
+## HTML errors
+
+| Problem | Likely cause |
+|---|---|
+| Images not loading | Incorrect `src` |
+| CSS not working | Incorrect stylesheet path |
+| JavaScript not running | Incorrect script path or JavaScript error |
+| Broken layout | Invalid nesting or CSS issue |
+| Missing mobile styling | Missing viewport metadata |
+
+## CSS errors
+
+| Problem | Likely cause |
+|---|---|
+| CSS not applying | Wrong selector |
+| Property ignored | Invalid value |
+| Element not centered | Incorrect layout settings |
+| z-index not working | Stacking context |
+| Flexbox behaving strangely | Incorrect axis or sizing |
+| Overflow | Fixed dimensions or missing wrapping |
+| Animation not running | Incorrect keyframes or animation name |
+
+## JavaScript errors
+
+| Error | Meaning |
+|---|---|
+| `ReferenceError` | Variable or function unavailable |
+| `TypeError` | Invalid operation for a value |
+| `SyntaxError` | Invalid syntax |
+| `RangeError` | Value outside allowed range |
+| `URIError` | Invalid URI operation |
+| `ReferenceError: Cannot access before initialization` | Accessing a lexical binding before initialisation |
+| `Cannot read properties of null` | Attempted property access on null |
+| `is not a function` | Called something that is not callable |
+
+## Common mistakes
+
+Incorrect:
+
+```javascript
+if (x = 10) {
+    console.log("Hello");
+}
+```
+
+Correct:
+
+```javascript
+if (x === 10) {
+    console.log("Hello");
+}
+```
+
+Incorrect:
+
+```javascript
+const numbers = [1, 2, 3];
+
+numbers = [4, 5];
+```
+
+Correct:
+
+```javascript
+let numbers = [1, 2, 3];
+
+numbers = [4, 5];
+```
+
+Or modify the existing array:
+
+```javascript
+const numbers = [1, 2, 3];
+
+numbers.push(4);
+```
+
+Remember that `const` prevents reassignment of the variable, not mutation of the object it references.
+
+---
+
+# 89. COMPLETE EXAMPLE PROJECTS
+
+## 89.1 Interactive counter
+
+HTML:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <title>Counter</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+
+    <h1 id="counter">0</h1>
+
+    <button id="decrease">-</button>
+
+    <button id="reset">Reset</button>
+
+    <button id="increase">+</button>
+
+</body>
+
+</html>
+```
+
+CSS:
+
+```css
+body {
+    background: #111;
+
+    color: white;
+
+    text-align: center;
+
+    font-family: Arial;
+
+    padding: 50px;
+}
+
+button {
+    padding: 15px 25px;
+
+    cursor: pointer;
+
+    border: none;
+
+    border-radius: 5px;
+}
+```
+
+JavaScript:
+
+```javascript
+let count = 0;
+
+const counter = document.querySelector("#counter");
+
+function update() {
+
+    counter.textContent = count;
+
+}
+
+document.querySelector("#increase").addEventListener("click", () => {
+
+    count++;
+
+    update();
+
+});
+
+document.querySelector("#decrease").addEventListener("click", () => {
+
+    count--;
+
+    update();
+
+});
+
+document.querySelector("#reset").addEventListener("click", () => {
+
+    count = 0;
+
+    update();
+
+});
+```
+
+## 89.2 To-do list
+
+HTML:
+
+```html
+<input id="taskInput" placeholder="Enter task">
+
+<button id="addTask">Add</button>
+
+<ul id="taskList"></ul>
+```
+
+JavaScript:
+
+```javascript
+const input = document.querySelector("#taskInput");
+
+const list = document.querySelector("#taskList");
+
+document.querySelector("#addTask").addEventListener("click", () => {
+
+    const text = input.value.trim();
+
+    if (!text) return;
+
+    const item = document.createElement("li");
+
+    const label = document.createElement("span");
+
+    const remove = document.createElement("button");
+
+    label.textContent = text;
+
+    remove.textContent = "Delete";
+
+    remove.addEventListener("click", () => {
+
+        item.remove();
+
+    });
+
+    item.append(label, remove);
+
+    list.appendChild(item);
+
+    input.value = "";
+
+});
+```
+
+## 89.3 Live digital clock
+
+HTML:
+
+```html
+<h1 id="clock"></h1>
+```
+
+JavaScript:
+
+```javascript
+function updateClock() {
+
+    const now = new Date();
+
+    const time = now.toLocaleTimeString();
+
+    document.querySelector("#clock").textContent = time;
+
+}
+
+updateClock();
+
+setInterval(updateClock, 1000);
+```
+
+## 89.4 API-powered webpage
+
+HTML:
+
+```html
+<button id="load">Load Data</button>
+
+<div id="output"></div>
+```
+
+JavaScript:
+
+```javascript
+const button = document.querySelector("#load");
+
+const output = document.querySelector("#output");
+
+button.addEventListener("click", async () => {
+
+    output.textContent = "Loading...";
+
+    try {
+
+        const response = await fetch(
+            "https://jsonplaceholder.typicode.com/posts/1"
+        );
+
+        if (!response.ok) {
+            throw new Error("Failed to load data");
+        }
+
+        const data = await response.json();
+
+        const heading = document.createElement("h2");
+
+        const paragraph = document.createElement("p");
+
+        heading.textContent = data.title;
+
+        paragraph.textContent = data.body;
+
+        output.replaceChildren(heading, paragraph);
+
+    } catch (error) {
+
+        output.textContent = error.message;
+
+    }
+
+});
+```
+
+## 89.5 Simple animated loading screen
+
+HTML:
+
+```html
+<div class="loader"></div>
+```
+
+CSS:
+
+```css
+.loader {
+    width: 50px;
+
+    height: 50px;
+
+    border: 5px solid #333;
+
+    border-top-color: white;
+
+    border-radius: 50%;
+
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+
+    to {
+        transform: rotate(360deg);
+    }
+
+}
+```
+
+---
+
+# 90. QUICK REFERENCE: HTML TAGS
+
+```text
+STRUCTURE
+<!DOCTYPE>
+<html>
+<head>
+<body>
+<title>
+<meta>
+<link>
+<style>
+<script>
+
+TEXT
+<h1> to <h6>
+<p>
+<br>
+<hr>
+<strong>
+<b>
+<em>
+<i>
+<u>
+<mark>
+<small>
+<sub>
+<sup>
+<code>
+<pre>
+<blockquote>
+
+CONTAINERS
+<div>
+<span>
+<header>
+<footer>
+<nav>
+<main>
+<section>
+<article>
+<aside>
+
+LINKS AND MEDIA
+<a>
+<img>
+<audio>
+<video>
+<source>
+<track>
+<iframe>
+<figure>
+<figcaption>
+
+LISTS
+<ul>
+<ol>
+<li>
+<dl>
+<dt>
+<dd>
+
+TABLES
+<table>
+<thead>
+<tbody>
+<tfoot>
+<tr>
+<th>
+<td>
+<caption>
+<col>
+<colgroup>
+
+FORMS
+<form>
+<input>
+<textarea>
+<select>
+<option>
+<optgroup>
+<button>
+<label>
+<fieldset>
+<legend>
+<datalist>
+<output>
+
+OTHER
+<canvas>
+<svg>
+<details>
+<summary>
+<dialog>
+<template>
+<time>
+<progress>
+<meter>
+<address>
+```
+
+---
+
+# 91. QUICK REFERENCE: CSS PROPERTIES
+
+```text
+TEXT
+color
+font-family
+font-size
+font-weight
+font-style
+text-align
+text-decoration
+text-transform
+line-height
+letter-spacing
+word-spacing
+text-shadow
+
+BACKGROUND
+background
+background-color
+background-image
+background-size
+background-position
+background-repeat
+background-attachment
+background-clip
+background-blend-mode
+
+BORDERS
+border
+border-width
+border-style
+border-color
+border-radius
+outline
+outline-offset
+
+BOX MODEL
+width
+height
+min-width
+max-width
+min-height
+max-height
+margin
+padding
+box-sizing
+
+LAYOUT
+display
+position
+top
+right
+bottom
+left
+z-index
+float
+clear
+overflow
+visibility
+isolation
+
+FLEXBOX
+flex
+flex-grow
+flex-shrink
+flex-basis
+flex-direction
+flex-wrap
+flex-flow
+justify-content
+align-items
+align-content
+align-self
+order
+gap
+
+GRID
+grid
+grid-template-columns
+grid-template-rows
+grid-template-areas
+grid-column
+grid-row
+grid-area
+grid-auto-flow
+grid-auto-columns
+grid-auto-rows
+place-items
+place-content
+gap
+
+EFFECTS
+opacity
+box-shadow
+filter
+backdrop-filter
+clip-path
+mask
+transform
+transform-origin
+transition
+animation
+
+OTHER
+cursor
+pointer-events
+user-select
+object-fit
+object-position
+aspect-ratio
+scroll-behavior
+scroll-snap-type
+scroll-snap-align
+content-visibility
+contain
+```
+
+---
+
+# 92. QUICK REFERENCE: JAVASCRIPT SYNTAX
+
+```text
+VARIABLES
+var
+let
+const
+
+OUTPUT
+console.log()
+console.info()
+console.warn()
+console.error()
+console.table()
+
+DATA TYPES
+String
+Number
+BigInt
+Boolean
+Undefined
+Null
+Symbol
+Object
+
+CONDITIONS
+if
+else
+else if
+switch
+case
+default
+? :
+??
+
+LOOPS
+for
+while
+do...while
+for...of
+for...in
+break
+continue
+
+FUNCTIONS
+function
+return
+=> 
+async
+await
+yield
+
+ARRAYS
+push()
+pop()
+shift()
+unshift()
+splice()
+slice()
+map()
+filter()
+reduce()
+forEach()
+find()
+some()
+every()
+sort()
+flat()
+flatMap()
+
+OBJECTS
+Object.keys()
+Object.values()
+Object.entries()
+Object.assign()
+Object.freeze()
+Object.seal()
+Object.hasOwn()
+
+DOM
+document
+window
+getElementById()
+querySelector()
+querySelectorAll()
+createElement()
+appendChild()
+append()
+remove()
+replaceChildren()
+classList
+setAttribute()
+getAttribute()
+textContent
+innerHTML
+
+EVENTS
+addEventListener()
+removeEventListener()
+preventDefault()
+stopPropagation()
+
+STORAGE
+localStorage
+sessionStorage
+setItem()
+getItem()
+removeItem()
+clear()
+
+NETWORKING
+fetch()
+XMLHttpRequest
+WebSocket
+
+ASYNC
+Promise
+then()
+catch()
+finally()
+Promise.all()
+Promise.allSettled()
+Promise.race()
+Promise.any()
+
+BROWSER APIS
+navigator
+location
+history
+clipboard
+geolocation
+Notification
+IntersectionObserver
+MutationObserver
+ResizeObserver
+
+ERROR HANDLING
+try
+catch
+finally
+throw
+
+MODULES
+import
+export
+export default
+
+DEBUGGING
+console.log()
+console.table()
+console.time()
+console.assert()
+debugger
+```
+
+---
+
+# 93. FINAL LEARNING ROADMAP
+
+## Stage 1: HTML foundations
+Learn:
+- Document structure
+- Headings and paragraphs
+- Links
+- Images
+- Lists
+- Tables
+- Forms
+- Semantic elements
+
+Goal: Build a complete static webpage.
+
+## Stage 2: CSS foundations
+Learn:
+- Selectors
+- Colours
+- Typography
+- Box model
+- Display
+- Flexbox
+- Grid
+- Positioning
+
+Goal: Make your webpage look professionally designed.
+
+## Stage 3: JavaScript foundations
+Learn:
+- Variables
+- Data types
+- Operators
+- Conditions
+- Loops
+- Functions
+- Arrays
+- Objects
+
+Goal: Create programs that perform calculations and process data.
+
+## Stage 4: Interactive websites
+Learn:
+- DOM manipulation
+- Event listeners
+- Forms
+- Local storage
+- Timers
+- Dynamic elements
+
+Goal: Build interactive applications.
+
+## Stage 5: Advanced web development
+Learn:
+- Fetch API
+- Promises
+- Async/await
+- JavaScript modules
+- Canvas
+- WebSockets
+- Browser APIs
+- Web Components
+
+Goal: Build sophisticated browser-based applications.
+
+## Stage 6: Professional development
+Learn:
+- Responsive design
+- Accessibility
+- Security
+- Testing
+- Performance
+- Version control
+- Deployment
+- Backend integration
+
+Goal: Build and publish complete web applications.
+
+---
+
+# CONCLUSION
+
+HTML, CSS and JavaScript form the foundation of modern web development.
+
+HTML describes what exists.
+
+CSS describes how it looks.
+
+JavaScript describes what it does.
+
+Once you understand how these three technologies work together, you can create everything from simple personal websites to interactive dashboards, games, browser-based software, simulations and complete web applications.
+
+**End of Web Development Cheat Sheet.**

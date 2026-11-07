@@ -216,7 +216,11 @@ h1 { font-weight: 300; }`);
         
         updatePreview();
       } catch (e) {
-        dialogs.alert('Error', 'Could not save: ' + e.message);
+        if (e.message.includes('ENOSPC')) {
+          dialogs.alert('Disk Full', 'The browser storage limit has been reached. Please delete some files or click "Request More Space" in the File Manager.');
+        } else {
+          dialogs.alert('Error', 'Could not save: ' + e.message);
+        }
       }
     }
 

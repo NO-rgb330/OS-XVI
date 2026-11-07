@@ -9,7 +9,7 @@ const PROJECT_DIR = '/home/user/Projects/Web';
 export const webcraftApp = {
   id: 'webcraft',
   name: 'WebCraft',
-  icon: 'grid', // Using the grid icon
+  icon: 'web', 
   defaultSize: [1000, 650],
 
   async launch(body, args, ctx) {

@@ -7,8 +7,8 @@
 
 import { formatBytes } from './util.js';
 
-/** Size of the virtual disk. Capped further by what the browser will actually grant us. */
-export const DISK_CAPACITY = 25 * 1024 ** 3; // 25 GiB
+/** Default fallback size. Updated by the setup wizard via localStorage. */
+const DISK_CAPACITY_DEFAULT = 25 * 1024 ** 3; // 25 GiB
 
 const DB_NAME = 'os_vfs_db';
 const DB_VERSION = 1;
@@ -267,16 +267,27 @@ export async function cp(src, dst) {
 }
 
 // ---- Virtual disk accounting ----
-let capacityCache = { t: 0, v: DISK_CAPACITY };
+let capacityCache = { t: 0, v: DISK_CAPACITY_DEFAULT };
 
 async function diskCapacity() {
   const now = Date.now();
   if (now - capacityCache.t < 30000) return capacityCache.v;
-  let v = DISK_CAPACITY;
+  
+  let v = DISK_CAPACITY_DEFAULT;
+  
+  // Read user preference from setup wizard
+  try {
+    const cfg = JSON.parse(localStorage.getItem('os16.config'));
+    if (cfg && cfg.diskLimit) {
+      v = cfg.diskLimit * 1024 ** 3;
+    }
+  } catch {}
+
   try {
     const est = await navigator.storage.estimate();
-    if (est?.quota > 64 * 1024 * 1024) v = Math.min(DISK_CAPACITY, est.quota);
+    if (est?.quota > 64 * 1024 * 1024) v = Math.min(v, est.quota);
   } catch { /* estimate() unavailable: use the nominal size */ }
+  
   capacityCache = { t: now, v };
   return v;
 }

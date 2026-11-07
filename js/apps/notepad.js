@@ -105,7 +105,11 @@ export const notepadApp = {
         return true;
       } catch (err) {
         updateState();
-        dialogs.alert('Error', 'Could not save file: ' + err.message);
+        if (err.message.includes('ENOSPC')) {
+          dialogs.alert('Disk Full', 'The browser storage limit has been reached. Please delete some files or click "Request More Space" in the File Manager.');
+        } else {
+          dialogs.alert('Error', 'Could not save file: ' + err.message);
+        }
         return false;
       }
     }

@@ -1,0 +1,106 @@
+.gc-app {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+  background: var(--paper);
+}
+
+.gc-sidebar {
+  flex: 0 0 260px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-right: 1px solid var(--bd-soft);
+}
+
+.gc-sidebar-header {
+  padding: 10px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--tx-muted);
+  border-bottom: 1px solid var(--bd-soft);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.gc-equation-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gc-eq-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--paper);
+  border: 1px solid var(--bd);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+}
+.gc-eq-item input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--tx);
+  outline: none;
+}
+.gc-eq-item input:focus {
+  outline: 1px solid var(--ink);
+}
+.gc-eq-color {
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+}
+.gc-eq-item:nth-child(1) .gc-eq-color { background: var(--ink); }
+.gc-eq-item:nth-child(2) .gc-eq-color { background: var(--shade-40); }
+.gc-eq-item:nth-child(3) .gc-eq-color { background: var(--ink); border-style: dashed; }
+.gc-eq-item:nth-child(4) .gc-eq-color { background: var(--shade-60); border-style: dashed; }
+
+.gc-remove {
+  color: var(--tx-muted);
+  cursor: pointer;
+  padding: 2px;
+}
+.gc-remove:hover { color: var(--ink); }
+
+.gc-canvas-wrap {
+  flex: 1 1 auto;
+  position: relative;
+  overflow: hidden;
+  background: var(--paper);
+}
+.gc-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+}
+
+.gc-toolbar {
+  display: flex;
+  gap: 4px;
+  padding: 8px;
+  border-top: 1px solid var(--bd-soft);
+  background: var(--paper);
+}
+.gc-toolbar button {
+  flex: 1;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.gc-toolbar button:hover { background: var(--surface-2); }
+.gc-toolbar button:active { background: var(--shade-20); }

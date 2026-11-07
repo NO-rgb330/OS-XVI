@@ -1,0 +1,212 @@
+/* ============================================================
+   IDE (PyCharm / WebStorm clones)
+   Monochrome syntax highlighting tokens:
+   .tok-kw  (Keywords)   -> Bold
+   .tok-str (Strings)    -> Italic
+   .tok-com (Comments)   -> Muted grey
+   .tok-num (Numbers)    -> Underlined
+   .tok-tag (HTML tags)  -> Bold + Underlined
+   .tok-attr (Attributes)-> Italic
+   ============================================================ */
+
+.ide-app {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-window);
+  outline: none;
+}
+
+/* ---- Toolbar ---- */
+.ide-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--bd-soft);
+  min-height: 38px;
+}
+
+/* ---- Split Layout ---- */
+.ide-split {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+}
+
+/* Sidebar (Project tree) */
+.ide-sidebar {
+  flex: 0 0 220px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-right: 1px solid var(--bd-soft);
+  overflow-y: auto;
+}
+.ide-sidebar-header {
+  padding: 8px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--tx-muted);
+  border-bottom: 1px solid var(--bd-soft);
+}
+.ide-tree-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  font-size: 12px;
+  color: var(--tx);
+  cursor: pointer;
+  user-select: none;
+}
+.ide-tree-item:hover { background: var(--hover-bg); }
+.ide-tree-item.active { background: var(--sel-bg); color: var(--sel-ink); }
+.ide-tree-item .icon { width: 14px; height: 14px; }
+
+/* Main editor area */
+.ide-main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Tabs */
+.ide-tabs {
+  flex: 0 0 auto;
+  display: flex;
+  background: var(--surface);
+  border-bottom: 1px solid var(--bd-soft);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ide-tabs::-webkit-scrollbar { display: none; }
+.ide-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--tx-muted);
+  border-right: 1px solid var(--bd-soft);
+  border-top: 2px solid transparent;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.ide-tab:hover { background: var(--hover-bg); }
+.ide-tab.active {
+  background: var(--bg-window);
+  color: var(--tx);
+  border-top-color: var(--ink);
+  border-bottom: 1px solid var(--bg-window);
+  margin-bottom: -1px;
+}
+.ide-tab .icon { width: 12px; height: 12px; }
+
+/* ---- Shared Code Editor ---- */
+.code-editor-wrap {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+  background: var(--bg-window);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  position: relative;
+}
+.code-gutter {
+  flex: 0 0 44px;
+  padding: 10px 8px 10px 0;
+  text-align: right;
+  color: var(--tx-muted);
+  background: var(--surface);
+  border-right: 1px solid var(--bd-soft);
+  overflow: hidden;
+  user-select: none;
+}
+.code-area {
+  flex: 1 1 auto;
+  position: relative;
+  overflow: hidden;
+}
+.code-highlight, .code-input {
+  position: absolute;
+  inset: 0;
+  padding: 10px 14px;
+  margin: 0;
+  border: 0;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  white-space: pre;
+  overflow: auto;
+  tab-size: 4;
+}
+.code-highlight {
+  pointer-events: none;
+  z-index: 1;
+  color: var(--tx);
+}
+.code-input {
+  z-index: 2;
+  color: transparent;
+  background: transparent;
+  caret-color: var(--tx);
+  resize: none;
+  outline: none;
+}
+
+/* Syntax highlighting tokens (monochrome only) */
+.tok-kw { font-weight: 700; }
+.tok-str { font-style: italic; }
+.tok-com { color: var(--tx-muted); }
+.tok-num { text-decoration: underline; }
+.tok-tag { font-weight: 700; text-decoration: underline; }
+.tok-attr { font-style: italic; }
+.tok-fn { font-weight: 600; }
+
+/* Bottom Console / Preview Area */
+.ide-bottom-panel {
+  flex: 0 0 220px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-top: 1px solid var(--bd-soft);
+  min-height: 0;
+}
+.ide-bottom-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--bd-soft);
+}
+.ide-console {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  white-space: pre-wrap;
+  color: var(--tx);
+}
+.ide-console-error { color: var(--danger-ink); background: var(--danger-bg); padding: 2px 6px; }
+
+/* Web Preview Iframe */
+.ide-preview {
+  flex: 1 1 auto;
+  border: none;
+  background: var(--paper);
+  width: 100%;
+  height: 100%;
+}

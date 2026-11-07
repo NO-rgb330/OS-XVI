@@ -1,0 +1,4988 @@
+# PYTHON PROGRAMMING CHEAT SHEET
+## Complete Reference: Beginner to Advanced
+**Language:** Python 3  
+**Level:** Beginner → Advanced  
+**Purpose:** Syntax reference, programming guide and practical examples
+
+---
+
+# TABLE OF CONTENTS
+
+1. Python Fundamentals
+2. Variables and Data Types
+3. Type Conversion
+4. Operators
+5. Strings and String Manipulation
+6. Input and Output
+7. Conditional Statements
+8. Loops and Iteration
+9. Lists
+10. Tuples
+11. Sets
+12. Dictionaries
+13. Functions
+14. Lambda Functions
+15. List, Dictionary and Set Comprehensions
+16. Error Handling and Exceptions
+17. File Handling
+18. Modules and Imports
+19. Object-Oriented Programming (OOP)
+20. Classes, Inheritance and Polymorphism
+21. Advanced Functions
+22. Iterators and Generators
+23. Decorators
+24. Context Managers
+25. Regular Expressions
+26. Working with Dates and Time
+27. Mathematical Operations
+28. Randomisation
+29. Working with JSON
+30. Working with CSV
+31. Operating System Interaction
+32. System Commands and Subprocesses
+33. Networking and Internet Access
+34. Multithreading and Multiprocessing
+35. Asynchronous Programming
+36. Type Hints
+37. Debugging and Testing
+38. Virtual Environments and pip
+39. Useful Built-in Functions
+40. Common Standard Libraries
+41. Python Syntax Reference
+42. Common Python Programming Patterns
+43. Common Mistakes and How to Fix Them
+44. Complete Example Programs
+
+---
+
+# 1. PYTHON FUNDAMENTALS
+
+## 1.1 Printing information
+
+The `print()` function displays information in the console.
+
+```python
+print("Hello World")
+print(123)
+print(True)
+```
+
+Output:
+
+```text
+Hello World
+123
+True
+```
+
+Printing multiple values:
+
+```python
+print("Hello", "World", 123)
+```
+
+Output:
+
+```text
+Hello World 123
+```
+
+Using separators:
+
+```python
+print("Python", "Java", "C++", sep=" | ")
+```
+
+Output:
+
+```text
+Python | Java | C++
+```
+
+Changing the ending character:
+
+```python
+print("Hello", end=" ")
+print("World")
+```
+
+Output:
+
+```text
+Hello World
+```
+
+Printing an empty line:
+
+```python
+print()
+```
+
+## 1.2 Comments
+
+Comments are ignored by Python and are used to explain code.
+
+Single-line comment:
+
+```python
+# This is a comment
+print("Hello")
+```
+
+Multiple-line comments are commonly written using multiple `#` symbols:
+
+```python
+# This is line one.
+# This is line two.
+# This is line three.
+```
+
+Triple-quoted strings can also be used for documentation:
+
+```python
+"""
+This is a multiline string.
+It can contain multiple lines.
+"""
+```
+
+## 1.3 Indentation
+
+Python uses indentation to determine which statements belong together.
+
+Correct:
+
+```python
+if True:
+    print("Inside the condition")
+    print("Still inside")
+
+print("Outside the condition")
+```
+
+Incorrect:
+
+```python
+if True:
+print("Error")
+```
+
+The standard convention is four spaces per indentation level.
+
+---
+
+# 2. VARIABLES AND DATA TYPES
+
+## 2.1 Creating variables
+
+A variable stores information.
+
+```python
+name = "Nathan"
+age = 13
+height = 1.65
+is_student = True
+```
+
+Python automatically determines the variable's data type.
+
+You do not need to declare variable types before using them.
+
+## 2.2 Variable naming rules
+
+Valid:
+
+```python
+username = "Nathan"
+user_age = 13
+userAge = 13
+_private = 10
+number1 = 25
+```
+
+Invalid:
+
+```python
+1number = 25
+user-name = "Nathan"
+class = "Python"
+```
+
+Rules:
+- Names cannot begin with numbers.
+- Names cannot contain spaces.
+- Names cannot use hyphens.
+- Names cannot be Python keywords.
+- Names are case-sensitive.
+
+```python
+name = "Nathan"
+Name = "Alex"
+
+print(name)
+print(Name)
+```
+
+These are two different variables.
+
+## 2.3 Main Python data types
+
+| Data type | Description | Example |
+|---|---|---|
+| `int` | Whole numbers | `25` |
+| `float` | Decimal numbers | `3.14` |
+| `str` | Text | `"Hello"` |
+| `bool` | True or false | `True` |
+| `list` | Ordered, changeable collection | `[1, 2, 3]` |
+| `tuple` | Ordered, unchangeable collection | `(1, 2, 3)` |
+| `set` | Unique values | `{1, 2, 3}` |
+| `dict` | Key-value collection | `{"name": "Alex"}` |
+| `NoneType` | Represents no value | `None` |
+| `complex` | Complex numbers | `3 + 4j` |
+
+## 2.4 Checking data types
+
+Use `type()`:
+
+```python
+number = 100
+name = "Nathan"
+
+print(type(number))
+print(type(name))
+```
+
+Output:
+
+```text
+<class 'int'>
+<class 'str'>
+```
+
+Use `isinstance()`:
+
+```python
+number = 10
+
+print(isinstance(number, int))
+print(isinstance(number, str))
+```
+
+Output:
+
+```text
+True
+False
+```
+
+## 2.5 Assigning multiple variables
+
+```python
+a, b, c = 10, 20, 30
+
+print(a)
+print(b)
+print(c)
+```
+
+Assigning the same value:
+
+```python
+x = y = z = 100
+```
+
+Swapping variables:
+
+```python
+a = 10
+b = 20
+
+a, b = b, a
+
+print(a, b)
+```
+
+Output:
+
+```text
+20 10
+```
+
+---
+
+# 3. TYPE CONVERSION
+
+Type conversion changes one data type into another.
+
+## 3.1 Common conversion functions
+
+| Function | Purpose | Example |
+|---|---|---|
+| `int()` | Convert to integer | `int("25")` |
+| `float()` | Convert to decimal | `float("3.14")` |
+| `str()` | Convert to string | `str(100)` |
+| `bool()` | Convert to Boolean | `bool(1)` |
+| `list()` | Convert to list | `list("abc")` |
+| `tuple()` | Convert to tuple | `tuple([1, 2])` |
+| `set()` | Convert to set | `set([1, 1, 2])` |
+| `dict()` | Create dictionary | `dict(a=1)` |
+| `complex()` | Create complex number | `complex(2, 3)` |
+
+Examples:
+
+```python
+number = int("100")
+decimal = float("3.14")
+text = str(123)
+result = bool(1)
+
+print(number)
+print(decimal)
+print(text)
+print(result)
+```
+
+Converting a string containing a decimal into an integer directly will fail:
+
+```python
+number = int("3.14")  # ValueError
+```
+
+Instead:
+
+```python
+number = int(float("3.14"))
+print(number)  # 3
+```
+
+---
+
+# 4. OPERATORS
+
+Operators perform operations on values and variables.
+
+## 4.1 Arithmetic operators
+
+| Operator | Meaning | Example | Result |
+|---|---|---|---|
+| `+` | Addition | `5 + 3` | `8` |
+| `-` | Subtraction | `5 - 3` | `2` |
+| `*` | Multiplication | `5 * 3` | `15` |
+| `/` | Division | `5 / 2` | `2.5` |
+| `//` | Floor division | `5 // 2` | `2` |
+| `%` | Modulus/remainder | `5 % 2` | `1` |
+| `**` | Exponentiation | `5 ** 2` | `25` |
+
+Example:
+
+```python
+a = 10
+b = 3
+
+print(a + b)
+print(a - b)
+print(a * b)
+print(a / b)
+print(a // b)
+print(a % b)
+print(a ** b)
+```
+
+## 4.2 Comparison operators
+
+These operators compare two values and return `True` or `False`.
+
+| Operator | Meaning |
+|---|---|
+| `==` | Equal to |
+| `!=` | Not equal to |
+| `>` | Greater than |
+| `<` | Less than |
+| `>=` | Greater than or equal to |
+| `<=` | Less than or equal to |
+
+Example:
+
+```python
+age = 13
+
+print(age == 13)
+print(age != 18)
+print(age > 10)
+print(age < 20)
+print(age >= 13)
+print(age <= 15)
+```
+
+## 4.3 Logical operators
+
+| Operator | Meaning |
+|---|---|
+| `and` | Both conditions must be true |
+| `or` | At least one condition must be true |
+| `not` | Reverses a Boolean result |
+
+Example:
+
+```python
+age = 13
+has_permission = True
+
+if age >= 13 and has_permission:
+    print("Access granted")
+```
+
+Using `or`:
+
+```python
+is_admin = False
+is_moderator = True
+
+if is_admin or is_moderator:
+    print("Can moderate")
+```
+
+Using `not`:
+
+```python
+is_locked = False
+
+if not is_locked:
+    print("Unlocked")
+```
+
+## 4.4 Assignment operators
+
+| Operator | Equivalent |
+|---|---|
+| `=` | Assign |
+| `+=` | `x = x + value` |
+| `-=` | `x = x - value` |
+| `*=` | `x = x * value` |
+| `/=` | `x = x / value` |
+| `//=` | `x = x // value` |
+| `%=` | `x = x % value` |
+| `**=` | `x = x ** value` |
+
+Example:
+
+```python
+number = 10
+
+number += 5
+number -= 2
+number *= 3
+
+print(number)  # 39
+```
+
+## 4.5 Membership operators
+
+Check whether something exists inside a collection.
+
+- `in`
+- `not in`
+
+```python
+fruits = ["apple", "banana", "orange"]
+
+print("apple" in fruits)
+print("grape" not in fruits)
+```
+
+Output:
+
+```text
+True
+True
+```
+
+## 4.6 Identity operators
+
+- `is`
+- `is not`
+
+These check whether two references point to the same object.
+
+```python
+a = [1, 2, 3]
+b = a
+c = [1, 2, 3]
+
+print(a == c)  # True
+print(a is c)  # False
+print(a is b)  # True
+```
+
+Use `==` to compare values and `is` mainly for identity checks such as `x is None`.
+
+## 4.7 Bitwise operators
+
+Bitwise operators work directly with binary representations of integers.
+
+| Operator | Meaning |
+|---|---|
+| `&` | AND |
+| `|` | OR |
+| `^` | XOR |
+| `~` | NOT |
+| `<<` | Left shift |
+| `>>` | Right shift |
+
+Example:
+
+```python
+a = 5   # Binary: 0101
+b = 3   # Binary: 0011
+
+print(a & b)   # 1
+print(a | b)   # 7
+print(a ^ b)   # 6
+print(~a)      # -6
+print(a << 1)  # 10
+print(a >> 1)  # 2
+```
+
+---
+
+# 5. STRINGS AND STRING MANIPULATION
+
+Strings store text.
+
+## 5.1 Creating strings
+
+```python
+name = "Nathan"
+name2 = 'Nathan'
+message = """This is
+a multiline
+string."""
+```
+
+## 5.2 String indexing
+
+Each character has a position, starting at zero.
+
+```python
+text = "Python"
+
+print(text[0])   # P
+print(text[1])   # y
+print(text[-1])  # n
+print(text[-2])  # o
+```
+
+## 5.3 String slicing
+
+Syntax:
+
+```python
+string[start:stop:step]
+```
+
+Examples:
+
+```python
+text = "Python Programming"
+
+print(text[0:6])   # Python
+print(text[:6])    # Python
+print(text[7:])    # Programming
+print(text[::2])   # Every second character
+print(text[::-1])  # Reverse string
+```
+
+The ending position is excluded.
+
+## 5.4 Common string methods
+
+| Method | Purpose | Example |
+|---|---|---|
+| `.upper()` | Uppercase | `"hello".upper()` |
+| `.lower()` | Lowercase | `"HELLO".lower()` |
+| `.capitalize()` | Capitalise first character | `"hello world".capitalize()` |
+| `.title()` | Capitalise each word | `"hello world".title()` |
+| `.strip()` | Remove surrounding whitespace | `" hello ".strip()` |
+| `.lstrip()` | Remove left whitespace | `" hello".lstrip()` |
+| `.rstrip()` | Remove right whitespace | `"hello ".rstrip()` |
+| `.replace()` | Replace text | `"cat".replace("c", "b")` |
+| `.split()` | Split into a list | `"a,b".split(",")` |
+| `.join()` | Join strings | `",".join(["a","b"])` |
+| `.find()` | Find position | `"hello".find("e")` |
+| `.index()` | Find position, raises error if absent | `"hello".index("e")` |
+| `.count()` | Count occurrences | `"banana".count("a")` |
+| `.startswith()` | Check beginning | `"hello".startswith("he")` |
+| `.endswith()` | Check ending | `"hello".endswith("lo")` |
+| `.isdigit()` | Check digit characters | `"123".isdigit()` |
+| `.isalpha()` | Check letters | `"abc".isalpha()` |
+| `.isalnum()` | Check letters and numbers | `"abc123".isalnum()` |
+| `.isspace()` | Check whitespace | `" ".isspace()` |
+| `.swapcase()` | Reverse letter case | `"Hello".swapcase()` |
+| `.casefold()` | Aggressive lowercase for comparisons | `"HELLO".casefold()` |
+| `.zfill()` | Pad with zeroes | `"42".zfill(5)` |
+
+Example:
+
+```python
+text = "  hello python  "
+
+print(text.strip())
+print(text.upper())
+print(text.replace("python", "world"))
+```
+
+## 5.5 f-strings
+
+f-strings insert variables into strings.
+
+```python
+name = "Nathan"
+age = 13
+
+print(f"My name is {name} and I am {age}.")
+```
+
+Mathematical expressions:
+
+```python
+a = 10
+b = 20
+
+print(f"Total: {a + b}")
+```
+
+Formatting decimals:
+
+```python
+price = 19.999
+
+print(f"${price:.2f}")
+```
+
+Output:
+
+```text
+$20.00
+```
+
+Formatting percentages:
+
+```python
+value = 0.756
+
+print(f"{value:.1%}")
+```
+
+Output:
+
+```text
+75.6%
+```
+
+## 5.6 Escape characters
+
+| Character | Meaning |
+|---|---|
+| `\n` | New line |
+| `\t` | Tab |
+| `\\` | Backslash |
+| `\'` | Single quotation mark |
+| `\"` | Double quotation mark |
+| `\r` | Carriage return |
+| `\b` | Backspace |
+| `\0` | Null character |
+
+Example:
+
+```python
+print("Hello\nWorld")
+print("Name:\tNathan")
+print("C:\\Users\\Nathan")
+```
+
+## 5.7 Raw strings
+
+Raw strings do not interpret most backslash escapes.
+
+```python
+path = r"C:\Users\Nathan\Documents"
+
+print(path)
+```
+
+Useful for Windows file paths and regular expressions.
+
+---
+
+# 6. INPUT AND OUTPUT
+
+## 6.1 Getting user input
+
+Use `input()`:
+
+```python
+name = input("Enter your name: ")
+
+print("Hello", name)
+```
+
+Important: `input()` always returns a string.
+
+Convert it when necessary:
+
+```python
+age = int(input("Enter your age: "))
+
+print(age + 1)
+```
+
+Decimal input:
+
+```python
+price = float(input("Enter price: "))
+```
+
+## 6.2 Multiple inputs
+
+```python
+name, age = input("Enter name and age: ").split()
+
+age = int(age)
+```
+
+Example input:
+
+```text
+Nathan 13
+```
+
+## 6.3 Printing formatted output
+
+```python
+name = "Nathan"
+score = 95
+
+print(f"Student: {name}")
+print(f"Score: {score}/100")
+```
+
+---
+
+# 7. CONDITIONAL STATEMENTS
+
+Conditional statements execute code depending on whether a condition is true.
+
+## 7.1 if
+
+```python
+age = 18
+
+if age >= 18:
+    print("Adult")
+```
+
+## 7.2 if and else
+
+```python
+age = 15
+
+if age >= 18:
+    print("Adult")
+else:
+    print("Minor")
+```
+
+## 7.3 if, elif and else
+
+```python
+score = 85
+
+if score >= 90:
+    print("A")
+elif score >= 80:
+    print("B")
+elif score >= 70:
+    print("C")
+else:
+    print("Fail")
+```
+
+## 7.4 Nested conditions
+
+```python
+username = "admin"
+password = "1234"
+
+if username == "admin":
+    if password == "1234":
+        print("Login successful")
+    else:
+        print("Wrong password")
+else:
+    print("Unknown username")
+```
+
+## 7.5 Ternary operator
+
+A short conditional expression.
+
+Syntax:
+
+```python
+value_if_true if condition else value_if_false
+```
+
+Example:
+
+```python
+age = 20
+
+status = "Adult" if age >= 18 else "Minor"
+
+print(status)
+```
+
+## 7.6 match-case
+
+Python 3.10+ supports structural pattern matching.
+
+```python
+command = "start"
+
+match command:
+    case "start":
+        print("Starting...")
+    case "stop":
+        print("Stopping...")
+    case "restart":
+        print("Restarting...")
+    case _:
+        print("Unknown command")
+```
+
+Matching values:
+
+```python
+status = 404
+
+match status:
+    case 200:
+        print("OK")
+    case 404:
+        print("Not Found")
+    case 500:
+        print("Server Error")
+    case _:
+        print("Other status")
+```
+
+Matching multiple alternatives:
+
+```python
+match command:
+    case "quit" | "exit":
+        print("Closing program")
+    case _:
+        print("Continue")
+```
+
+---
+
+# 8. LOOPS AND ITERATION
+
+Loops repeat sections of code.
+
+## 8.1 for loops
+
+```python
+for number in range(5):
+    print(number)
+```
+
+Output:
+
+```text
+0
+1
+2
+3
+4
+```
+
+## 8.2 range()
+
+Syntax:
+
+```python
+range(start, stop, step)
+```
+
+Examples:
+
+```python
+range(5)          # 0, 1, 2, 3, 4
+range(1, 6)       # 1, 2, 3, 4, 5
+range(0, 10, 2)   # 0, 2, 4, 6, 8
+range(10, 0, -1)  # 10 down to 1
+```
+
+Example:
+
+```python
+for number in range(1, 11):
+    print(number)
+```
+
+## 8.3 while loops
+
+Repeats while a condition remains true.
+
+```python
+count = 0
+
+while count < 5:
+    print(count)
+    count += 1
+```
+
+## 8.4 break
+
+Immediately exits a loop.
+
+```python
+for number in range(10):
+    if number == 5:
+        break
+
+    print(number)
+```
+
+## 8.5 continue
+
+Skips the current iteration.
+
+```python
+for number in range(10):
+    if number == 5:
+        continue
+
+    print(number)
+```
+
+## 8.6 pass
+
+Does nothing. Useful as a placeholder.
+
+```python
+if True:
+    pass
+```
+
+## 8.7 Nested loops
+
+A loop inside another loop.
+
+```python
+for x in range(3):
+    for y in range(3):
+        print(x, y)
+```
+
+Useful for grids, matrices and simulations.
+
+## 8.8 enumerate()
+
+Provides an index and value while looping.
+
+```python
+fruits = ["Apple", "Banana", "Orange"]
+
+for index, fruit in enumerate(fruits):
+    print(index, fruit)
+```
+
+Start numbering at 1:
+
+```python
+for index, fruit in enumerate(fruits, start=1):
+    print(index, fruit)
+```
+
+## 8.9 zip()
+
+Loops through multiple collections simultaneously.
+
+```python
+names = ["Alex", "John", "Nathan"]
+ages = [15, 16, 13]
+
+for name, age in zip(names, ages):
+    print(name, age)
+```
+
+## 8.10 Loop else
+
+An `else` block executes when a loop finishes normally, not when it exits through `break`.
+
+```python
+for number in range(5):
+    if number == 10:
+        break
+else:
+    print("Loop completed normally")
+```
+
+---
+
+# 9. LISTS
+
+Lists store multiple values in an ordered, changeable collection.
+
+## 9.1 Creating lists
+
+```python
+numbers = [1, 2, 3, 4, 5]
+names = ["Alex", "Nathan", "John"]
+mixed = [10, "Hello", True, 3.14]
+empty = []
+```
+
+## 9.2 Accessing list elements
+
+```python
+numbers = [10, 20, 30, 40]
+
+print(numbers[0])   # 10
+print(numbers[-1])  # 40
+```
+
+## 9.3 Changing elements
+
+```python
+numbers = [10, 20, 30]
+
+numbers[1] = 99
+
+print(numbers)
+```
+
+## 9.4 List slicing
+
+```python
+numbers = [0, 1, 2, 3, 4, 5]
+
+print(numbers[1:4])
+print(numbers[:3])
+print(numbers[2:])
+print(numbers[::-1])
+```
+
+## 9.5 List methods
+
+| Method | Purpose | Example |
+|---|---|---|
+| `.append(x)` | Add one element | `a.append(5)` |
+| `.extend(iterable)` | Add multiple elements | `a.extend([5, 6])` |
+| `.insert(i, x)` | Insert at position | `a.insert(0, 5)` |
+| `.remove(x)` | Remove first matching value | `a.remove(5)` |
+| `.pop(i)` | Remove and return element | `a.pop()` |
+| `.clear()` | Remove everything | `a.clear()` |
+| `.index(x)` | Find element position | `a.index(5)` |
+| `.count(x)` | Count occurrences | `a.count(5)` |
+| `.sort()` | Sort list in place | `a.sort()` |
+| `.reverse()` | Reverse in place | `a.reverse()` |
+| `.copy()` | Shallow copy | `b = a.copy()` |
+
+Examples:
+
+```python
+numbers = [3, 1, 2]
+
+numbers.append(4)
+numbers.insert(0, 10)
+numbers.remove(1)
+
+print(numbers)
+```
+
+Sorting:
+
+```python
+numbers = [5, 2, 8, 1]
+
+numbers.sort()
+
+print(numbers)
+```
+
+Descending sorting:
+
+```python
+numbers.sort(reverse=True)
+```
+
+Using `sorted()` without changing the original:
+
+```python
+numbers = [5, 2, 8]
+
+new_list = sorted(numbers)
+
+print(new_list)
+print(numbers)
+```
+
+## 9.6 Copying lists
+
+Be careful with references.
+
+```python
+a = [1, 2, 3]
+b = a
+
+b.append(4)
+
+print(a)  # [1, 2, 3, 4]
+```
+
+Both variables refer to the same list.
+
+Create a shallow copy:
+
+```python
+b = a.copy()
+```
+
+Or:
+
+```python
+b = a[:]
+```
+
+For nested lists, use `copy.deepcopy()` when an independent deep copy is needed.
+
+## 9.7 Nested lists
+
+```python
+matrix = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
+]
+
+print(matrix[0][0])  # 1
+print(matrix[1][2])  # 6
+```
+
+Loop through a matrix:
+
+```python
+for row in matrix:
+    for value in row:
+        print(value)
+```
+
+---
+
+# 10. TUPLES
+
+Tuples are ordered collections that cannot be modified after creation.
+
+```python
+coordinates = (10, 20)
+```
+
+Accessing elements:
+
+```python
+print(coordinates[0])
+```
+
+Single-element tuple:
+
+```python
+value = (10,)
+```
+
+Tuple unpacking:
+
+```python
+person = ("Nathan", 13, "Singapore")
+
+name, age, country = person
+
+print(name)
+```
+
+Tuple methods:
+
+```python
+numbers = (1, 2, 2, 3)
+
+print(numbers.count(2))
+print(numbers.index(3))
+```
+
+Converting between lists and tuples:
+
+```python
+my_list = [1, 2, 3]
+my_tuple = tuple(my_list)
+
+back_to_list = list(my_tuple)
+```
+
+Use tuples for fixed collections of values.
+
+---
+
+# 11. SETS
+
+Sets store unique values and do not guarantee positional indexing.
+
+## 11.1 Creating sets
+
+```python
+numbers = {1, 2, 3, 4}
+empty_set = set()
+```
+
+Duplicate values are automatically removed:
+
+```python
+numbers = {1, 2, 2, 3}
+
+print(numbers)
+```
+
+## 11.2 Set methods
+
+```python
+numbers = {1, 2, 3}
+
+numbers.add(4)
+numbers.update([5, 6])
+numbers.remove(2)
+numbers.discard(10)
+```
+
+Difference between `remove()` and `discard()`:
+
+- `remove()` raises `KeyError` if the item is missing.
+- `discard()` does not.
+
+Other methods:
+
+```python
+numbers.pop()      # Removes and returns an arbitrary element
+numbers.clear()    # Empties the set
+```
+
+## 11.3 Set operations
+
+Given:
+
+```python
+a = {1, 2, 3, 4}
+b = {3, 4, 5, 6}
+```
+
+Union:
+
+```python
+print(a | b)
+print(a.union(b))
+```
+
+Intersection:
+
+```python
+print(a & b)
+print(a.intersection(b))
+```
+
+Difference:
+
+```python
+print(a - b)
+```
+
+Symmetric difference:
+
+```python
+print(a ^ b)
+```
+
+Subset:
+
+```python
+print({1, 2}.issubset(a))
+```
+
+Superset:
+
+```python
+print(a.issuperset({1, 2}))
+```
+
+Disjoint:
+
+```python
+print({1, 2}.isdisjoint({3, 4}))
+```
+
+## 11.4 Frozensets
+
+An immutable set.
+
+```python
+numbers = frozenset([1, 2, 3])
+```
+
+You cannot add or remove elements from a frozenset.
+
+---
+
+# 12. DICTIONARIES
+
+Dictionaries store information using key-value pairs.
+
+## 12.1 Creating dictionaries
+
+```python
+person = {
+    "name": "Nathan",
+    "age": 13,
+    "country": "Singapore"
+}
+```
+
+## 12.2 Accessing values
+
+```python
+print(person["name"])
+print(person["age"])
+```
+
+Using `.get()`:
+
+```python
+print(person.get("name"))
+print(person.get("height", "Unknown"))
+```
+
+`.get()` avoids a `KeyError` when the key does not exist.
+
+## 12.3 Changing values
+
+```python
+person["age"] = 14
+person["school"] = "BPGHS"
+```
+
+## 12.4 Dictionary methods
+
+| Method | Purpose |
+|---|---|
+| `.keys()` | Return dictionary keys |
+| `.values()` | Return dictionary values |
+| `.items()` | Return key-value pairs |
+| `.get(key)` | Safely retrieve value |
+| `.update()` | Add or update entries |
+| `.pop(key)` | Remove key and return value |
+| `.popitem()` | Remove last inserted pair |
+| `.clear()` | Empty dictionary |
+| `.copy()` | Shallow copy |
+| `.setdefault()` | Retrieve key or insert default |
+
+Examples:
+
+```python
+person = {
+    "name": "Nathan",
+    "age": 13
+}
+
+print(person.keys())
+print(person.values())
+print(person.items())
+```
+
+Update:
+
+```python
+person.update({
+    "age": 14,
+    "city": "Singapore"
+})
+```
+
+## 12.5 Looping through dictionaries
+
+Keys:
+
+```python
+for key in person:
+    print(key)
+```
+
+Values:
+
+```python
+for value in person.values():
+    print(value)
+```
+
+Both:
+
+```python
+for key, value in person.items():
+    print(key, value)
+```
+
+## 12.6 Nested dictionaries
+
+```python
+students = {
+    "student1": {
+        "name": "Alex",
+        "age": 15
+    },
+    "student2": {
+        "name": "Nathan",
+        "age": 13
+    }
+}
+
+print(students["student2"]["name"])
+```
+
+---
+
+# 13. FUNCTIONS
+
+Functions are reusable blocks of code.
+
+## 13.1 Creating functions
+
+Syntax:
+
+```python
+def function_name():
+    # Code
+    pass
+```
+
+Example:
+
+```python
+def greet():
+    print("Hello!")
+
+greet()
+```
+
+## 13.2 Function parameters
+
+```python
+def greet(name):
+    print(f"Hello, {name}!")
+
+greet("Nathan")
+```
+
+## 13.3 Multiple parameters
+
+```python
+def add(a, b):
+    print(a + b)
+
+add(10, 20)
+```
+
+## 13.4 Return values
+
+`return` sends a value back to the caller.
+
+```python
+def add(a, b):
+    return a + b
+
+result = add(10, 20)
+
+print(result)
+```
+
+Difference:
+
+- `print()` displays information.
+- `return` gives a value back to the calling code.
+
+## 13.5 Default parameters
+
+```python
+def greet(name="Guest"):
+    print(f"Hello {name}")
+
+greet()
+greet("Nathan")
+```
+
+## 13.6 Keyword arguments
+
+```python
+def introduce(name, age):
+    print(name, age)
+
+introduce(age=13, name="Nathan")
+```
+
+## 13.7 Positional arguments
+
+```python
+def subtract(a, b):
+    return a - b
+
+print(subtract(10, 3))
+```
+
+The argument order matters.
+
+## 13.8 *args
+
+Accepts any number of positional arguments.
+
+```python
+def add_all(*numbers):
+    return sum(numbers)
+
+print(add_all(1, 2, 3, 4, 5))
+```
+
+Inside the function, `numbers` is a tuple.
+
+## 13.9 **kwargs
+
+Accepts any number of keyword arguments.
+
+```python
+def show_info(**details):
+    for key, value in details.items():
+        print(key, value)
+
+show_info(name="Nathan", age=13, country="Singapore")
+```
+
+Inside the function, `details` is a dictionary.
+
+## 13.10 Combining arguments
+
+```python
+def example(a, b, *args, **kwargs):
+    print(a)
+    print(b)
+    print(args)
+    print(kwargs)
+
+example(1, 2, 3, 4, name="Nathan")
+```
+
+## 13.11 Unpacking arguments
+
+```python
+def add(a, b, c):
+    return a + b + c
+
+numbers = [1, 2, 3]
+
+print(add(*numbers))
+```
+
+Dictionary unpacking:
+
+```python
+def introduce(name, age):
+    print(name, age)
+
+data = {
+    "name": "Nathan",
+    "age": 13
+}
+
+introduce(**data)
+```
+
+## 13.12 Recursion
+
+A function calling itself.
+
+```python
+def factorial(n):
+    if n <= 1:
+        return 1
+
+    return n * factorial(n - 1)
+
+print(factorial(5))
+```
+
+Output:
+
+```text
+120
+```
+
+Always provide a base case to prevent infinite recursion.
+
+---
+
+# 14. LAMBDA FUNCTIONS
+
+Lambda functions are small anonymous functions.
+
+Syntax:
+
+```python
+lambda arguments: expression
+```
+
+Example:
+
+```python
+square = lambda x: x ** 2
+
+print(square(5))
+```
+
+Multiple arguments:
+
+```python
+add = lambda a, b: a + b
+
+print(add(5, 10))
+```
+
+Using lambda with `sorted()`:
+
+```python
+students = [
+    ("Alex", 80),
+    ("Nathan", 95),
+    ("John", 70)
+]
+
+students.sort(key=lambda student: student[1])
+
+print(students)
+```
+
+Lambda with `map()`:
+
+```python
+numbers = [1, 2, 3]
+
+result = list(map(lambda x: x * 2, numbers))
+
+print(result)
+```
+
+Lambda with `filter()`:
+
+```python
+numbers = [1, 2, 3, 4, 5, 6]
+
+result = list(filter(lambda x: x % 2 == 0, numbers))
+
+print(result)
+```
+
+Use normal `def` functions when logic becomes complicated.
+
+---
+
+# 15. COMPREHENSIONS
+
+Comprehensions create collections using concise syntax.
+
+## 15.1 List comprehensions
+
+Normal approach:
+
+```python
+squares = []
+
+for number in range(10):
+    squares.append(number ** 2)
+```
+
+Comprehension:
+
+```python
+squares = [number ** 2 for number in range(10)]
+```
+
+With conditions:
+
+```python
+even = [x for x in range(20) if x % 2 == 0]
+```
+
+With conditional expressions:
+
+```python
+labels = ["Even" if x % 2 == 0 else "Odd" for x in range(5)]
+```
+
+## 15.2 Dictionary comprehensions
+
+```python
+squares = {
+    x: x ** 2
+    for x in range(5)
+}
+```
+
+Output:
+
+```python
+{
+    0: 0,
+    1: 1,
+    2: 4,
+    3: 9,
+    4: 16
+}
+```
+
+## 15.3 Set comprehensions
+
+```python
+squares = {x ** 2 for x in range(10)}
+```
+
+## 15.4 Nested comprehensions
+
+```python
+matrix = [[x * y for x in range(3)] for y in range(3)]
+```
+
+## 15.5 Generator expressions
+
+```python
+numbers = (x ** 2 for x in range(10))
+
+for number in numbers:
+    print(number)
+```
+
+Generator expressions produce values as needed instead of immediately creating a complete list.
+
+---
+
+# 16. ERROR HANDLING AND EXCEPTIONS
+
+Errors can interrupt programs. Exception handling allows you to respond to them.
+
+## 16.1 try and except
+
+```python
+try:
+    number = int(input("Enter a number: "))
+    print(number)
+
+except ValueError:
+    print("Invalid number!")
+```
+
+## 16.2 Multiple exceptions
+
+```python
+try:
+    number = int(input("Enter number: "))
+    result = 10 / number
+
+except ValueError:
+    print("Please enter a valid integer.")
+
+except ZeroDivisionError:
+    print("Cannot divide by zero.")
+```
+
+## 16.3 Catching multiple exception types
+
+```python
+try:
+    result = 10 / int("0")
+
+except (ValueError, ZeroDivisionError):
+    print("An error occurred.")
+```
+
+## 16.4 Generic exception handling
+
+```python
+try:
+    print(10 / 0)
+
+except Exception as error:
+    print(f"Error: {error}")
+```
+
+Avoid catching every exception without a good reason.
+
+## 16.5 else
+
+Runs when no exception occurs.
+
+```python
+try:
+    number = int("100")
+
+except ValueError:
+    print("Invalid")
+
+else:
+    print("Conversion successful")
+```
+
+## 16.6 finally
+
+Always executes, whether an exception occurred or not.
+
+```python
+try:
+    print("Running")
+
+finally:
+    print("Cleanup complete")
+```
+
+## 16.7 raise
+
+Manually trigger an exception.
+
+```python
+age = -5
+
+if age < 0:
+    raise ValueError("Age cannot be negative")
+```
+
+## 16.8 Creating custom exceptions
+
+```python
+class LoginError(Exception):
+    pass
+
+
+def login(password):
+    if password != "1234":
+        raise LoginError("Incorrect password")
+
+
+try:
+    login("wrong")
+
+except LoginError as error:
+    print(error)
+```
+
+## 16.9 assert
+
+Checks whether a condition is true.
+
+```python
+age = 20
+
+assert age >= 0, "Age cannot be negative"
+```
+
+Assertions can be disabled with Python optimisation flags, so do not use them for essential input validation.
+
+---
+
+# 17. FILE HANDLING
+
+Python can create, read, modify and delete files.
+
+## 17.1 Opening files
+
+Syntax:
+
+```python
+open(filename, mode)
+```
+
+File modes:
+
+| Mode | Meaning |
+|---|---|
+| `r` | Read |
+| `w` | Write, overwrites existing contents |
+| `a` | Append |
+| `x` | Create, fails if already exists |
+| `b` | Binary mode |
+| `t` | Text mode |
+| `+` | Reading and writing |
+
+## 17.2 Reading files
+
+```python
+file = open("data.txt", "r")
+
+content = file.read()
+
+print(content)
+
+file.close()
+```
+
+Read one line:
+
+```python
+file = open("data.txt", "r")
+
+line = file.readline()
+
+print(line)
+
+file.close()
+```
+
+Read all lines:
+
+```python
+with open("data.txt", "r") as file:
+    lines = file.readlines()
+
+print(lines)
+```
+
+## 17.3 Writing files
+
+```python
+with open("data.txt", "w") as file:
+    file.write("Hello World")
+```
+
+Warning: `w` overwrites existing content.
+
+## 17.4 Appending files
+
+```python
+with open("data.txt", "a") as file:
+    file.write("\nNew line")
+```
+
+## 17.5 Writing multiple lines
+
+```python
+lines = ["Apple\n", "Banana\n", "Orange\n"]
+
+with open("fruits.txt", "w") as file:
+    file.writelines(lines)
+```
+
+## 17.6 Reading binary files
+
+Useful for images, audio and other binary data.
+
+```python
+with open("image.png", "rb") as file:
+    data = file.read()
+```
+
+## 17.7 Writing binary files
+
+```python
+with open("copy.png", "wb") as file:
+    file.write(data)
+```
+
+## 17.8 File positioning
+
+```python
+with open("data.txt", "r") as file:
+    print(file.tell())
+
+    file.seek(5)
+
+    print(file.read())
+```
+
+- `tell()` returns the current position.
+- `seek()` changes the position.
+
+## 17.9 Encoding
+
+```python
+with open("data.txt", "r", encoding="utf-8") as file:
+    content = file.read()
+```
+
+UTF-8 is a common encoding for text files.
+
+---
+
+# 18. MODULES AND IMPORTS
+
+Modules allow you to organise code and reuse existing functionality.
+
+## 18.1 Importing a module
+
+```python
+import math
+
+print(math.sqrt(25))
+```
+
+## 18.2 Importing specific functions
+
+```python
+from math import sqrt, pi
+
+print(sqrt(25))
+print(pi)
+```
+
+## 18.3 Import aliases
+
+```python
+import math as m
+
+print(m.sqrt(16))
+```
+
+## 18.4 Import everything
+
+```python
+from math import *
+```
+
+This is generally discouraged because it can create naming conflicts.
+
+## 18.5 Creating your own module
+
+Create `calculator.py`:
+
+```python
+def add(a, b):
+    return a + b
+
+def subtract(a, b):
+    return a - b
+```
+
+Create `main.py`:
+
+```python
+import calculator
+
+print(calculator.add(10, 5))
+```
+
+## 18.6 The main guard
+
+```python
+def main():
+    print("Program started")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+This ensures `main()` runs when the file is executed directly, but not when it is imported as a module.
+
+---
+
+# 19. OBJECT-ORIENTED PROGRAMMING (OOP)
+
+OOP organises programs around objects and classes.
+
+## 19.1 Classes
+
+A class is a blueprint for creating objects.
+
+```python
+class Person:
+    pass
+```
+
+Creating an object:
+
+```python
+person1 = Person()
+```
+
+## 19.2 Attributes
+
+Attributes store information about objects.
+
+```python
+class Person:
+    def __init__(self, name, age):
+        self.name = name
+        self.age = age
+
+
+person = Person("Nathan", 13)
+
+print(person.name)
+print(person.age)
+```
+
+## 19.3 Methods
+
+Methods are functions defined inside classes.
+
+```python
+class Person:
+    def __init__(self, name):
+        self.name = name
+
+    def greet(self):
+        print(f"Hello, I am {self.name}")
+
+
+person = Person("Nathan")
+
+person.greet()
+```
+
+## 19.4 The self parameter
+
+`self` refers to the current object.
+
+```python
+class Dog:
+    def __init__(self, name):
+        self.name = name
+
+    def bark(self):
+        print(self.name, "is barking")
+```
+
+## 19.5 Class attributes
+
+Shared by instances unless overridden.
+
+```python
+class Student:
+    school = "BPGHS"
+
+    def __init__(self, name):
+        self.name = name
+
+
+a = Student("Alex")
+b = Student("Nathan")
+
+print(a.school)
+print(b.school)
+```
+
+## 19.6 Instance attributes
+
+Belong to individual objects.
+
+```python
+class Player:
+    def __init__(self, health):
+        self.health = health
+
+
+player1 = Player(100)
+player2 = Player(50)
+```
+
+## 19.7 Instance methods
+
+Operate on an object using `self`.
+
+```python
+class Counter:
+    def __init__(self):
+        self.value = 0
+
+    def increment(self):
+        self.value += 1
+```
+
+## 19.8 Class methods
+
+Use `@classmethod` and receive the class as `cls`.
+
+```python
+class Person:
+    count = 0
+
+    def __init__(self):
+        Person.count += 1
+
+    @classmethod
+    def get_count(cls):
+        return cls.count
+
+
+Person()
+
+print(Person.get_count())
+```
+
+## 19.9 Static methods
+
+Do not automatically receive `self` or `cls`.
+
+```python
+class Calculator:
+    @staticmethod
+    def add(a, b):
+        return a + b
+
+
+print(Calculator.add(10, 20))
+```
+
+## 19.10 Encapsulation
+
+Encapsulation groups data and methods together and controls access through conventions and properties.
+
+Python naming conventions:
+
+```python
+class BankAccount:
+    def __init__(self, balance):
+        self.balance = balance
+        self._internal_code = "ABC"
+        self.__secret = "hidden"
+```
+
+- `balance`: public.
+- `_internal_code`: intended for internal use by convention.
+- `__secret`: name-mangled to reduce accidental access.
+
+Double underscores do not provide true security.
+
+## 19.11 Properties
+
+Properties allow methods to be accessed like attributes.
+
+```python
+class Person:
+    def __init__(self, age):
+        self._age = age
+
+    @property
+    def age(self):
+        return self._age
+
+    @age.setter
+    def age(self, value):
+        if value < 0:
+            raise ValueError("Invalid age")
+
+        self._age = value
+
+
+person = Person(13)
+
+print(person.age)
+
+person.age = 14
+```
+
+---
+
+# 20. INHERITANCE AND POLYMORPHISM
+
+## 20.1 Inheritance
+
+A class can inherit functionality from another class.
+
+```python
+class Animal:
+    def speak(self):
+        print("Animal sound")
+
+
+class Dog(Animal):
+    pass
+
+
+dog = Dog()
+dog.speak()
+```
+
+## 20.2 Overriding methods
+
+```python
+class Animal:
+    def speak(self):
+        print("Generic sound")
+
+
+class Dog(Animal):
+    def speak(self):
+        print("Woof!")
+
+
+dog = Dog()
+dog.speak()
+```
+
+## 20.3 super()
+
+Calls functionality from a parent class.
+
+```python
+class Animal:
+    def __init__(self, name):
+        self.name = name
+
+
+class Dog(Animal):
+    def __init__(self, name, breed):
+        super().__init__(name)
+        self.breed = breed
+
+
+dog = Dog("Buddy", "Golden Retriever")
+```
+
+## 20.4 Multiple inheritance
+
+A class can inherit from multiple parent classes.
+
+```python
+class Flyer:
+    def fly(self):
+        print("Flying")
+
+
+class Swimmer:
+    def swim(self):
+        print("Swimming")
+
+
+class Duck(Flyer, Swimmer):
+    pass
+
+
+duck = Duck()
+
+duck.fly()
+duck.swim()
+```
+
+## 20.5 Polymorphism
+
+Different objects can implement the same method differently.
+
+```python
+class Dog:
+    def speak(self):
+        print("Woof")
+
+
+class Cat:
+    def speak(self):
+        print("Meow")
+
+
+animals = [Dog(), Cat()]
+
+for animal in animals:
+    animal.speak()
+```
+
+## 20.6 Abstract classes
+
+Use the `abc` module to define interfaces that subclasses must implement.
+
+```python
+from abc import ABC, abstractmethod
+
+
+class Shape(ABC):
+    @abstractmethod
+    def area(self):
+        pass
+
+
+class Square(Shape):
+    def __init__(self, side):
+        self.side = side
+
+    def area(self):
+        return self.side ** 2
+
+
+square = Square(5)
+
+print(square.area())
+```
+
+## 20.7 Dataclasses
+
+Dataclasses automatically generate useful methods such as `__init__()` and `__repr__()`.
+
+```python
+from dataclasses import dataclass
+
+
+@dataclass
+class Student:
+    name: str
+    age: int
+
+
+student = Student("Nathan", 13)
+
+print(student)
+```
+
+---
+
+# 21. ADVANCED FUNCTIONS
+
+## 21.1 First-class functions
+
+Functions can be stored in variables and passed to other functions.
+
+```python
+def greet():
+    print("Hello")
+
+
+function = greet
+
+function()
+```
+
+## 21.2 Functions as arguments
+
+```python
+def greet():
+    return "Hello"
+
+
+def display(function):
+    print(function())
+
+
+display(greet)
+```
+
+## 21.3 Returning functions
+
+```python
+def outer():
+    def inner():
+        print("Inside inner function")
+
+    return inner
+
+
+function = outer()
+function()
+```
+
+## 21.4 Closures
+
+A closure remembers variables from its enclosing function.
+
+```python
+def multiplier(number):
+    def multiply(value):
+        return value * number
+
+    return multiply
+
+
+double = multiplier(2)
+
+print(double(10))
+```
+
+## 21.5 Nonlocal
+
+Changes a variable in the nearest enclosing function scope.
+
+```python
+def counter():
+    count = 0
+
+    def increment():
+        nonlocal count
+        count += 1
+        return count
+
+    return increment
+
+
+c = counter()
+
+print(c())
+print(c())
+```
+
+## 21.6 Global
+
+Access or modify a module-level variable.
+
+```python
+count = 0
+
+
+def increment():
+    global count
+    count += 1
+
+
+increment()
+
+print(count)
+```
+
+Use global variables sparingly.
+
+---
+
+# 22. ITERATORS AND GENERATORS
+
+## 22.1 Iterables
+
+An iterable is an object that can be looped over.
+
+Examples:
+- Lists
+- Tuples
+- Strings
+- Dictionaries
+- Sets
+- Files
+- Ranges
+
+```python
+for character in "Python":
+    print(character)
+```
+
+## 22.2 Iterators
+
+An iterator produces values one at a time.
+
+```python
+numbers = [1, 2, 3]
+
+iterator = iter(numbers)
+
+print(next(iterator))
+print(next(iterator))
+print(next(iterator))
+```
+
+Calling `next()` after the iterator is exhausted raises `StopIteration`.
+
+## 22.3 Creating custom iterators
+
+```python
+class Counter:
+    def __init__(self, limit):
+        self.current = 0
+        self.limit = limit
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.current >= self.limit:
+            raise StopIteration
+
+        self.current += 1
+        return self.current
+
+
+for number in Counter(5):
+    print(number)
+```
+
+## 22.4 Generators
+
+Generators use `yield` to produce values one at a time.
+
+```python
+def generate_numbers():
+    yield 1
+    yield 2
+    yield 3
+
+
+for number in generate_numbers():
+    print(number)
+```
+
+## 22.5 Generator with a loop
+
+```python
+def count_to(limit):
+    for number in range(1, limit + 1):
+        yield number
+
+
+for number in count_to(5):
+    print(number)
+```
+
+## 22.6 yield from
+
+Delegates generation to another iterable.
+
+```python
+def numbers():
+    yield from [1, 2, 3]
+
+
+print(list(numbers()))
+```
+
+Generators are useful for large datasets because they avoid storing every generated value in memory.
+
+---
+
+# 23. DECORATORS
+
+Decorators modify or wrap the behaviour of functions.
+
+## 23.1 Basic decorator
+
+```python
+def decorator(function):
+    def wrapper():
+        print("Before function")
+        function()
+        print("After function")
+
+    return wrapper
+
+
+@decorator
+def greet():
+    print("Hello")
+
+
+greet()
+```
+
+Output:
+
+```text
+Before function
+Hello
+After function
+```
+
+## 23.2 Decorator with arguments
+
+```python
+from functools import wraps
+
+
+def decorator(function):
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        print("Running function")
+
+        return function(*args, **kwargs)
+
+    return wrapper
+
+
+@decorator
+def add(a, b):
+    return a + b
+
+
+print(add(10, 20))
+```
+
+## 23.3 Decorators with parameters
+
+```python
+def repeat(times):
+    def decorator(function):
+        def wrapper(*args, **kwargs):
+            for _ in range(times):
+                function(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+@repeat(3)
+def greet():
+    print("Hello")
+
+
+greet()
+```
+
+Common uses:
+- Logging
+- Timing functions
+- Authentication checks
+- Caching
+- Access control
+- Validation
+
+---
+
+# 24. CONTEXT MANAGERS
+
+Context managers manage resources and automatically perform cleanup.
+
+## 24.1 with statement
+
+```python
+with open("data.txt", "r") as file:
+    content = file.read()
+```
+
+The file is automatically closed when the block finishes.
+
+## 24.2 Creating a context manager
+
+```python
+class MyContext:
+    def __enter__(self):
+        print("Entering")
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        print("Exiting")
+        return False
+
+
+with MyContext():
+    print("Inside context")
+```
+
+## 24.3 Using contextlib
+
+```python
+from contextlib import contextmanager
+
+
+@contextmanager
+def my_context():
+    print("Start")
+
+    try:
+        yield
+    finally:
+        print("End")
+
+
+with my_context():
+    print("Working")
+```
+
+---
+
+# 25. REGULAR EXPRESSIONS
+
+Regular expressions (regex) are used to search, match and manipulate text patterns.
+
+Import:
+
+```python
+import re
+```
+
+## 25.1 Common regex symbols
+
+| Symbol | Meaning |
+|---|---|
+| `.` | Any character except newline by default |
+| `^` | Beginning of string/line |
+| `$` | End of string/line |
+| `*` | Zero or more |
+| `+` | One or more |
+| `?` | Zero or one |
+| `{n}` | Exactly n repetitions |
+| `{n,m}` | Between n and m repetitions |
+| `[]` | Character set |
+| `[^]` | Negated character set |
+| `\d` | Digit |
+| `\D` | Non-digit |
+| `\w` | Word character |
+| `\W` | Non-word character |
+| `\s` | Whitespace |
+| `\S` | Non-whitespace |
+| `()` | Capturing group |
+| `|` | OR |
+| `\b` | Word boundary |
+
+## 25.2 re.search()
+
+Finds the first matching pattern.
+
+```python
+import re
+
+text = "My number is 12345"
+
+result = re.search(r"\d+", text)
+
+if result:
+    print(result.group())
+```
+
+## 25.3 re.match()
+
+Checks for a match at the beginning of a string.
+
+```python
+result = re.match(r"Hello", "Hello World")
+
+print(result.group() if result else "No match")
+```
+
+## 25.4 re.findall()
+
+Returns all matches.
+
+```python
+text = "12 apples and 25 oranges"
+
+numbers = re.findall(r"\d+", text)
+
+print(numbers)
+```
+
+## 25.5 re.sub()
+
+Replaces matching text.
+
+```python
+text = "Hello 123"
+
+result = re.sub(r"\d+", "456", text)
+
+print(result)
+```
+
+## 25.6 re.split()
+
+Splits using a pattern.
+
+```python
+text = "apple,banana;orange"
+
+result = re.split(r"[,;]", text)
+
+print(result)
+```
+
+## 25.7 Compiling regex
+
+```python
+pattern = re.compile(r"\d+")
+
+print(pattern.findall("123 abc 456"))
+```
+
+---
+
+# 26. WORKING WITH DATES AND TIME
+
+Use the `datetime` module.
+
+```python
+import datetime
+```
+
+## 26.1 Current date and time
+
+```python
+now = datetime.datetime.now()
+
+print(now)
+```
+
+## 26.2 Current date
+
+```python
+today = datetime.date.today()
+
+print(today)
+```
+
+## 26.3 Creating dates
+
+```python
+date = datetime.date(2026, 11, 7)
+
+print(date)
+```
+
+## 26.4 Creating times
+
+```python
+time = datetime.time(14, 30, 0)
+
+print(time)
+```
+
+## 26.5 Formatting dates
+
+```python
+now = datetime.datetime.now()
+
+print(now.strftime("%d/%m/%Y"))
+print(now.strftime("%H:%M:%S"))
+print(now.strftime("%A"))
+```
+
+Common formatting codes:
+
+| Code | Meaning |
+|---|---|
+| `%Y` | Four-digit year |
+| `%y` | Two-digit year |
+| `%m` | Month number |
+| `%B` | Full month name |
+| `%b` | Abbreviated month |
+| `%d` | Day |
+| `%A` | Full weekday |
+| `%a` | Abbreviated weekday |
+| `%H` | 24-hour clock |
+| `%I` | 12-hour clock |
+| `%M` | Minute |
+| `%S` | Second |
+| `%p` | AM/PM |
+
+## 26.6 Parsing dates
+
+```python
+date_string = "07/11/2026"
+
+date = datetime.datetime.strptime(
+    date_string,
+    "%d/%m/%Y"
+)
+
+print(date)
+```
+
+## 26.7 Time differences
+
+```python
+from datetime import datetime, timedelta
+
+now = datetime.now()
+
+tomorrow = now + timedelta(days=1)
+
+print(tomorrow)
+```
+
+Subtracting dates:
+
+```python
+difference = tomorrow - now
+
+print(difference.days)
+```
+
+---
+
+# 27. MATHEMATICAL OPERATIONS
+
+## 27.1 Built-in mathematical functions
+
+```python
+abs(-10)       # 10
+round(3.14159, 2)  # 3.14
+pow(2, 3)      # 8
+sum([1, 2, 3]) # 6
+min([1, 2, 3]) # 1
+max([1, 2, 3]) # 3
+```
+
+## 27.2 Math module
+
+```python
+import math
+```
+
+Common functions:
+
+| Function | Purpose |
+|---|---|
+| `math.sqrt(x)` | Square root |
+| `math.pow(x, y)` | Power |
+| `math.floor(x)` | Round down |
+| `math.ceil(x)` | Round up |
+| `math.factorial(x)` | Factorial |
+| `math.gcd(a, b)` | Greatest common divisor |
+| `math.lcm(a, b)` | Least common multiple |
+| `math.fabs(x)` | Absolute floating-point value |
+| `math.trunc(x)` | Remove decimal portion |
+| `math.sin(x)` | Sine |
+| `math.cos(x)` | Cosine |
+| `math.tan(x)` | Tangent |
+| `math.log(x)` | Natural logarithm |
+| `math.log10(x)` | Base-10 logarithm |
+| `math.exp(x)` | e raised to x |
+| `math.isqrt(x)` | Integer square root |
+| `math.isfinite(x)` | Check finite number |
+| `math.isinf(x)` | Check infinity |
+| `math.isnan(x)` | Check NaN |
+
+Examples:
+
+```python
+import math
+
+print(math.sqrt(144))
+print(math.ceil(4.2))
+print(math.floor(4.9))
+print(math.factorial(5))
+print(math.gcd(24, 36))
+```
+
+Constants:
+
+```python
+print(math.pi)
+print(math.e)
+print(math.tau)
+```
+
+---
+
+# 28. RANDOMISATION
+
+Use the `random` module.
+
+```python
+import random
+```
+
+## 28.1 Random integer
+
+```python
+number = random.randint(1, 100)
+```
+
+Both endpoints are included.
+
+## 28.2 Random floating-point number
+
+```python
+number = random.random()
+```
+
+Returns a value from 0.0 up to, but not including, 1.0.
+
+## 28.3 Random choice
+
+```python
+items = ["Apple", "Banana", "Orange"]
+
+print(random.choice(items))
+```
+
+## 28.4 Random sample
+
+Select multiple unique elements:
+
+```python
+numbers = random.sample(range(100), 5)
+
+print(numbers)
+```
+
+## 28.5 Shuffle
+
+```python
+cards = [1, 2, 3, 4, 5]
+
+random.shuffle(cards)
+
+print(cards)
+```
+
+## 28.6 Random seed
+
+```python
+random.seed(42)
+
+print(random.randint(1, 100))
+```
+
+A fixed seed makes pseudorandom results reproducible.
+
+For passwords, tokens and security-sensitive random values, use `secrets` instead:
+
+```python
+import secrets
+
+token = secrets.token_hex(16)
+password_number = secrets.randbelow(100)
+```
+
+---
+
+# 29. WORKING WITH JSON
+
+JSON is a common format for storing and transferring data.
+
+Import:
+
+```python
+import json
+```
+
+## 29.1 Python dictionary to JSON string
+
+```python
+data = {
+    "name": "Nathan",
+    "age": 13
+}
+
+json_data = json.dumps(data)
+
+print(json_data)
+```
+
+## 29.2 Pretty JSON
+
+```python
+json_data = json.dumps(data, indent=4)
+
+print(json_data)
+```
+
+## 29.3 JSON string to Python object
+
+```python
+json_string = '{"name": "Nathan", "age": 13}'
+
+data = json.loads(json_string)
+
+print(data["name"])
+```
+
+## 29.4 Saving JSON to a file
+
+```python
+with open("data.json", "w", encoding="utf-8") as file:
+    json.dump(data, file, indent=4)
+```
+
+## 29.5 Loading JSON from a file
+
+```python
+with open("data.json", "r", encoding="utf-8") as file:
+    data = json.load(file)
+
+print(data)
+```
+
+Difference:
+
+- `dump()` writes JSON into a file.
+- `dumps()` creates a JSON string.
+- `load()` reads JSON from a file.
+- `loads()` reads JSON from a string.
+
+---
+
+# 30. WORKING WITH CSV
+
+CSV stands for Comma-Separated Values.
+
+Import:
+
+```python
+import csv
+```
+
+## 30.1 Reading CSV
+
+```python
+with open("students.csv", "r", newline="", encoding="utf-8") as file:
+    reader = csv.reader(file)
+
+    for row in reader:
+        print(row)
+```
+
+## 30.2 Writing CSV
+
+```python
+with open("students.csv", "w", newline="", encoding="utf-8") as file:
+    writer = csv.writer(file)
+
+    writer.writerow(["Name", "Age"])
+    writer.writerow(["Nathan", 13])
+    writer.writerow(["Alex", 15])
+```
+
+## 30.3 Dictionary-based CSV
+
+```python
+with open("students.csv", "w", newline="", encoding="utf-8") as file:
+    fields = ["name", "age"]
+
+    writer = csv.DictWriter(file, fieldnames=fields)
+
+    writer.writeheader()
+
+    writer.writerow({
+        "name": "Nathan",
+        "age": 13
+    })
+```
+
+Reading dictionaries:
+
+```python
+with open("students.csv", "r", newline="", encoding="utf-8") as file:
+    reader = csv.DictReader(file)
+
+    for row in reader:
+        print(row["name"])
+```
+
+---
+
+# 31. OPERATING SYSTEM INTERACTION
+
+The `os` module interacts with the operating system.
+
+```python
+import os
+```
+
+## 31.1 Current directory
+
+```python
+print(os.getcwd())
+```
+
+## 31.2 Change directory
+
+```python
+os.chdir("C:/Users/Nathan/Documents")
+```
+
+## 31.3 List directory contents
+
+```python
+files = os.listdir(".")
+
+print(files)
+```
+
+## 31.4 Create directory
+
+```python
+os.mkdir("NewFolder")
+```
+
+Create nested directories:
+
+```python
+os.makedirs("Folder/Subfolder", exist_ok=True)
+```
+
+## 31.5 Delete directories
+
+```python
+os.rmdir("NewFolder")
+```
+
+For non-empty directories:
+
+```python
+import shutil
+
+shutil.rmtree("Folder")
+```
+
+Be careful: `rmtree()` permanently removes the directory tree.
+
+## 31.6 Rename files
+
+```python
+os.rename("old.txt", "new.txt")
+```
+
+## 31.7 Delete files
+
+```python
+os.remove("file.txt")
+```
+
+## 31.8 Environment variables
+
+```python
+print(os.environ.get("PATH"))
+```
+
+Set an environment variable for the current process:
+
+```python
+os.environ["MY_VARIABLE"] = "Hello"
+```
+
+## 31.9 Paths
+
+Prefer `pathlib` for modern path handling.
+
+```python
+from pathlib import Path
+
+path = Path("Documents") / "data.txt"
+
+print(path)
+print(path.exists())
+print(path.name)
+print(path.stem)
+print(path.suffix)
+print(path.parent)
+```
+
+Creating a folder:
+
+```python
+Path("NewFolder").mkdir(exist_ok=True)
+```
+
+Reading a text file:
+
+```python
+path = Path("data.txt")
+
+content = path.read_text(encoding="utf-8")
+```
+
+Writing a text file:
+
+```python
+path.write_text("Hello", encoding="utf-8")
+```
+
+---
+
+# 32. SYSTEM COMMANDS AND SUBPROCESS
+
+Python can execute external programs using `subprocess`.
+
+## 32.1 Running a system command
+
+```python
+import subprocess
+
+subprocess.run(["python", "--version"])
+```
+
+## 32.2 Capturing output
+
+```python
+result = subprocess.run(
+    ["python", "--version"],
+    capture_output=True,
+    text=True
+)
+
+print(result.stdout)
+print(result.stderr)
+```
+
+## 32.3 Checking exit status
+
+```python
+result = subprocess.run(["python", "--version"])
+
+print(result.returncode)
+```
+
+Usually, `0` means success.
+
+## 32.4 Raising errors on failure
+
+```python
+subprocess.run(
+    ["python", "--version"],
+    check=True
+)
+```
+
+## 32.5 Running a process and waiting
+
+```python
+process = subprocess.Popen(["python", "--version"])
+
+process.wait()
+```
+
+Use argument lists rather than constructing shell command strings whenever possible. Avoid `shell=True` with untrusted input.
+
+---
+
+# 33. NETWORKING AND INTERNET ACCESS
+
+Python can communicate with servers and access online resources.
+
+## 33.1 urllib
+
+Built-in module:
+
+```python
+from urllib.request import urlopen
+
+with urlopen("https://example.com") as response:
+    html = response.read().decode("utf-8")
+
+print(html)
+```
+
+## 33.2 Requests library
+
+Install:
+
+```bash
+pip install requests
+```
+
+GET request:
+
+```python
+import requests
+
+response = requests.get("https://example.com", timeout=10)
+
+print(response.status_code)
+print(response.text)
+```
+
+JSON API request:
+
+```python
+response = requests.get(
+    "https://api.github.com",
+    timeout=10
+)
+
+data = response.json()
+
+print(data)
+```
+
+POST request:
+
+```python
+response = requests.post(
+    "https://httpbin.org/post",
+    json={"name": "Nathan"},
+    timeout=10
+)
+
+print(response.status_code)
+```
+
+HTTP methods:
+
+| Method | Purpose |
+|---|---|
+| GET | Retrieve information |
+| POST | Submit information |
+| PUT | Replace a resource |
+| PATCH | Partially update a resource |
+| DELETE | Delete a resource |
+| HEAD | Retrieve response headers |
+| OPTIONS | Check supported operations |
+
+## 33.3 Basic socket programming
+
+```python
+import socket
+
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+client.connect(("example.com", 80))
+
+client.sendall(
+    b"GET / HTTP/1.1\r\nHost: example.com\r\nConnection: close\r\n\r\n"
+)
+
+response = client.recv(4096)
+
+print(response.decode(errors="replace"))
+
+client.close()
+```
+
+Sockets are lower-level networking tools. Production applications should also handle timeouts, connection errors and partial reads.
+
+---
+
+# 34. MULTITHREADING AND MULTIPROCESSING
+
+These techniques allow programs to perform multiple tasks.
+
+## 34.1 Threading
+
+Useful for I/O-bound tasks.
+
+```python
+import threading
+
+
+def task():
+    print("Task running")
+
+
+thread = threading.Thread(target=task)
+
+thread.start()
+thread.join()
+
+print("Finished")
+```
+
+## 34.2 Multiple threads
+
+```python
+import threading
+import time
+
+
+def worker(number):
+    print(f"Worker {number} started")
+    time.sleep(1)
+    print(f"Worker {number} finished")
+
+
+threads = []
+
+for i in range(5):
+    thread = threading.Thread(target=worker, args=(i,))
+    threads.append(thread)
+    thread.start()
+
+for thread in threads:
+    thread.join()
+```
+
+## 34.3 Locks
+
+Locks prevent multiple threads from modifying shared data simultaneously.
+
+```python
+import threading
+
+lock = threading.Lock()
+
+counter = 0
+
+
+def increment():
+    global counter
+
+    for _ in range(1000):
+        with lock:
+            counter += 1
+```
+
+## 34.4 Multiprocessing
+
+Useful for CPU-intensive work.
+
+```python
+from multiprocessing import Process
+
+
+def task():
+    print("Process running")
+
+
+if __name__ == "__main__":
+    process = Process(target=task)
+
+    process.start()
+    process.join()
+```
+
+On platforms that use process spawning, including Windows, protect process creation with the main guard.
+
+## 34.5 ThreadPoolExecutor
+
+```python
+from concurrent.futures import ThreadPoolExecutor
+
+
+def square(number):
+    return number ** 2
+
+
+with ThreadPoolExecutor(max_workers=4) as executor:
+    results = list(executor.map(square, range(10)))
+
+print(results)
+```
+
+## 34.6 ProcessPoolExecutor
+
+```python
+from concurrent.futures import ProcessPoolExecutor
+
+
+def square(number):
+    return number ** 2
+
+
+if __name__ == "__main__":
+    with ProcessPoolExecutor() as executor:
+        results = list(executor.map(square, range(10)))
+
+    print(results)
+```
+
+---
+
+# 35. ASYNCHRONOUS PROGRAMMING
+
+Async programming allows a program to handle other tasks while waiting for operations to finish.
+
+Use the `asyncio` module.
+
+## 35.1 async and await
+
+```python
+import asyncio
+
+
+async def greet():
+    print("Hello")
+
+
+asyncio.run(greet())
+```
+
+## 35.2 Sleeping asynchronously
+
+```python
+import asyncio
+
+
+async def task():
+    print("Starting")
+
+    await asyncio.sleep(2)
+
+    print("Finished")
+
+
+asyncio.run(task())
+```
+
+Unlike `time.sleep()`, `asyncio.sleep()` allows other asynchronous tasks to run.
+
+## 35.3 Running multiple tasks
+
+```python
+import asyncio
+
+
+async def task(number):
+    print(f"Task {number} started")
+
+    await asyncio.sleep(2)
+
+    print(f"Task {number} completed")
+
+
+async def main():
+    await asyncio.gather(
+        task(1),
+        task(2),
+        task(3)
+    )
+
+
+asyncio.run(main())
+```
+
+## 35.4 Creating tasks
+
+```python
+async def main():
+    task1 = asyncio.create_task(task(1))
+    task2 = asyncio.create_task(task(2))
+
+    await task1
+    await task2
+```
+
+Async programming is especially useful for network requests, web servers and other I/O-heavy applications.
+
+---
+
+# 36. TYPE HINTS
+
+Type hints describe the expected types of variables, parameters and return values.
+
+Python does not generally enforce these annotations at runtime.
+
+## 36.1 Basic type hints
+
+```python
+name: str = "Nathan"
+age: int = 13
+height: float = 1.65
+active: bool = True
+```
+
+## 36.2 Function type hints
+
+```python
+def add(a: int, b: int) -> int:
+    return a + b
+```
+
+## 36.3 Collection type hints
+
+```python
+numbers: list[int] = [1, 2, 3]
+
+names: list[str] = ["Alex", "Nathan"]
+
+scores: dict[str, int] = {
+    "Nathan": 95
+}
+```
+
+## 36.4 Optional values
+
+Python 3.10+:
+
+```python
+def find_user(name: str) -> str | None:
+    if name == "Nathan":
+        return "Found"
+
+    return None
+```
+
+## 36.5 Union types
+
+```python
+def display(value: int | str):
+    print(value)
+```
+
+## 36.6 Type aliases
+
+```python
+Coordinates = tuple[float, float]
+
+position: Coordinates = (10.5, 20.3)
+```
+
+## 36.7 Typed dictionaries
+
+```python
+from typing import TypedDict
+
+
+class Student(TypedDict):
+    name: str
+    age: int
+
+
+student: Student = {
+    "name": "Nathan",
+    "age": 13
+}
+```
+
+## 36.8 Generic types
+
+```python
+from typing import TypeVar
+
+T = TypeVar("T")
+
+
+def first(items: list[T]) -> T:
+    return items[0]
+```
+
+---
+
+# 37. DEBUGGING AND TESTING
+
+## 37.1 print debugging
+
+```python
+number = 10
+
+print("DEBUG:", number)
+```
+
+## 37.2 Using breakpoint()
+
+```python
+number = 10
+
+breakpoint()
+
+print(number)
+```
+
+Python enters the debugger at that point.
+
+## 37.3 Using pdb
+
+```python
+import pdb
+
+pdb.set_trace()
+```
+
+Useful debugger commands:
+
+| Command | Purpose |
+|---|---|
+| `n` | Next line |
+| `s` | Step into |
+| `c` | Continue |
+| `l` | Show source |
+| `p variable` | Print variable |
+| `q` | Quit debugger |
+| `b` | Set breakpoint |
+
+## 37.4 Logging
+
+Use the `logging` module rather than excessive debug prints.
+
+```python
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+
+logging.debug("Debug message")
+logging.info("Information")
+logging.warning("Warning")
+logging.error("Error")
+logging.critical("Critical error")
+```
+
+Logging levels:
+
+1. DEBUG
+2. INFO
+3. WARNING
+4. ERROR
+5. CRITICAL
+
+## 37.5 Unit testing
+
+```python
+import unittest
+
+
+def add(a, b):
+    return a + b
+
+
+class TestCalculator(unittest.TestCase):
+
+    def test_add(self):
+        self.assertEqual(add(2, 3), 5)
+
+    def test_negative(self):
+        self.assertEqual(add(-2, 2), 0)
+
+
+if __name__ == "__main__":
+    unittest.main()
+```
+
+## 37.6 Common unittest assertions
+
+| Assertion | Purpose |
+|---|---|
+| `assertEqual(a, b)` | Values equal |
+| `assertNotEqual(a, b)` | Values differ |
+| `assertTrue(x)` | Condition true |
+| `assertFalse(x)` | Condition false |
+| `assertIsNone(x)` | Value is None |
+| `assertIn(a, b)` | Value exists |
+| `assertRaises(Error)` | Exception expected |
+| `assertGreater(a, b)` | First value greater |
+| `assertLess(a, b)` | First value smaller |
+
+## 37.7 pytest
+
+Install:
+
+```bash
+pip install pytest
+```
+
+Example:
+
+```python
+def add(a, b):
+    return a + b
+
+
+def test_add():
+    assert add(2, 3) == 5
+```
+
+Run:
+
+```bash
+pytest
+```
+
+---
+
+# 38. VIRTUAL ENVIRONMENTS AND PIP
+
+Virtual environments keep project dependencies separate.
+
+## 38.1 Checking Python version
+
+```bash
+python --version
+```
+
+Depending on your system:
+
+```bash
+python3 --version
+```
+
+## 38.2 Installing packages
+
+```bash
+pip install requests
+```
+
+Or:
+
+```bash
+python -m pip install requests
+```
+
+## 38.3 Updating packages
+
+```bash
+python -m pip install --upgrade requests
+```
+
+## 38.4 Uninstalling packages
+
+```bash
+pip uninstall requests
+```
+
+## 38.5 Listing installed packages
+
+```bash
+pip list
+```
+
+## 38.6 Package information
+
+```bash
+pip show requests
+```
+
+## 38.7 Saving dependencies
+
+```bash
+pip freeze > requirements.txt
+```
+
+## 38.8 Installing dependencies from a file
+
+```bash
+pip install -r requirements.txt
+```
+
+## 38.9 Creating a virtual environment
+
+```bash
+python -m venv venv
+```
+
+## 38.10 Activating it
+
+Windows CMD:
+
+```bash
+venv\Scripts\activate
+```
+
+Windows PowerShell:
+
+```powershell
+.\venv\Scripts\Activate.ps1
+```
+
+Linux/macOS:
+
+```bash
+source venv/bin/activate
+```
+
+## 38.11 Deactivating
+
+```bash
+deactivate
+```
+
+---
+
+# 39. USEFUL BUILT-IN FUNCTIONS
+
+Python includes many useful functions without requiring additional imports.
+
+| Function | Purpose | Example |
+|---|---|---|
+| `print()` | Display output | `print("Hello")` |
+| `input()` | Receive input | `input("Name: ")` |
+| `len()` | Get length | `len("Python")` |
+| `type()` | Check type | `type(10)` |
+| `isinstance()` | Check instance type | `isinstance(10, int)` |
+| `int()` | Convert to integer | `int("10")` |
+| `float()` | Convert to float | `float("3.5")` |
+| `str()` | Convert to string | `str(10)` |
+| `bool()` | Convert to Boolean | `bool(1)` |
+| `list()` | Create list | `list("abc")` |
+| `tuple()` | Create tuple | `tuple([1, 2])` |
+| `set()` | Create set | `set([1, 1, 2])` |
+| `dict()` | Create dictionary | `dict(a=1)` |
+| `range()` | Generate integer sequence | `range(10)` |
+| `enumerate()` | Generate index-value pairs | `enumerate(["a","b"])` |
+| `zip()` | Combine iterables | `zip(a, b)` |
+| `sorted()` | Return sorted list | `sorted([3,1,2])` |
+| `reversed()` | Reverse iterator | `reversed([1,2,3])` |
+| `sum()` | Add values | `sum([1,2,3])` |
+| `min()` | Minimum | `min([1,2,3])` |
+| `max()` | Maximum | `max([1,2,3])` |
+| `abs()` | Absolute value | `abs(-5)` |
+| `round()` | Round number | `round(3.14, 1)` |
+| `pow()` | Exponentiation | `pow(2, 3)` |
+| `divmod()` | Quotient and remainder | `divmod(10, 3)` |
+| `all()` | All values truthy | `all([True, True])` |
+| `any()` | At least one truthy | `any([False, True])` |
+| `map()` | Transform iterable | `map(str, [1,2])` |
+| `filter()` | Filter iterable | `filter(bool, values)` |
+| `iter()` | Get iterator | `iter([1,2])` |
+| `next()` | Get next iterator value | `next(iterator)` |
+| `callable()` | Check if callable | `callable(print)` |
+| `getattr()` | Retrieve attribute | `getattr(obj, "name")` |
+| `setattr()` | Set attribute | `setattr(obj, "age", 13)` |
+| `hasattr()` | Check attribute | `hasattr(obj, "name")` |
+| `delattr()` | Delete attribute | `delattr(obj, "name")` |
+| `dir()` | List available names | `dir(str)` |
+| `help()` | Show documentation | `help(list)` |
+| `id()` | Get object identity | `id(variable)` |
+| `hash()` | Calculate hash | `hash("hello")` |
+| `repr()` | Developer-oriented representation | `repr("hello")` |
+| `format()` | Format value | `format(3.14, ".2f")` |
+| `chr()` | Unicode code to character | `chr(65)` |
+| `ord()` | Character to Unicode code | `ord("A")` |
+| `bin()` | Binary representation | `bin(10)` |
+| `oct()` | Octal representation | `oct(10)` |
+| `hex()` | Hexadecimal representation | `hex(255)` |
+| `ascii()` | ASCII-escaped representation | `ascii("é")` |
+| `bytes()` | Create immutable bytes | `bytes([65, 66])` |
+| `bytearray()` | Mutable byte sequence | `bytearray([65,66])` |
+| `memoryview()` | View binary data | `memoryview(b"abc")` |
+| `open()` | Open file | `open("data.txt")` |
+| `eval()` | Evaluate expression | `eval("2 + 2")` |
+| `exec()` | Execute Python code | `exec("print(2)")` |
+| `compile()` | Compile source code | `compile("2+2", "<string>", "eval")` |
+| `globals()` | Global namespace | `globals()` |
+| `locals()` | Local namespace | `locals()` |
+| `vars()` | Object namespace dictionary | `vars(obj)` |
+| `super()` | Access parent-class functionality | `super()` |
+| `property()` | Create managed property | `property()` |
+| `staticmethod()` | Create static method | `staticmethod(func)` |
+| `classmethod()` | Create class method | `classmethod(func)` |
+| `object()` | Create base object | `object()` |
+| `slice()` | Create slicing object | `slice(1, 5)` |
+| `breakpoint()` | Start debugger | `breakpoint()` |
+
+**Security warning:** Never use `eval()` or `exec()` with untrusted input. They can execute arbitrary Python code.
+
+---
+
+# 40. COMMON STANDARD LIBRARIES
+
+These are included with Python and do not normally require pip installation.
+
+## Mathematics and calculations
+
+| Library | Purpose |
+|---|---|
+| `math` | Mathematical functions |
+| `cmath` | Complex-number mathematics |
+| `statistics` | Statistical calculations |
+| `decimal` | Accurate decimal arithmetic |
+| `fractions` | Fraction calculations |
+| `random` | Pseudorandom values |
+| `secrets` | Security-sensitive random values |
+
+Example:
+
+```python
+from statistics import mean, median, mode
+
+numbers = [10, 20, 20, 30, 40]
+
+print(mean(numbers))
+print(median(numbers))
+print(mode(numbers))
+```
+
+## File and data management
+
+| Library | Purpose |
+|---|---|
+| `os` | Operating system interaction |
+| `pathlib` | Filesystem paths |
+| `shutil` | File and directory operations |
+| `glob` | File pattern matching |
+| `tempfile` | Temporary files |
+| `json` | JSON processing |
+| `csv` | CSV processing |
+| `pickle` | Python object serialisation |
+| `sqlite3` | SQLite database |
+| `configparser` | Configuration files |
+| `zipfile` | ZIP archives |
+| `tarfile` | TAR archives |
+| `hashlib` | Cryptographic hashes |
+| `hmac` | Message authentication |
+| `base64` | Base64 encoding |
+
+## System and development
+
+| Library | Purpose |
+|---|---|
+| `sys` | Python interpreter information |
+| `platform` | Operating system information |
+| `subprocess` | External processes |
+| `argparse` | Command-line arguments |
+| `logging` | Logging |
+| `traceback` | Error tracebacks |
+| `inspect` | Inspect Python objects |
+| `ast` | Parse Python syntax |
+| `dis` | Python bytecode inspection |
+| `gc` | Garbage collector |
+| `timeit` | Performance measurement |
+| `profile` | Performance profiling |
+| `cProfile` | Deterministic profiling |
+
+Example:
+
+```python
+import platform
+
+print(platform.system())
+print(platform.release())
+print(platform.python_version())
+```
+
+## Internet and communication
+
+| Library | Purpose |
+|---|---|
+| `socket` | Network communication |
+| `ssl` | TLS/SSL support |
+| `urllib` | URL handling |
+| `http` | HTTP functionality |
+| `email` | Email handling |
+| `smtplib` | Sending email using SMTP |
+| `ftplib` | FTP client |
+| `asyncio` | Asynchronous programming |
+
+## User interfaces
+
+| Library | Purpose |
+|---|---|
+| `tkinter` | Desktop graphical interfaces |
+| `turtle` | Drawing and graphics |
+| `curses` | Terminal interfaces on supported platforms |
+
+Example Tkinter application:
+
+```python
+import tkinter as tk
+
+root = tk.Tk()
+
+root.title("My Application")
+root.geometry("400x300")
+
+label = tk.Label(root, text="Hello Python!")
+label.pack()
+
+root.mainloop()
+```
+
+## Text processing
+
+| Library | Purpose |
+|---|---|
+| `re` | Regular expressions |
+| `string` | String constants and helpers |
+| `textwrap` | Format paragraphs |
+| `difflib` | Compare text |
+| `unicodedata` | Unicode information |
+
+## Dates and scheduling
+
+| Library | Purpose |
+|---|---|
+| `datetime` | Dates and times |
+| `time` | Time functions |
+| `calendar` | Calendar calculations |
+| `zoneinfo` | Time zones |
+| `sched` | Event scheduling |
+
+## Data structures and utilities
+
+| Library | Purpose |
+|---|---|
+| `collections` | Specialised data structures |
+| `itertools` | Iterator tools |
+| `functools` | Higher-order function utilities |
+| `operator` | Standard operators as functions |
+| `heapq` | Heap queues |
+| `bisect` | Sorted-list operations |
+| `array` | Typed arrays |
+| `enum` | Enumerations |
+| `copy` | Object copying |
+| `dataclasses` | Data classes |
+| `typing` | Type annotations |
+| `weakref` | Weak references |
+
+---
+
+# 41. IMPORTANT COLLECTION UTILITIES
+
+## 41.1 collections.Counter
+
+Counts occurrences.
+
+```python
+from collections import Counter
+
+items = ["apple", "banana", "apple", "orange"]
+
+counts = Counter(items)
+
+print(counts)
+print(counts["apple"])
+```
+
+## 41.2 defaultdict
+
+Provides a default value for missing keys.
+
+```python
+from collections import defaultdict
+
+groups = defaultdict(list)
+
+groups["fruits"].append("Apple")
+groups["fruits"].append("Banana")
+
+print(groups)
+```
+
+## 41.3 deque
+
+A double-ended queue.
+
+```python
+from collections import deque
+
+queue = deque([1, 2, 3])
+
+queue.append(4)
+queue.appendleft(0)
+
+queue.pop()
+queue.popleft()
+
+print(queue)
+```
+
+## 41.4 namedtuple
+
+Creates tuple-like objects with named fields.
+
+```python
+from collections import namedtuple
+
+Person = namedtuple("Person", ["name", "age"])
+
+person = Person("Nathan", 13)
+
+print(person.name)
+print(person.age)
+```
+
+## 41.5 itertools
+
+Useful iterator operations.
+
+```python
+import itertools
+```
+
+Infinite counter:
+
+```python
+for number in itertools.count(1):
+    if number > 5:
+        break
+
+    print(number)
+```
+
+Repeat:
+
+```python
+print(list(itertools.repeat("Hello", 3)))
+```
+
+Chain:
+
+```python
+a = [1, 2]
+b = [3, 4]
+
+print(list(itertools.chain(a, b)))
+```
+
+Permutations:
+
+```python
+print(list(itertools.permutations([1, 2, 3])))
+```
+
+Combinations:
+
+```python
+print(list(itertools.combinations([1, 2, 3], 2)))
+```
+
+---
+
+# 42. PYTHON SYNTAX REFERENCE
+
+## 42.1 Basic syntax
+
+```python
+variable = value
+
+if condition:
+    statement
+
+for item in iterable:
+    statement
+
+while condition:
+    statement
+
+def function():
+    statement
+
+class MyClass:
+    statement
+
+try:
+    statement
+except Exception:
+    statement
+```
+
+## 42.2 Important Python keywords
+
+These are reserved words and cannot be used as ordinary variable names.
+
+```text
+False
+None
+True
+and
+as
+assert
+async
+await
+break
+class
+continue
+def
+del
+elif
+else
+except
+finally
+for
+from
+global
+if
+import
+in
+is
+lambda
+nonlocal
+not
+or
+pass
+raise
+return
+try
+while
+with
+yield
+```
+
+Additional contextual keywords:
+
+```text
+match
+case
+```
+
+## 42.3 Assignment expressions (walrus operator)
+
+The `:=` operator assigns a value inside an expression.
+
+```python
+if (length := len("Python")) > 3:
+    print(length)
+```
+
+Useful for avoiding repeated calculations.
+
+## 42.4 Unpacking
+
+```python
+a, b = (10, 20)
+
+first, *middle, last = [1, 2, 3, 4, 5]
+
+print(first)
+print(middle)
+print(last)
+```
+
+## 42.5 Multiple statements
+
+Although possible, putting multiple statements on one line is generally discouraged.
+
+```python
+a = 10; b = 20; print(a + b)
+```
+
+Prefer:
+
+```python
+a = 10
+b = 20
+
+print(a + b)
+```
+
+---
+
+# 43. COMMON PYTHON PROGRAMMING PATTERNS
+
+## 43.1 Check whether a number is even
+
+```python
+number = 10
+
+if number % 2 == 0:
+    print("Even")
+else:
+    print("Odd")
+```
+
+## 43.2 Find the largest number
+
+```python
+numbers = [10, 50, 20, 90, 30]
+
+largest = max(numbers)
+
+print(largest)
+```
+
+## 43.3 Find duplicates
+
+```python
+numbers = [1, 2, 3, 2, 4, 1]
+
+duplicates = {
+    number
+    for number in numbers
+    if numbers.count(number) > 1
+}
+
+print(duplicates)
+```
+
+For large lists, a `Counter` or set-based approach is more efficient.
+
+## 43.4 Reverse a string
+
+```python
+text = "Python"
+
+print(text[::-1])
+```
+
+## 43.5 Check a palindrome
+
+```python
+text = "racecar"
+
+if text == text[::-1]:
+    print("Palindrome")
+```
+
+## 43.6 Count characters
+
+```python
+text = "Hello World"
+
+print(len(text))
+print(text.count("l"))
+```
+
+## 43.7 Remove duplicates
+
+Preserve original order:
+
+```python
+numbers = [1, 2, 2, 3, 1, 4]
+
+unique = list(dict.fromkeys(numbers))
+
+print(unique)
+```
+
+## 43.8 Swap variables
+
+```python
+a = 10
+b = 20
+
+a, b = b, a
+```
+
+## 43.9 Generate a multiplication table
+
+```python
+number = 5
+
+for i in range(1, 13):
+    print(f"{number} x {i} = {number * i}")
+```
+
+## 43.10 Fibonacci sequence
+
+```python
+a, b = 0, 1
+
+for _ in range(10):
+    print(a)
+
+    a, b = b, a + b
+```
+
+## 43.11 Binary conversion
+
+```python
+number = 25
+
+print(bin(number))
+print(int("11001", 2))
+```
+
+## 43.12 Hexadecimal conversion
+
+```python
+number = 255
+
+print(hex(number))
+print(int("FF", 16))
+```
+
+## 43.13 Frequency counting
+
+```python
+from collections import Counter
+
+text = "hello world"
+
+frequency = Counter(text)
+
+print(frequency)
+```
+
+## 43.14 Simple input validation
+
+```python
+while True:
+    try:
+        age = int(input("Enter age: "))
+
+        if age < 0:
+            print("Age cannot be negative.")
+            continue
+
+        break
+
+    except ValueError:
+        print("Enter a valid number.")
+
+print("Age:", age)
+```
+
+---
+
+# 44. COMPLETE EXAMPLE PROGRAMS
+
+These examples combine several Python concepts into working programs.
+
+## 44.1 Calculator
+
+```python
+def calculator():
+    print("PYTHON CALCULATOR")
+
+    a = float(input("First number: "))
+    operator = input("Operator (+, -, *, /): ")
+    b = float(input("Second number: "))
+
+    if operator == "+":
+        result = a + b
+
+    elif operator == "-":
+        result = a - b
+
+    elif operator == "*":
+        result = a * b
+
+    elif operator == "/":
+        if b == 0:
+            print("Cannot divide by zero.")
+            return
+
+        result = a / b
+
+    else:
+        print("Unknown operator.")
+        return
+
+    print("Result:", result)
+
+
+if __name__ == "__main__":
+    calculator()
+```
+
+## 44.2 Number guessing game
+
+```python
+import random
+
+secret = random.randint(1, 100)
+attempts = 0
+
+print("Guess the number between 1 and 100.")
+
+while True:
+    try:
+        guess = int(input("Your guess: "))
+
+        attempts += 1
+
+        if guess < secret:
+            print("Too low!")
+
+        elif guess > secret:
+            print("Too high!")
+
+        else:
+            print(f"Correct! Attempts: {attempts}")
+            break
+
+    except ValueError:
+        print("Please enter a valid integer.")
+```
+
+## 44.3 Simple login system
+
+```python
+users = {
+    "admin": "password123",
+    "student": "python456"
+}
+
+
+def login(username, password):
+    if username not in users:
+        return False
+
+    return users[username] == password
+
+
+username = input("Username: ")
+password = input("Password: ")
+
+if login(username, password):
+    print("Login successful!")
+else:
+    print("Incorrect login details.")
+```
+
+Note: This is a learning example, not a secure authentication system. Real applications should use password hashing and appropriate account protections.
+
+## 44.4 Simple file-based database
+
+```python
+import json
+from pathlib import Path
+
+DATABASE = Path("database.json")
+
+
+def load_database():
+    if not DATABASE.exists():
+        return {}
+
+    try:
+        return json.loads(DATABASE.read_text(encoding="utf-8"))
+
+    except json.JSONDecodeError:
+        return {}
+
+
+def save_database(data):
+    DATABASE.write_text(
+        json.dumps(data, indent=4),
+        encoding="utf-8"
+    )
+
+
+def add_user(name, age):
+    data = load_database()
+
+    data[name] = {
+        "age": age
+    }
+
+    save_database(data)
+
+
+def display_users():
+    data = load_database()
+
+    for name, details in data.items():
+        print(name, details)
+
+
+add_user("Nathan", 13)
+display_users()
+```
+
+## 44.5 Simple object-oriented banking system
+
+```python
+class BankAccount:
+
+    def __init__(self, owner, balance=0):
+        self.owner = owner
+        self.balance = balance
+
+    def deposit(self, amount):
+        if amount <= 0:
+            raise ValueError("Amount must be positive")
+
+        self.balance += amount
+
+    def withdraw(self, amount):
+        if amount <= 0:
+            raise ValueError("Amount must be positive")
+
+        if amount > self.balance:
+            print("Insufficient funds")
+            return
+
+        self.balance -= amount
+
+    def show_balance(self):
+        print(f"{self.owner}: ${self.balance:.2f}")
+
+
+account = BankAccount("Nathan", 100)
+
+account.deposit(50)
+account.withdraw(25)
+
+account.show_balance()
+```
+
+---
+
+# 45. PYTHON BEST PRACTICES
+
+## Naming conventions
+
+| Element | Recommended style | Example |
+|---|---|---|
+| Variables | snake_case | `user_name` |
+| Functions | snake_case | `calculate_total()` |
+| Classes | PascalCase | `UserAccount` |
+| Constants | UPPER_CASE | `MAX_USERS` |
+| Modules | lowercase | `calculator.py` |
+| Private-by-convention names | Leading underscore | `_internal_value` |
+
+## Code organisation
+
+A good Python project might look like this:
+
+```text
+MyProject/
+│
+├── main.py
+├── config.py
+├── requirements.txt
+│
+├── modules/
+│   ├── calculator.py
+│   └── database.py
+│
+├── assets/
+│   └── icon.png
+│
+├── data/
+│   └── database.json
+│
+└── tests/
+    └── test_main.py
+```
+
+## Important habits
+
+1. Use meaningful variable names.
+2. Write reusable functions.
+3. Avoid repeating the same code unnecessarily.
+4. Handle expected errors.
+5. Use `with open()` for file operations.
+6. Use virtual environments for projects.
+7. Separate large programs into modules.
+8. Use type hints where helpful.
+9. Write tests for important functionality.
+10. Use comments to explain why something happens, not merely repeat what the code says.
+11. Avoid unnecessary global variables.
+12. Prefer readable code over unnecessarily short code.
+13. Never execute untrusted input using `eval()` or `exec()`.
+14. Validate user input.
+15. Keep passwords and API keys out of source code.
+
+---
+
+# 46. QUICK REFERENCE: MOST IMPORTANT SYNTAX
+
+| Syntax | Purpose |
+|---|---|
+| `# comment` | Comment |
+| `print()` | Output |
+| `input()` | User input |
+| `variable = value` | Assignment |
+| `if` | Conditional |
+| `elif` | Additional condition |
+| `else` | Alternative condition |
+| `for` | Iteration |
+| `while` | Conditional loop |
+| `break` | Exit loop |
+| `continue` | Skip iteration |
+| `pass` | Placeholder |
+| `def` | Define function |
+| `return` | Return value |
+| `lambda` | Anonymous function |
+| `yield` | Generator output |
+| `class` | Define class |
+| `self` | Current instance |
+| `super()` | Parent-class functionality |
+| `try` | Begin exception handling |
+| `except` | Handle exception |
+| `finally` | Always-run cleanup |
+| `raise` | Trigger exception |
+| `assert` | Check condition |
+| `import` | Import module |
+| `from` | Import specific functionality |
+| `as` | Assign alias |
+| `with` | Context management |
+| `async` | Define asynchronous function |
+| `await` | Await asynchronous operation |
+| `global` | Refer to global variable |
+| `nonlocal` | Refer to enclosing variable |
+| `del` | Delete reference/item |
+| `in` | Membership check |
+| `is` | Identity check |
+| `and` | Logical AND |
+| `or` | Logical OR |
+| `not` | Logical NOT |
+| `match` | Pattern matching |
+| `case` | Pattern-matching branch |
+| `:=` | Assignment expression |
+| `@decorator` | Apply decorator |
+| `...` | Ellipsis object |
+
+---
+
+# FINAL NOTE
+
+Python is a large language, and mastering every feature takes time. You do not need to memorise this entire guide.
+
+A useful learning order is:
+
+**Stage 1:** Variables, data types, operators, strings and input/output.
+
+**Stage 2:** Conditions, loops, lists, tuples, sets and dictionaries.
+
+**Stage 3:** Functions, modules, exceptions and file handling.
+
+**Stage 4:** Classes, inheritance, OOP, comprehensions and decorators.
+
+**Stage 5:** APIs, databases, networking, threading and asynchronous programming.
+
+**Stage 6:** Testing, debugging, optimisation, architecture and advanced Python internals.
+
+The best way to learn Python is to build things with it. Start with small scripts, gradually combine concepts, and eventually develop complete applications.
+
+**End of Python Cheat Sheet.**

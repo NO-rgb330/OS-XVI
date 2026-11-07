@@ -10,19 +10,12 @@ import { notepadApp } from './apps/notepad.js';
 import { calculatorApp } from './apps/calculator.js';
 import { imageViewerApp } from './apps/imageviewer.js';
 import { mediaViewerApp } from './apps/mediaviewer.js';
-
-function placeholder(body) {
-  body.innerHTML = `
-    <div class="app-empty" style="background:var(--bg-window)">
-      <svg class="icon icon-48" aria-hidden="true"><use href="#i-desktop"/></svg>
-      <div>App not implemented yet.</div>
-    </div>`;
-}
+import { terminalApp } from './apps/terminal.js';
 
 const APPS = [
   fileManagerApp,
   notepadApp,
-  { id: 'terminal', name: 'Terminal',     icon: 'terminal', defaultSize: [720, 440], launch: placeholder },
+  terminalApp,
   calculatorApp,
   imageViewerApp,
   mediaViewerApp

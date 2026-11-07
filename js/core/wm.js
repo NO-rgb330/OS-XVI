@@ -10,6 +10,8 @@ let panelH = null;
 const windows = new Map();
 const listeners = new Set();
 
+let snapPreview = null;
+
 const getPanelH = () =>
   (panelH ??= parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-h'), 10) || 30);
 
@@ -47,6 +49,7 @@ export function openWindow(appId, args = {}) {
       y: Math.max(16, Math.round((availH - h) / 2) + offset),
       w, h
     },
+    preSnapRect: null, // Stores the original size when snapped
     z: ++nextZ, el: null, bodyEl: null,
     cleanups: [], beforeClose: null, onFocus: null, closed: false, closing: false
   };
@@ -65,9 +68,7 @@ export function openWindow(appId, args = {}) {
     close: () => closeWindow(rec.id),
     setTitle: (t) => setTitle(rec.id, t),
     onCleanup: addCleanup,
-    /** fn() may return false (or a Promise of false) to veto closing. */
     onBeforeClose: (fn) => { rec.beforeClose = fn; },
-    /** Called whenever the window receives focus. */
     onFocus: (fn) => { rec.onFocus = fn; },
     rect: () => ({ ...rec.rect })
   };
@@ -125,16 +126,16 @@ function applyRect(rec) {
   s.height = h + 'px';
 }
 
-/** Run `move` for pointer drags on `target` with pointer capture (no document listeners to leak). */
-function trackPointer(e, target, cls, rec, move) {
+function trackPointer(e, target, cls, rec, move, endCb) {
   target.setPointerCapture(e.pointerId);
   rec.el.classList.add(cls);
   const onMove = (ev) => move(ev);
-  const end = () => {
+  const end = (ev) => {
     rec.el.classList.remove(cls);
     target.removeEventListener('pointermove', onMove);
     target.removeEventListener('pointerup', end);
     target.removeEventListener('pointercancel', end);
+    if (endCb) endCb(ev);
   };
   target.addEventListener('pointermove', onMove);
   target.addEventListener('pointerup', end);
@@ -143,14 +144,79 @@ function trackPointer(e, target, cls, rec, move) {
 
 function startDrag(e, rec, tb) {
   if (e.button !== 0 || rec.state === 'maximized' || e.target.closest('.window-btn')) return;
+  
+  if (!snapPreview) {
+    snapPreview = document.createElement('div');
+    snapPreview.id = 'snap-preview';
+    snapPreview.style.display = 'none';
+    document.getElementById('window-layer').appendChild(snapPreview);
+  }
+
   const startX = e.clientX, startY = e.clientY;
+  let currentSnap = null;
+  const availH = window.innerHeight - getPanelH();
+  
+  // If we were already snapped, we start fresh from a normal state
   const x0 = rec.rect.x, y0 = rec.rect.y;
-  const maxY = window.innerHeight - getPanelH() - 40;
+  const w0 = rec.rect.w, h0 = rec.rect.h;
+
   trackPointer(e, tb, 'dragging', rec, (ev) => {
-    rec.rect.x = Math.max(-rec.rect.w + 80, Math.min(window.innerWidth - 80, x0 + ev.clientX - startX));
-    rec.rect.y = Math.max(0, Math.min(maxY, y0 + ev.clientY - startY));
-    rec.el.style.left = rec.rect.x + 'px';
-    rec.el.style.top = rec.rect.y + 'px';
+    const dx = ev.clientX - startX, dy = ev.clientY - startY;
+    
+    // Window movement
+    if (!currentSnap) {
+      rec.rect.x = Math.max(-rec.rect.w + 80, Math.min(window.innerWidth - 80, x0 + dx));
+      rec.rect.y = Math.max(0, Math.min(availH - 40, y0 + dy));
+      rec.el.style.left = rec.rect.x + 'px';
+      rec.el.style.top = rec.rect.y + 'px';
+    }
+
+    // Snapping detection
+    if (ev.clientX < 20) currentSnap = 'left';
+    else if (ev.clientX > window.innerWidth - 20) currentSnap = 'right';
+    else if (ev.clientY < 20) currentSnap = 'max';
+    else currentSnap = null;
+
+    // Preview UI
+    if (currentSnap) {
+      snapPreview.style.display = 'block';
+      if (currentSnap === 'left') {
+        snapPreview.style.left = '0px';
+        snapPreview.style.top = '0px';
+        snapPreview.style.width = (window.innerWidth / 2) + 'px';
+        snapPreview.style.height = availH + 'px';
+      } else if (currentSnap === 'right') {
+        snapPreview.style.left = (window.innerWidth / 2) + 'px';
+        snapPreview.style.top = '0px';
+        snapPreview.style.width = (window.innerWidth / 2) + 'px';
+        snapPreview.style.height = availH + 'px';
+      } else {
+        snapPreview.style.left = '0px';
+        snapPreview.style.top = '0px';
+        snapPreview.style.width = window.innerWidth + 'px';
+        snapPreview.style.height = availH + 'px';
+      }
+    } else {
+      snapPreview.style.display = 'none';
+    }
+  }, () => {
+    snapPreview.style.display = 'none';
+    if (currentSnap) {
+      if (!rec.preSnapRect) rec.preSnapRect = { x: x0, y: y0, w: w0, h: h0 };
+      
+      if (currentSnap === 'max') {
+        toggleMaximize(rec.id);
+      } else {
+        rec.state = 'snapped';
+        rec.rect = {
+          x: currentSnap === 'left' ? 0 : window.innerWidth / 2,
+          y: 0,
+          w: window.innerWidth / 2,
+          h: availH
+        };
+        applyRect(rec);
+      }
+    }
   });
 }
 
@@ -221,6 +287,7 @@ function toggleMaximize(id) {
     rec.el.classList.remove('maximized');
     icon.setAttribute('href', '#i-max');
     btn.title = 'Maximize';
+    applyRect(rec);
   } else {
     rec.el.classList.remove('minimized');
     rec.state = 'maximized';
@@ -231,7 +298,6 @@ function toggleMaximize(id) {
   emit({ type: 'state', id });
 }
 
-/** Resolves true if the window closed, false if a beforeClose handler vetoed it. */
 export async function closeWindow(id, force = false) {
   const rec = windows.get(id);
   if (!rec || rec.closing) return false;

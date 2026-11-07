@@ -9,16 +9,18 @@ const PROJECT_DIR = '/home/user/Projects/Web';
 export const webcraftApp = {
   id: 'webcraft',
   name: 'WebCraft',
-  icon: 'web', 
+  icon: 'web',
   defaultSize: [1000, 650],
 
   async launch(body, args, ctx) {
-    let openFiles = new Map(); // path -> { editor, tabEl, dirty, lang }
+    let openFiles = new Map();
     let activeFile = null;
     let projectTreeEl = null;
     let tabsEl = null;
     let editorContainer = null;
+    let previewContainer = null;
     let previewIframe = null;
+    let isPreviewMinimized = false;
 
     // Ensure project dir and default files exist
     if (!(await vfs.exists(PROJECT_DIR))) {
@@ -63,15 +65,18 @@ h1 { font-weight: 300; }`);
           </div>
           
           <!-- Middle: Editor -->
-          <div class="ide-main" style="flex: 1 1 50%; border-right: 1px solid var(--bd-soft);">
+          <div class="ide-main" id="webcraft-editor-pane" style="flex: 1 1 50%; border-right: 1px solid var(--bd-soft);">
             <div class="ide-tabs" id="webcraft-tabs"></div>
             <div class="code-editor-container" id="webcraft-editor" style="flex:1; display:flex; flex-direction:column;"></div>
           </div>
 
           <!-- Right: Preview -->
-          <div class="ide-main" style="flex: 1 1 50%; background: var(--paper);">
+          <div class="ide-main" id="webcraft-preview-pane" style="flex: 1 1 50%; background: var(--paper);">
             <div class="ide-bottom-header" style="background: var(--surface); border-bottom: 1px solid var(--bd-soft);">
               <span>Preview</span>
+              <button class="toolbar-btn btn-toggle-preview" title="Minimize Preview" style="padding: 0 4px; height: 20px;">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+              </button>
             </div>
             <iframe id="webcraft-preview" class="ide-preview" sandbox="allow-scripts allow-modals"></iframe>
           </div>
@@ -82,12 +87,32 @@ h1 { font-weight: 300; }`);
     projectTreeEl = body.querySelector('#webcraft-tree');
     tabsEl = body.querySelector('#webcraft-tabs');
     editorContainer = body.querySelector('#webcraft-editor');
+    previewContainer = body.querySelector('#webcraft-preview-pane');
     previewIframe = body.querySelector('#webcraft-preview');
     
     const btnRun = body.querySelector('.btn-run');
     const btnSave = body.querySelector('.btn-save');
     const btnNew = body.querySelector('.btn-new');
+    const btnTogglePreview = body.querySelector('.btn-toggle-preview');
     const statusEl = body.querySelector('#webcraft-status');
+
+    // --- Preview Toggle Logic ---
+    btnTogglePreview.onclick = () => {
+      isPreviewMinimized = !isPreviewMinimized;
+      if (isPreviewMinimized) {
+        previewContainer.style.display = 'none';
+        editorContainer.parentElement.style.flex = '1 1 100%'; // Editor takes full width
+        editorContainer.parentElement.style.borderRight = 'none';
+        btnTogglePreview.innerHTML = `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;
+        btnTogglePreview.title = "Expand Preview";
+      } else {
+        previewContainer.style.display = 'flex';
+        editorContainer.parentElement.style.flex = '1 1 50%';
+        editorContainer.parentElement.style.borderRight = '1px solid var(--bd-soft)';
+        btnTogglePreview.innerHTML = `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>`;
+        btnTogglePreview.title = "Minimize Preview";
+      }
+    };
 
     // --- File System ---
     async function loadTree() {
@@ -159,7 +184,6 @@ h1 { font-weight: 300; }`);
         switchTab(filename);
         loadTree();
         
-        // If it's the first file opened, or we just opened index.html, refresh preview
         if (filename === 'index.html' || openFiles.size === 1) {
           updatePreview();
         }
@@ -194,7 +218,6 @@ h1 { font-weight: 300; }`);
         btnSave.disabled = true;
         statusEl.textContent = `Saved ${activeFile}`;
         
-        // Auto-refresh if saving HTML/CSS/JS
         updatePreview();
       } catch (e) {
         dialogs.alert('Error', 'Could not save: ' + e.message);
@@ -219,7 +242,6 @@ h1 { font-weight: 300; }`);
     async function updatePreview() {
       statusEl.textContent = 'Updating preview...';
       
-      // We need index.html to render the page
       if (!(await vfs.exists(`${PROJECT_DIR}/index.html`))) {
         previewIframe.srcdoc = '<body style="font-family:sans-serif;padding:20px;color:#666;">No index.html found in project.</body>';
         statusEl.textContent = 'No index.html';
@@ -229,7 +251,6 @@ h1 { font-weight: 300; }`);
       try {
         let html = '';
         
-        // If index.html is open and dirty, use the editor's current text
         if (openFiles.has('index.html') && openFiles.get('index.html').dirty) {
           html = openFiles.get('index.html').editor.getValue();
         } else {
@@ -285,7 +306,6 @@ h1 { font-weight: 300; }`);
 
     // Init
     await loadTree();
-    // Auto-open index.html if it exists
     if (await vfs.exists(`${PROJECT_DIR}/index.html`)) {
       openFile('index.html');
     } else if (projectTreeEl.firstElementChild) {

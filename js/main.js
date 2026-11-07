@@ -11,6 +11,7 @@ import { calculatorApp } from './apps/calculator.js';
 import { imageViewerApp } from './apps/imageviewer.js';
 import { mediaViewerApp } from './apps/mediaviewer.js';
 import { terminalApp } from './apps/terminal.js';
+import { serpentApp } from './apps/serpent.js';
 
 // Import new boot modules
 import { runSetup } from './core/setup.js';
@@ -23,7 +24,8 @@ const APPS = [
   terminalApp,
   calculatorApp,
   imageViewerApp,
-  mediaViewerApp
+  mediaViewerApp,
+  serpentApp 
 ];
 
 async function boot() {

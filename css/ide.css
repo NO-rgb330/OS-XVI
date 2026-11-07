@@ -122,6 +122,7 @@
   line-height: 1.6;
   position: relative;
 }
+
 .code-gutter {
   flex: 0 0 44px;
   padding: 10px 8px 10px 0;
@@ -132,11 +133,13 @@
   overflow: hidden;
   user-select: none;
 }
+
 .code-area {
   flex: 1 1 auto;
   position: relative;
   overflow: hidden;
 }
+
 .code-highlight, .code-input {
   position: absolute;
   inset: 0;
@@ -150,11 +153,18 @@
   overflow: auto;
   tab-size: 4;
 }
+
 .code-highlight {
   pointer-events: none;
   z-index: 1;
   color: var(--tx);
+  /* Hide scrollbars on the highlight layer to prevent double scrollbars */
+  scrollbar-width: none; 
 }
+.code-highlight::-webkit-scrollbar { 
+  display: none; 
+}
+
 .code-input {
   z-index: 2;
   color: transparent;
@@ -200,7 +210,11 @@
   white-space: pre-wrap;
   color: var(--tx);
 }
-.ide-console-error { color: var(--danger-ink); background: var(--danger-bg); padding: 2px 6px; }
+.ide-console-error { 
+  color: var(--danger-ink); 
+  background: var(--danger-bg); 
+  padding: 2px 6px; 
+}
 
 /* Web Preview Iframe */
 .ide-preview {

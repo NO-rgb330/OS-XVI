@@ -12,6 +12,7 @@ import { imageViewerApp } from './apps/imageviewer.js';
 import { mediaViewerApp } from './apps/mediaviewer.js';
 import { terminalApp } from './apps/terminal.js';
 import { serpentApp } from './apps/serpent.js';
+import { webcraftApp } from './apps/webcraft.js';
 
 // Import new boot modules
 import { runSetup } from './core/setup.js';
@@ -25,7 +26,8 @@ const APPS = [
   calculatorApp,
   imageViewerApp,
   mediaViewerApp,
-  serpentApp 
+  serpentApp,
+  webcraftApp
 ];
 
 async function boot() {

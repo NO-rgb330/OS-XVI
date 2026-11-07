@@ -72,12 +72,10 @@ function tokenizeHTML(code) {
       }
       end++;
       const tagStr = code.slice(i, end);
-      // Color the whole tag block, italicize attributes
       const match = tagStr.match(/^<([a-zA-Z0-9\-]+)|^<\/?([a-zA-Z0-9\-]+)/);
       const tagName = match ? (match[1] || match[2]) : '';
       let inner = tagStr;
       if (tagName) {
-         // Basic attribute highlighting
          inner = tagStr.replace(/([a-zA-Z\-]+)=/g, '<span class="tok-attr">$1</span>=');
       }
       result += `<span class="tok-tag">${inner}</span>`;
@@ -152,17 +150,13 @@ function tokenizeCSS(code) {
       else end += 2;
       result += `<span class="tok-com">${esc(code.slice(i, end))}</span>`;
       i = end;
-    } else if (code[i] === '{') {
-      result += esc(code[i]);
-      i++;
-    } else if (code[i] === '}') {
+    } else if (code[i] === '{' || code[i] === '}') {
       result += esc(code[i]);
       i++;
     } else if (/[a-zA-Z\-]/.test(code[i])) {
       let end = i + 1;
       while (end < code.length && /[a-zA-Z0-9\-]/.test(code[end])) end++;
       const word = code.slice(i, end);
-      // If it's followed by a colon, it's a property
       let look = end;
       while (look < code.length && /\s/.test(code[look])) look++;
       if (code[look] === ':') {
@@ -192,12 +186,13 @@ export class CodeEditor {
     this.language = options.language || 'text';
     this.onChange = options.onChange || (() => {});
     
+    // Added wrap="off" to prevent the textarea from breaking lines independently of the <pre> block
     this.container.innerHTML = `
       <div class="code-editor-wrap">
         <div class="code-gutter"></div>
         <div class="code-area">
           <pre class="code-highlight"><code></code></pre>
-          <textarea class="code-input" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+          <textarea class="code-input" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off"></textarea>
         </div>
       </div>
     `;
@@ -209,7 +204,6 @@ export class CodeEditor {
     this.input.addEventListener('input', () => this.update());
     this.input.addEventListener('scroll', () => this.syncScroll());
     
-    // Handle Tab key
     this.input.addEventListener('keydown', (e) => {
       if (e.key === 'Tab') {
         e.preventDefault();
@@ -228,14 +222,12 @@ export class CodeEditor {
   update() {
     const val = this.input.value;
     
-    // 1. Highlight Code
     if (this.language === 'python') this.highlight.innerHTML = tokenizePython(val) + '\n';
     else if (this.language === 'html') this.highlight.innerHTML = tokenizeHTML(val) + '\n';
     else if (this.language === 'js') this.highlight.innerHTML = tokenizeJS(val) + '\n';
     else if (this.language === 'css') this.highlight.innerHTML = tokenizeCSS(val) + '\n';
     else this.highlight.textContent = val + '\n';
 
-    // 2. Update Line Numbers
     const lines = val.split('\n').length;
     if (this.gutter.dataset.lines != lines) {
       this.gutter.dataset.lines = lines;
@@ -244,7 +236,6 @@ export class CodeEditor {
       this.gutter.innerHTML = numHtml;
     }
 
-    // 3. Sync Scroll
     this.syncScroll();
     this.onChange(val);
   }

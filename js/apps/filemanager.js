@@ -388,11 +388,35 @@ export const fileManagerApp = {
       if (view !== 'storage' || tab !== storageTab) return; // user moved on while we were measuring
 
       const big = tab === 'used' ? formatBytes(disk.used) : formatBytes(disk.free);
+      
+      // Check if storage is persistent
+      let isPersisted = false;
+      if (navigator.storage && navigator.storage.persisted) {
+        try { isPersisted = await navigator.storage.persisted(); } catch {}
+      }
+
+      let requestedGB = 25;
+      try {
+        const cfg = JSON.parse(localStorage.getItem('os16.config'));
+        if (cfg && cfg.diskLimit) requestedGB = cfg.diskLimit;
+      } catch {}
+      
+      const browserLimitGB = (disk.capacity / 1024 ** 3).toFixed(1);
+      const isCapped = parseFloat(browserLimitGB) < requestedGB;
+
       const sub = tab === 'used'
-        ? `of ${formatBytes(disk.capacity)} virtual disk used (${fmtPct(usedPct)})`
-        : `free of ${formatBytes(disk.capacity)} (${fmtPct(freePct)})`;
+        ? `of ${formatBytes(disk.capacity)} virtual disk used (${fmtPct(usedPct)})${isCapped ? ` <br><span style="color:var(--danger-ink);font-size:11px;">(Capped by browser from ${requestedGB} GB)</span>` : ''}`
+        : `free of ${formatBytes(disk.capacity)} (${fmtPct(freePct)})${isCapped ? ` <br><span style="color:var(--danger-ink);font-size:11px;">(Capped by browser from ${requestedGB} GB)</span>` : ''}`;
+      
       const fill = tab === 'used' ? usedPct : freePct;
       const warn = usedPct >= 90 ? `<div class="fm-warn">${iconHTML('warning', 14)}<span>The disk is almost full. Delete files to free up space.</span></div>` : '';
+
+      const persistStatus = isPersisted 
+        ? `<div style="display:flex; align-items:center; gap:8px; font-weight:600; margin-top:12px;">${iconHTML('check', 16)} Persistent Storage Granted</div>
+           <p class="fm-note" style="margin-top:4px;">Your data is safe from automatic eviction. The browser will allow you to use as much space as it can spare.</p>`
+        : `<div style="display:flex; align-items:center; gap:8px; font-weight:600; margin-top:12px; color:var(--tx-muted);">${iconHTML('warning', 16)} Persistent Storage Not Granted</div>
+           <p class="fm-note" style="margin-top:4px;">Without this, the browser may limit your disk size to ~10 GB and clear your files if space gets low.</p>
+           <button class="app-btn primary" id="btn-request-persist" style="margin-top:8px;">Request More Space</button>`;
 
       const kv = `
         <div class="fm-kv">
@@ -400,7 +424,8 @@ export const fileManagerApp = {
           <div><span>Total storage left</span><b>${formatBytes(disk.free)}</b></div>
           <div><span>Disk size</span><b>${formatBytes(disk.capacity)}</b></div>
           <div><span>Files / folders</span><b>${disk.files} / ${Math.max(0, disk.dirs - 1)}</b></div>
-        </div>`;
+        </div>
+        ${persistStatus}`;
 
       const breakdown = tab === 'used' ? `
         <div class="fm-bd-title">Used by item in Home</div>
@@ -417,6 +442,25 @@ export const fileManagerApp = {
         <div class="fm-sub">${sub}</div>
         <div class="fm-meter lg${usedPct >= 90 ? ' full' : ''}"><div class="fm-meter-fill" style="width:${fill}%"></div></div>
         ${warn}${kv}${breakdown}`;
+
+      const btnPersist = elStoragePanel.querySelector('#btn-request-persist');
+      if (btnPersist) {
+        btnPersist.onclick = async () => {
+          btnPersist.textContent = 'Requesting...';
+          btnPersist.disabled = true;
+          
+          const res = await vfs.requestPersist();
+          
+          if (res.granted) {
+            dialogs.toast('Persistent storage granted! Quota updated.', { danger: false });
+            await refreshDisk(); // Refresh the panel
+          } else {
+            dialogs.alert('Storage Request', 'The browser denied the request for persistent storage. You may need to adjust your browser settings or clear some disk space on your computer.');
+            btnPersist.textContent = 'Request More Space';
+            btnPersist.disabled = false;
+          }
+        };
+      }
     }
 
     async function refreshDisk() {

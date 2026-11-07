@@ -174,12 +174,23 @@ export async function write(path, data) {
 
   let node = await idbIndexGet('pid_name', [pid, name]);
   if (node?.kind === 'dir') throw new Error('EISDIR: ' + path);
+  
   await assertSpace(blob.size - (node?.size || 0));
+  
   node = node
     ? { ...node, size: blob.size, mtime: Date.now() }
     : { id: crypto.randomUUID(), pid, name, kind: 'file', size: blob.size, mtime: Date.now() };
 
-  await writeBlob(node.id, blob);
+  try {
+    await writeBlob(node.id, blob);
+  } catch (err) {
+    // Catch the browser's hard quota limit
+    if (err.name === 'QuotaExceededError' || err.message.includes('quota')) {
+      throw new Error('ENOSPC: The browser storage limit has been reached. You cannot save more files.');
+    }
+    throw err;
+  }
+
   await idbPut(node);
   emit('change', parent);
   return node.id;
@@ -273,23 +284,26 @@ async function diskCapacity() {
   const now = Date.now();
   if (now - capacityCache.t < 30000) return capacityCache.v;
   
-  let v = DISK_CAPACITY_DEFAULT;
+  let requested = DISK_CAPACITY_DEFAULT;
   
   // Read user preference from setup wizard
   try {
     const cfg = JSON.parse(localStorage.getItem('os16.config'));
     if (cfg && cfg.diskLimit) {
-      v = cfg.diskLimit * 1024 ** 3;
+      requested = cfg.diskLimit * 1024 ** 3;
     }
   } catch {}
 
+  let actual = requested;
   try {
     const est = await navigator.storage.estimate();
-    if (est?.quota > 64 * 1024 * 1024) v = Math.min(v, est.quota);
+    if (est?.quota > 0) {
+      actual = Math.min(requested, est.quota);
+    }
   } catch { /* estimate() unavailable: use the nominal size */ }
   
-  capacityCache = { t: now, v };
-  return v;
+  capacityCache = { t: now, v: actual };
+  return actual;
 }
 
 /** Totals for the whole virtual disk: { used, free, capacity, files, dirs } (bytes / counts). */
@@ -340,6 +354,27 @@ async function assertSpace(extra) {
   if (extra > free) {
     throw new Error(`ENOSPC: Not enough disk space (need ${formatBytes(extra)}, ${formatBytes(free)} left)`);
   }
+}
+
+/**
+ * Requests persistent storage from the browser and forces a quota refresh.
+ * Returns { granted: boolean, capacity: number }.
+ */
+export async function requestPersist() {
+  let granted = false;
+  if (navigator.storage && navigator.storage.persist) {
+    try {
+      granted = await navigator.storage.persist();
+    } catch (e) {
+      console.error('Error requesting persist:', e);
+    }
+  }
+  
+  // Clear the cache so the next usage() call asks the browser for the new limit
+  capacityCache = { t: 0, v: DISK_CAPACITY_DEFAULT };
+  
+  const stats = await usage();
+  return { granted, capacity: stats.capacity };
 }
 
 // ---- IndexedDB helpers ----

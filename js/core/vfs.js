@@ -8,7 +8,7 @@
 import { formatBytes } from './util.js';
 
 /** Size of the virtual disk. Capped further by what the browser will actually grant us. */
-export const DISK_CAPACITY = 2 * 1024 ** 3; // 2 GiB
+export const DISK_CAPACITY = 25 * 1024 ** 3; // 25 GiB
 
 const DB_NAME = 'os_vfs_db';
 const DB_VERSION = 1;

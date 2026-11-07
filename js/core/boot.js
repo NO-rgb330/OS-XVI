@@ -1,3 +1,5 @@
+import { initPython } from './python-runtime.js';
+
 export async function runBootSequence() {
   return new Promise(async (resolve) => {
     const overlay = document.createElement('div');
@@ -28,7 +30,14 @@ export async function runBootSequence() {
     const wait = (ms) => new Promise(r => setTimeout(r, ms));
     const randHex = (len) => Array.from({length: len}, () => Math.floor(Math.random()*16).toString(16)).join('');
     
-    // Fake log data
+    // Start loading Python in the background
+    print('[    1.000000] Starting Python WASM Runtime...', 'boot-warn');
+    const pyPromise = initPython().then(() => {
+      print('[    1.200000] Python runtime loaded successfully.', 'boot-ok');
+    }).catch(err => {
+      print(`[    1.200000] Failed to load Python: ${err.message}`, 'boot-warn');
+    });
+
     const steps = [
       { t: '[    0.000000] Booting Monochrome OS Kernel...', d: 200, c: 'boot-ok' },
       { t: '[    0.120512] Initializing OPFS block device driver...', d: 400 },
@@ -54,7 +63,6 @@ export async function runBootSequence() {
       { t: `[    7.451111] systemd[1]: Reached target Graphical Interface.`, d: 200, c: 'boot-ok' },
       { t: `[    8.123111] starting version 250.5+`, d: 300 },
       { t: `[    8.512111] [  0.000000]  #${randHex(8)}  #${randHex(8)}  #${randHex(8)}  #${randHex(8)}`, d: 150, c: 'boot-warn' },
-      { t: `[    9.111111] Starting Login Manager...`, d: 400 },
     ];
 
     let progress = 0;
@@ -65,7 +73,11 @@ export async function runBootSequence() {
       await wait(s.d);
     }
     
-    // Fast forward to 100%
+    // Wait for Python to finish loading before showing login
+    print(`[    9.000000] Waiting for background services...`, 'boot-warn');
+    await pyPromise;
+    
+    print(`[    9.111111] Starting Login Manager...`, 'boot-ok');
     fill.style.width = '100%';
     await wait(600);
     

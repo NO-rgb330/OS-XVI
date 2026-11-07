@@ -147,3 +147,14 @@
 .window.dragging * {
   cursor: inherit !important;
 }
+/* ---- Window Snapping Preview ---- */
+#snap-preview {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid var(--ink-inv);
+  border-radius: var(--radius);
+  pointer-events: none;
+  z-index: 999999;
+  transition: all 0.15s ease-out;
+  box-shadow: inset 0 0 20px rgba(255,255,255,0.1);
+}

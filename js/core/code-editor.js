@@ -72,12 +72,14 @@ function tokenizeHTML(code) {
       }
       end++;
       const tagStr = code.slice(i, end);
-      const match = tagStr.match(/^<([a-zA-Z0-9\-]+)|^<\/?([a-zA-Z0-9\-]+)/);
-      const tagName = match ? (match[1] || match[2]) : '';
-      let inner = tagStr;
-      if (tagName) {
-         inner = tagStr.replace(/([a-zA-Z\-]+)=/g, '<span class="tok-attr">$1</span>=');
-      }
+      
+      // 1. Escape the ENTIRE tag first so the browser treats it as text.
+      let inner = esc(tagStr);
+      
+      // 2. Now safely highlight attributes inside the escaped string.
+      // This regex finds things like "src=" or "href=" and wraps them in a span.
+      inner = inner.replace(/([a-zA-Z\-]+)=/g, '<span class="tok-attr">$1</span>=');
+      
       result += `<span class="tok-tag">${inner}</span>`;
       i = end;
     } else {
@@ -186,7 +188,6 @@ export class CodeEditor {
     this.language = options.language || 'text';
     this.onChange = options.onChange || (() => {});
     
-    // Added wrap="off" to prevent the textarea from breaking lines independently of the <pre> block
     this.container.innerHTML = `
       <div class="code-editor-wrap">
         <div class="code-gutter"></div>

@@ -12,6 +12,11 @@ import { imageViewerApp } from './apps/imageviewer.js';
 import { mediaViewerApp } from './apps/mediaviewer.js';
 import { terminalApp } from './apps/terminal.js';
 
+// Import new boot modules
+import { runSetup } from './core/setup.js';
+import { runBootSequence } from './core/boot.js';
+import { showLogin } from './core/login.js';
+
 const APPS = [
   fileManagerApp,
   notepadApp,
@@ -21,37 +26,48 @@ const APPS = [
   mediaViewerApp
 ];
 
-// ---------- Boot ----------
 async function boot() {
   const splash = document.getElementById('splash');
-  const status = document.getElementById('splash-status');
+  
+  // 1. Check if first boot
+  const isFirstBoot = localStorage.getItem('os16.setup_complete') !== '1';
+  
+  if (isFirstBoot) {
+    splash.remove(); // Remove default splash, we are using setup wizard
+    await runSetup();
+  } else {
+    // If not first boot, keep the splash for a tiny moment then remove it
+    // The boot sequence will take over.
+    splash.classList.add('hide');
+    setTimeout(() => splash.remove(), 300);
+  }
 
-  for (const app of APPS) register(app);
+  // 2. Run the boot sequence
+  await runBootSequence();
 
-  status.textContent = 'Mounting filesystem…';
+  // 3. Mount VFS and Seed
   try {
     await vfs.mount();
     await seed();
   } catch (err) {
     console.error(err);
-    status.textContent = 'VFS Mount Failed: ' + err.message;
+    document.body.innerHTML = `<div style="color:white;background:black;padding:20px;font-family:monospace;">VFS Mount Failed: ${err.message}</div>`;
     return;
   }
   window.vfs = vfs;
   window.dialogs = dialogs;
 
-  status.textContent = 'Starting shell…';
+  // 4. Show Login Screen
+  await showLogin(false);
+
+  // 5. Start the Shell
+  for (const app of APPS) register(app);
   initPanel();
   await initDesktop();
-
-  splash.classList.add('hide');
-  setTimeout(() => splash.remove(), 300);
 
   window.__wm = { openWindow };
 }
 
 boot().catch((e) => {
   console.error(e);
-  const s = document.getElementById('splash-status');
-  if (s) s.textContent = 'Boot failed: ' + e.message;
 });

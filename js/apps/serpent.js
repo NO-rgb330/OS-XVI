@@ -3,6 +3,7 @@ import * as dialogs from '../core/dialogs.js';
 import { iconHTML } from '../core/icons.js';
 import { CodeEditor } from '../core/code-editor.js';
 import { openWindow } from '../core/wm.js';
+import { initPython, getPython } from '../core/python-runtime.js';
 
 const PROJECT_DIR = '/home/user/Projects';
 
@@ -13,7 +14,6 @@ export const serpentApp = {
   defaultSize: [900, 600],
 
   async launch(body, args, ctx) {
-    let pyodide = null;
     let pyLoading = false;
     let openFiles = new Map(); // path -> { editor, tabEl, dirty }
     let activeFile = null;
@@ -82,49 +82,13 @@ export const serpentApp = {
       consoleEl.scrollTop = consoleEl.scrollHeight;
     }
 
-    // --- Pyodide Loader ---
-    async function initPyodide() {
-      if (pyodide) return pyodide;
-      if (pyLoading) return;
-      pyLoading = true;
-      statusEl.textContent = 'Loading Python (WASM)...';
-      log('Downloading Python runtime (this may take a moment)...');
-
-      try {
-        // Load Pyodide script
-        await new Promise((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js';
-          script.onload = resolve;
-          script.onerror = () => reject(new Error('Failed to load Pyodide from CDN'));
-          document.head.appendChild(script);
-        });
-
-        pyodide = await window.loadPyodide({
-          stdout: (text) => log(text),
-          stderr: (text) => log(text, true),
-          stdin: () => prompt('Python input:') || ''
-        });
-        
-        log('Python runtime ready.');
-        statusEl.textContent = 'Ready';
-        return pyodide;
-      } catch (err) {
-        log('Error loading Python: ' + err.message, true);
-        statusEl.textContent = 'Python failed to load';
-        throw err;
-      } finally {
-        pyLoading = false;
-      }
-    }
-
     // --- File System ---
     async function loadTree() {
       projectTreeEl.innerHTML = '';
       try {
         const items = await vfs.list(PROJECT_DIR);
         for (const item of items) {
-          if (item.kind === 'dir') continue; // Simplified flat view for now
+          if (item.kind === 'dir') continue;
           const el = document.createElement('div');
           el.className = 'ide-tree-item';
           el.innerHTML = `${iconHTML('file-text', 14)} ${item.name}`;
@@ -148,14 +112,12 @@ export const serpentApp = {
         const blob = await vfs.read(path);
         const text = await blob.text();
 
-        // Create Tab
         const tab = document.createElement('div');
         tab.className = 'ide-tab';
         tab.innerHTML = `${iconHTML('file-text', 12)} ${filename}`;
         tab.onclick = () => switchTab(filename);
         tabsEl.appendChild(tab);
 
-        // Create Editor
         const edWrap = document.createElement('div');
         edWrap.style.display = 'none';
         edWrap.style.flex = '1';
@@ -242,10 +204,25 @@ export const serpentApp = {
       btnRun.disabled = true;
       
       try {
-        const py = await initPyodide();
+        let py = getPython();
+        if (!py) {
+          if (!pyLoading) {
+            statusEl.textContent = 'Loading Python (WASM)...';
+            log('Python runtime is still loading (or failed during boot). Please wait...');
+            pyLoading = true;
+            await initPython();
+            pyLoading = false;
+          } else {
+            await new Promise(r => setTimeout(r, 500));
+          }
+          py = getPython();
+        }
+        
         const code = openFiles.get(activeFile).editor.getValue();
         
-        // Reset globals but keep imports (basic approach)
+        // Redirect stdout/stderr dynamically if possible, 
+        // but since Pyodide was initialized globally, we'll let it use the global console.
+        // For a better implementation, we can run in a context, but standard runPythonAsync works.
         await py.runPythonAsync(code);
         consoleStatus.textContent = 'Finished';
       } catch (err) {
@@ -253,6 +230,7 @@ export const serpentApp = {
         consoleStatus.textContent = 'Error';
       } finally {
         btnRun.disabled = false;
+        statusEl.textContent = 'Ready';
       }
     }
 
@@ -263,7 +241,7 @@ export const serpentApp = {
     btnClear.onclick = () => { consoleEl.innerHTML = ''; };
 
     ctx.onCleanup(() => {
-      // Cleanup any global Pyodide state if needed
+      // Cleanup
     });
 
     // Init

@@ -13,8 +13,8 @@ import { mediaViewerApp } from './apps/mediaviewer.js';
 import { terminalApp } from './apps/terminal.js';
 import { serpentApp } from './apps/serpent.js';
 import { webcraftApp } from './apps/webcraft.js';
+import { graphCalcApp } from './apps/graphcalc.js'; // <--- NEW
 
-// Import new boot modules
 import { runSetup } from './core/setup.js';
 import { runBootSequence } from './core/boot.js';
 import { showLogin } from './core/login.js';
@@ -24,6 +24,7 @@ const APPS = [
   notepadApp,
   terminalApp,
   calculatorApp,
+  graphCalcApp, // <--- NEW
   imageViewerApp,
   mediaViewerApp,
   serpentApp,
@@ -32,24 +33,18 @@ const APPS = [
 
 async function boot() {
   const splash = document.getElementById('splash');
-  
-  // 1. Check if first boot
   const isFirstBoot = localStorage.getItem('os16.setup_complete') !== '1';
   
   if (isFirstBoot) {
-    splash.remove(); // Remove default splash, we are using setup wizard
+    splash.remove();
     await runSetup();
   } else {
-    // If not first boot, keep the splash for a tiny moment then remove it
-    // The boot sequence will take over.
     splash.classList.add('hide');
     setTimeout(() => splash.remove(), 300);
   }
 
-  // 2. Run the boot sequence
   await runBootSequence();
 
-  // 3. Mount VFS and Seed
   try {
     await vfs.mount();
     await seed();
@@ -61,10 +56,8 @@ async function boot() {
   window.vfs = vfs;
   window.dialogs = dialogs;
 
-  // 4. Show Login Screen
   await showLogin(false);
 
-  // 5. Start the Shell
   for (const app of APPS) register(app);
   initPanel();
   await initDesktop();

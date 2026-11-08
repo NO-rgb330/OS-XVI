@@ -46,7 +46,6 @@ h1 { font-weight: 300; }`);
       await vfs.write(`${PROJECT_DIR}/script.js`, `console.log("WebCraft loaded.");`);
     }
 
-    // Replace the body.innerHTML in webcraft.js with this:
     body.innerHTML = `
       <div class="ide-app">
         <div class="ide-toolbar">
@@ -161,9 +160,8 @@ h1 { font-weight: 300; }`);
 
         // Create Editor
         const edWrap = document.createElement('div');
+        edWrap.className = 'code-editor-wrapper';
         edWrap.style.display = 'none';
-        edWrap.style.flex = '1';
-        edWrap.style.flexDirection = 'column';
         editorContainer.appendChild(edWrap);
 
         const editor = new CodeEditor(edWrap, {

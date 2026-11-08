@@ -36,13 +36,49 @@ export function describe(rec) {
  * Order: less-filtered families first, then larger (= more capable) models that still fit.
  */
 export function pickModels(list, { f16 = true, budgetMB = 3000, showAll = false } = {}) {
-  return list
+  const all = list
     .filter((r) => r?.model_id && (r.model_type ?? 0) === 0 && !/embed/i.test(r.model_id))
     .map(describe)
-    .filter((m) => f16 || !m.f16)
+    .filter((m) => f16 || !m.f16);
+  // On a GPU with 16-bit shaders the q4f32 build of a model is strictly worse (slower, bigger), and being
+  // bigger it used to sort *first*. Hide it whenever the q4f16 build of the same model is available.
+  const f16Bases = new Set(all.filter((m) => m.f16).map((m) => baseName(m.id)));
+  return all
+    .filter((m) => !(f16 && !showAll && !m.f16 && !m.custom && f16Bases.has(baseName(m.id))))
     .filter((m) => showAll || m.custom || (m.vram <= budgetMB && !m.shortCtx))
     .sort((a, b) =>
       (b.custom - a.custom) || (b.lessFiltered - a.lessFiltered) || (b.vram - a.vram) || a.id.localeCompare(b.id));
+}
+
+/** Model id without its quantisation / packaging suffixes: the "same model" key. */
+export const baseName = (id) => String(id).replace(/-MLC(-1k)?$/i, '').replace(/-q\d+f(?:16|32)(?:_\d)?/i, '');
+
+/** Qwen3 "hybrid" models start every reply with a long <think> block unless told not to. */
+export const thinksByDefault = (id) => /qwen3/i.test(id);
+
+/* ---------- Speed estimation ----------
+   Token generation is memory-bandwidth bound: every new token streams (almost) all the weights through the GPU.
+   So for the same machine, tokens/s scales ~ 1 / (weight bytes). `vram_required_MB` is weights + KV cache +
+   runtime buffers; the fixed part is subtracted so a measurement on one model can predict another. */
+export const FIXED_OVERHEAD_MB = 600;
+
+export function predictTps(measuredTps, fromVramMB, toVramMB) {
+  const from = Math.max(300, fromVramMB - FIXED_OVERHEAD_MB);
+  const to = Math.max(300, toVramMB - FIXED_OVERHEAD_MB);
+  return measuredTps * (from / to);
+}
+
+/**
+ * Given one real measurement ({ tps, vram }), pick the most capable listed model predicted to reach `target` tok/s.
+ * Falls back to the lightest model when none do. → { model, predicted, meets }
+ */
+export function suggestForSpeed(models, measured, target = 20) {
+  const cands = models.filter((m) => m.vram && !m.custom);
+  if (!cands.length || !measured?.tps || !measured?.vram) return null;
+  const scored = cands.map((m) => ({ model: m, predicted: predictTps(measured.tps, measured.vram, m.vram) }));
+  const ok = scored.filter((s) => s.predicted >= target * 1.05).sort((a, b) => b.model.vram - a.model.vram);   // 5 % safety margin
+  if (ok.length) return { ...ok[0], meets: true };
+  return { ...scored.sort((a, b) => a.model.vram - b.model.vram)[0], meets: false };
 }
 
 /** The model to suggest first: best-ranked one that is comfortably light (<= `lightMB`). */

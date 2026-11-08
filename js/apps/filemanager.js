@@ -68,6 +68,7 @@ export const fileManagerApp = {
           ${tpl('paste', 'Paste (Ctrl+V)', 'paste')}
           <div class="toolbar-sep"></div>
           ${tpl('upload', 'Upload files from your computer (saved to UPLOADS)', 'upload')}
+          ${tpl('download', 'Save to Device (download)', 'download')}
           ${tpl('extract', 'Extract the selected .zip into a new folder', 'archive')}
           <div class="toolbar-sep"></div>
           ${tpl('storage', 'Storage: total used / left', 'disk')}
@@ -203,6 +204,7 @@ export const fileManagerApp = {
 
     function updateStatus() {
       btn('extract').disabled = view !== 'files' || !selectedZip();
+      btn('download').disabled = view !== 'files' || !selected.size;
       btn('cut').disabled = btn('copy').disabled = view !== 'files' || !selected.size;
       btn('paste').disabled = view !== 'files' || !getClipboard();
       if (view === 'storage') { elCount.textContent = 'Virtual disk'; elSel.textContent = ''; return; }
@@ -301,6 +303,66 @@ export const fileManagerApp = {
       const res = await extractArchive(pathOf(it.name), { here });
       if (res?.name && parentPath(res.dir) === cwd && view === 'files') await refresh(res.name);   // jump to the new folder
     }
+
+    // ---------- Downloading ----------
+    const saveBlob = (b, name) => {
+      const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    };
+
+    const dlNodes = async ns => {
+      for (const n of ns) {
+        if (n.kind === 'folder') continue;
+        const blob = await vfs.read(joinPath(cwd, n.name));
+        if (blob) saveBlob(blob, n.name);
+      }
+    };
+
+    const download = async () => {
+      const ns = selectedItems();
+      if (!ns.length) return;
+      
+      // If multiple items or contains a folder, use ZIP
+      if (ns.length > 1 || ns.some(i => i.kind === 'folder')) {
+        return downloadzip();
+      }
+      
+      stat('Downloading...');
+      await dlNodes(ns);
+      stat('Download complete.');
+    };
+
+    const downloadzip = async () => {
+      if (typeof fflate === 'undefined') return stat('ZIP library failed to load.');
+      const ns = selectedItems(); if (!ns.length) return;
+      
+      stat('Preparing ZIP...');
+      const out = {};
+      
+      const gather = async (nd, prefix) => {
+        if (nd.kind === 'folder') {
+          const base = prefix + nd.name + '/';
+          out[base] = new Uint8Array(0); // empty dir entry
+          const children = await vfs.list(joinPath(cwd, nd.name));
+          for (const k of children) await gather(k, base);
+        } else {
+          const blob = await vfs.read(joinPath(cwd, nd.name));
+          if (blob) {
+            let name = prefix + nd.name;
+            let i = 2;
+            while (out[name]) name = prefix + nd.name.replace(/(\.[^.]+)?$/, ` (${i++})$1`);
+            out[name] = new Uint8Array(await blob.arrayBuffer());
+          }
+        }
+      };
+      
+      for (const n of ns) await gather(n, '');
+      if (!Object.keys(out).length) return stat('Nothing to save.');
+      
+      saveBlob(new Blob([fflate.zipSync(out)], { type: 'application/zip' }), ns.length === 1 && ns[0].kind === 'folder' ? ns[0].name + '.zip' : 'Export.zip');
+      stat('ZIP downloaded.');
+    };
 
     // ---------- Clipboard ----------
     const copySelected = () => { if (selected.size) setClipboard('copy', cwd, [...selected]); };
@@ -503,7 +565,8 @@ export const fileManagerApp = {
     const COMMANDS = {
       back: goBack, fwd: goForward, up: goUp, refresh: () => (view === 'storage' ? refreshDisk() : refresh()),
       newfolder: () => newEntry('dir'), newfile: () => newEntry('file'), view: toggleView,
-      upload: uploadFromComputer, storage: toggleStorage, cut: cutSelected, copy: copySelected, paste: () => pasteInto(), extract: () => extractSelected(false)
+      upload: uploadFromComputer, download: download, downloadzip: downloadzip, 
+      storage: toggleStorage, cut: cutSelected, copy: copySelected, paste: () => pasteInto(), extract: () => extractSelected(false)
     };
 
     // ---------- Pointer & menu events (all delegated) ----------
@@ -563,6 +626,8 @@ export const fileManagerApp = {
             { label: `Extract to “${zip.name.replace(/\.zip$/i, '') || 'archive'}/”`, action: () => extractSelected(false) },
             { label: 'Extract Here', action: () => extractSelected(true) }
           ] : []),
+          { sep: true },
+          { label: 'Save to Device', action: download },
           { sep: true },
           { label: 'Cut', action: cutSelected, hint: 'Ctrl+X' },
           { label: 'Copy', action: copySelected, hint: 'Ctrl+C' },
@@ -757,6 +822,7 @@ export const fileManagerApp = {
       else if (mod && e.key.toLowerCase() === 'c') copySelected();
       else if (mod && e.key.toLowerCase() === 'x') cutSelected();
       else if (mod && e.key.toLowerCase() === 'v') pasteInto();
+      else if (mod && e.key.toLowerCase() === 's') download();
       else if (e.altKey || mod) handled = false;
       else switch (e.key) {
         case 'Enter': openSelected(); break;

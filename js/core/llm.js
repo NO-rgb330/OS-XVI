@@ -6,7 +6,7 @@
    · One engine is shared system-wide: loading, streaming, stopping and unloading go through here.
    ============================================================ */
 
-import { pickModels, memoryBudgetMB } from './llm-utils.js';
+import { pickModels, memoryBudgetMB, thinksByDefault } from './llm-utils.js';
 
 export const WEBLLM_VERSION = '0.2.79';
 const SOURCES = [
@@ -38,17 +38,29 @@ export function loadLib() {
   return libPromise;
 }
 
-/** WebGPU availability + the one capability that decides which model builds work. */
+/** WebGPU availability + the capabilities that decide which model builds work and how fast they run. */
 export async function checkGpu() {
   if (!('gpu' in navigator)) {
     return { ok: false, reason: 'This browser has no WebGPU. Use a recent Chrome or Edge (113+), and make sure hardware acceleration is on.' };
   }
+  // Ask for the same adapter the runtime will use. A bare requestAdapter() can return the integrated GPU on
+  // laptops that also have a discrete one, which gave a wrong shader-f16 answer and a wrong name.
   let adapter = null;
-  try { adapter = await navigator.gpu.requestAdapter(); } catch { /* handled below */ }
+  try { adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' }); } catch { /* handled below */ }
+  if (!adapter) { try { adapter = await navigator.gpu.requestAdapter(); } catch { /* handled below */ } }
   if (!adapter) return { ok: false, reason: 'WebGPU is present but no graphics adapter was found. Enable hardware acceleration in your browser settings, or update your graphics drivers.' };
-  let name = '';
-  try { name = (adapter.info ?? (await adapter.requestAdapterInfo?.()))?.description || ''; } catch { /* optional */ }
-  return { ok: true, f16: adapter.features.has('shader-f16'), name, deviceMemory: navigator.deviceMemory || 0 };
+  let info = null;
+  try { info = adapter.info ?? (await adapter.requestAdapterInfo?.()) ?? null; } catch { /* optional */ }
+  const name = [info?.vendor, info?.description || info?.architecture].filter(Boolean).join(' ').trim();
+  // A software rasteriser (SwiftShader / "fallback adapter") runs models at 1–3 tokens/s. Say so instead of crawling.
+  if (adapter.isFallbackAdapter || info?.isFallbackAdapter) {
+    return { ok: false, reason: 'Your browser is using a software graphics renderer, which is far too slow for AI models. Turn on hardware acceleration (Settings → System), update your graphics driver, and check chrome://gpu.' };
+  }
+  const lim = adapter.limits ?? {};
+  return {
+    ok: true, f16: adapter.features.has('shader-f16'), name, deviceMemory: navigator.deviceMemory || 0,
+    maxBufferMB: Math.round((lim.maxBufferSize || 0) / 1048576)
+  };
 }
 
 /** The runtime's built-in model list plus the user's custom entries. */
@@ -141,15 +153,17 @@ export function stopGeneration() {
  * Stream a reply. Yields { delta } text pieces, then a final { usage } with tokens/second.
  * Stop it with stopGeneration(); the partial text already yielded is still valid.
  */
-export async function* streamChat(messages, { temperature = 0.7, top_p = 0.95, max_tokens = 1024 } = {}) {
+export async function* streamChat(messages, { temperature = 0.7, top_p = 0.95, max_tokens = 1024, think = true } = {}) {
   if (!state.engine) throw new Error('No model is loaded.');
   if (state.generating) throw new Error('Already generating.');
   state.generating = true;
   emit();
   try {
-    const stream = await state.engine.chat.completions.create({
-      messages, stream: true, stream_options: { include_usage: true }, temperature, top_p, max_tokens
-    });
+    const req = { messages, stream: true, stream_options: { include_usage: true }, temperature, top_p, max_tokens };
+    // Qwen3 reasons inside <think> for hundreds of tokens before answering; skipping that is the biggest
+    // "speed-up" the user can feel, and it stops the reply from being cut off by max_tokens mid-thought.
+    if (!think && thinksByDefault(state.modelId)) req.extra_body = { enable_thinking: false };
+    const stream = await state.engine.chat.completions.create(req);
     for await (const chunk of stream) {
       const delta = chunk.choices?.[0]?.delta?.content;
       if (delta) yield { delta };
@@ -161,4 +175,33 @@ export async function* streamChat(messages, { temperature = 0.7, top_p = 0.95, m
     state.generating = false;
     emit();
   }
+}
+
+/**
+ * Warm up the GPU pipelines (shaders compile lazily on first use, which makes the first reply slow) and measure
+ * steady-state decode speed. Costs about 2–4 seconds. → tokens/second, or 0 if it could not be measured.
+ */
+export async function benchmark() {
+  if (!state.engine || state.generating) return 0;
+  state.generating = true;
+  emit();
+  const run = async (maxTokens) => {
+    const req = {
+      messages: [{ role: 'user', content: 'Count from 1 to 60, separated by commas.' }],
+      stream: true, stream_options: { include_usage: true }, temperature: 0, max_tokens: maxTokens
+    };
+    if (thinksByDefault(state.modelId)) req.extra_body = { enable_thinking: false };
+    let tps = 0;
+    for await (const chunk of await state.engine.chat.completions.create(req)) {
+      if (chunk.usage) tps = chunk.usage.extra?.decode_tokens_per_s || 0;
+    }
+    return tps;
+  };
+  try {
+    await run(12);                 // compile pipelines, touch every weight buffer once
+    const tps = await run(64);     // the real measurement
+    try { await state.engine.resetChat(); } catch { /* not critical */ }
+    return tps;
+  } catch { return 0; }
+  finally { state.generating = false; emit(); }
 }

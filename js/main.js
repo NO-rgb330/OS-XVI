@@ -13,7 +13,8 @@ import { mediaViewerApp } from './apps/mediaviewer.js';
 import { terminalApp } from './apps/terminal.js';
 import { serpentApp } from './apps/serpent.js';
 import { webcraftApp } from './apps/webcraft.js';
-import { graphCalcApp } from './apps/graphcalc.js'; // <--- NEW
+import { graphCalcApp } from './apps/graphcalc.js'; 
+import { codeScanApp } from '.apps/codescan.js':
 
 import { runSetup } from './core/setup.js';
 import { runBootSequence } from './core/boot.js';
@@ -24,7 +25,8 @@ const APPS = [
   notepadApp,
   terminalApp,
   calculatorApp,
-  graphCalcApp, // <--- NEW
+  graphCalcApp, 
+  codeScanApp,
   imageViewerApp,
   mediaViewerApp,
   serpentApp,

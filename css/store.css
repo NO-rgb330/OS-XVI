@@ -1,0 +1,86 @@
+/* ============================================================
+   APP STORE
+   ============================================================ */
+.store-app { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; background: var(--bg-window); }
+
+.store-top {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px 0;
+  background: var(--bg-toolbar);
+  border-bottom: 1px solid var(--bd-soft);
+}
+.store-tabs { display: flex; gap: 2px; }
+.store-tab {
+  padding: 7px 16px;
+  font-size: 13px;
+  color: var(--tx-muted);
+  border: 1px solid transparent;
+  border-bottom: 0;
+  margin-bottom: -1px;
+  background: transparent;
+}
+.store-tab:hover { color: var(--tx); background: var(--hover-bg); }
+.store-tab.active { color: var(--tx); font-weight: 600; background: var(--bg-window); border-color: var(--bd-soft); }
+.store-search { width: 220px; margin-bottom: 8px; }
+
+.store-cats {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--bd-soft);
+}
+.store-cat {
+  padding: 3px 12px;
+  font-size: 12px;
+  color: var(--tx);
+  background: transparent;
+  border: 1px solid var(--bd);
+  border-radius: 999px;
+}
+.store-cat:hover { background: var(--hover-bg); }
+.store-cat.active { background: var(--ink); color: var(--ink-inv); border-color: var(--ink); }
+
+.store-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  align-content: start;
+  gap: 10px;
+  padding: 12px;
+}
+.store-list .app-empty { grid-column: 1 / -1; }
+
+.store-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "icon info" "icon actions";
+  column-gap: 12px;
+  row-gap: 10px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--bd-soft);
+}
+.store-card:hover { border-color: var(--bd); }
+.store-icon {
+  grid-area: icon;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ink);
+  color: var(--ink-inv);
+}
+.store-info { grid-area: info; min-width: 0; }
+.store-name { font-size: 14px; font-weight: 600; }
+.store-cat-label { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--tx-muted); margin: 1px 0 4px; }
+.store-desc { font-size: 12px; line-height: 1.4; color: var(--tx); }
+.store-actions { grid-area: actions; display: flex; gap: 6px; }

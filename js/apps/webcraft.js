@@ -46,6 +46,7 @@ h1 { font-weight: 300; }`);
       await vfs.write(`${PROJECT_DIR}/script.js`, `console.log("WebCraft loaded.");`);
     }
 
+    // Replace the body.innerHTML in webcraft.js with this:
     body.innerHTML = `
       <div class="ide-app">
         <div class="ide-toolbar">
@@ -66,13 +67,13 @@ h1 { font-weight: 300; }`);
           </div>
           
           <!-- Middle: Editor -->
-          <div class="ide-main" id="webcraft-editor-pane" style="flex: 1 1 50%; border-right: 1px solid var(--bd-soft);">
+          <div class="ide-main" id="webcraft-editor-pane" style="flex: 1 1 50%; min-width: 0; border-right: 1px solid var(--bd-soft);">
             <div class="ide-tabs" id="webcraft-tabs"></div>
-            <div class="code-editor-container" id="webcraft-editor" style="flex:1; display:flex; flex-direction:column;"></div>
+            <div class="code-editor-container" id="webcraft-editor"></div>
           </div>
 
           <!-- Right: Preview -->
-          <div class="ide-main" id="webcraft-preview-pane" style="flex: 1 1 50%; background: var(--paper);">
+          <div class="ide-main" id="webcraft-preview-pane" style="flex: 1 1 50%; min-width: 0; background: var(--paper);">
             <div class="ide-bottom-header" style="background: var(--surface); border-bottom: 1px solid var(--bd-soft);">
               <span>Preview</span>
             </div>

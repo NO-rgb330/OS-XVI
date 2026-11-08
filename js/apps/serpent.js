@@ -15,12 +15,16 @@ export const serpentApp = {
 
   async launch(body, args, ctx) {
     let pyLoading = false;
-    let openFiles = new Map(); // path -> { editor, tabEl, dirty }
+    let openFiles = new Map(); 
     let activeFile = null;
     let projectTreeEl = null;
     let tabsEl = null;
     let editorContainer = null;
-    let consoleEl = null;
+    
+    // Output and REPL elements
+    let replLog = null;
+    let replInput = null;
+    let outputLog = null;
 
     // Ensure project dir exists
     if (!(await vfs.exists(PROJECT_DIR))) {
@@ -31,11 +35,11 @@ export const serpentApp = {
     body.innerHTML = `
       <div class="ide-app">
         <div class="ide-toolbar">
-          <button class="toolbar-btn btn-run primary">${iconHTML('play', 14)} Run</button>
+          <button class="toolbar-btn btn-run primary">${iconHTML('play', 14)} Run File</button>
           <button class="toolbar-btn btn-save" disabled>${iconHTML('file-text', 14)} Save</button>
           <div class="toolbar-sep"></div>
           <button class="toolbar-btn btn-new">${iconHTML('file-plus', 14)} New File</button>
-          <button class="toolbar-btn btn-clear">${iconHTML('trash', 14)} Clear Console</button>
+          <button class="toolbar-btn btn-clear">${iconHTML('trash', 14)} Clear All</button>
           <div style="flex:1"></div>
           <span class="muted" style="font-size:11px" id="serpent-status">Ready</span>
         </div>
@@ -50,12 +54,30 @@ export const serpentApp = {
             <div class="ide-tabs" id="serpent-tabs"></div>
             <div class="code-editor-container" id="serpent-editor" style="flex:1; display:flex; flex-direction:column;"></div>
             
-            <div class="ide-bottom-panel">
-              <div class="ide-bottom-header">
-                <span>Console</span>
-                <span class="muted" id="serpent-console-status">Not running</span>
+            <!-- Split Bottom Panel -->
+            <div class="ide-bottom-panel" style="flex-direction: row; height: 250px;">
+              
+              <!-- Left: REPL -->
+              <div class="ide-main" style="flex: 1; border-right: 1px solid var(--bd-soft);">
+                <div class="ide-bottom-header">
+                  <span>Interactive Console</span>
+                </div>
+                <div class="ide-console" id="serpent-repl-log" style="flex: 1; overflow-y: auto; white-space: pre-wrap;"></div>
+                <div class="repl-input-line">
+                  <span class="repl-prompt">>>></span>
+                  <input type="text" id="serpent-repl-input" class="repl-input" autocomplete="off" spellcheck="false" placeholder="Type Python code and press Enter...">
+                </div>
               </div>
-              <div class="ide-console" id="serpent-console"></div>
+
+              <!-- Right: Output -->
+              <div class="ide-main" style="flex: 1;">
+                <div class="ide-bottom-header">
+                  <span>Output</span>
+                  <span class="muted" id="serpent-console-status">Idle</span>
+                </div>
+                <div class="ide-console" id="serpent-output-log" style="flex: 1; overflow-y: auto;"></div>
+              </div>
+              
             </div>
           </div>
         </div>
@@ -65,7 +87,11 @@ export const serpentApp = {
     projectTreeEl = body.querySelector('#serpent-tree');
     tabsEl = body.querySelector('#serpent-tabs');
     editorContainer = body.querySelector('#serpent-editor');
-    consoleEl = body.querySelector('#serpent-console');
+    
+    replLog = body.querySelector('#serpent-repl-log');
+    replInput = body.querySelector('#serpent-repl-input');
+    outputLog = body.querySelector('#serpent-output-log');
+    
     const btnRun = body.querySelector('.btn-run');
     const btnSave = body.querySelector('.btn-save');
     const btnNew = body.querySelector('.btn-new');
@@ -73,13 +99,21 @@ export const serpentApp = {
     const statusEl = body.querySelector('#serpent-status');
     const consoleStatus = body.querySelector('#serpent-console-status');
 
-    // --- Console Output ---
-    function log(text, isError = false) {
+    // --- Output Loggers ---
+    function logOutput(text, isError = false) {
       const div = document.createElement('div');
       if (isError) div.className = 'ide-console-error';
       div.textContent = text;
-      consoleEl.appendChild(div);
-      consoleEl.scrollTop = consoleEl.scrollHeight;
+      outputLog.appendChild(div);
+      outputLog.scrollTop = outputLog.scrollHeight;
+    }
+
+    function logRepl(text, isError = false) {
+      const div = document.createElement('div');
+      if (isError) div.className = 'ide-console-error';
+      div.textContent = text;
+      replLog.appendChild(div);
+      replLog.scrollTop = replLog.scrollHeight;
     }
 
     // --- File System ---
@@ -97,7 +131,7 @@ export const serpentApp = {
           projectTreeEl.appendChild(el);
         }
       } catch (e) {
-        log('Error reading project: ' + e.message, true);
+        logOutput('Error reading project: ' + e.message, true);
       }
     }
 
@@ -167,7 +201,7 @@ export const serpentApp = {
         f.dirty = false;
         f.tabEl.innerHTML = `${iconHTML('file-text', 12)} ${activeFile}`;
         btnSave.disabled = true;
-        log(`Saved ${activeFile}`);
+        logOutput(`Saved ${activeFile}`);
       } catch (e) {
         if (e.message.includes('ENOSPC')) {
           dialogs.alert('Disk Full', 'The browser storage limit has been reached. Please delete some files or click "Request More Space" in the File Manager.');
@@ -195,11 +229,11 @@ export const serpentApp = {
 
     async function runCode() {
       if (!activeFile || !openFiles.has(activeFile)) {
-        log('No file open to run.', true);
+        logOutput('No file open to run.', true);
         return;
       }
       
-      consoleEl.innerHTML = '';
+      outputLog.innerHTML = '';
       consoleStatus.textContent = 'Running...';
       btnRun.disabled = true;
       
@@ -208,7 +242,7 @@ export const serpentApp = {
         if (!py) {
           if (!pyLoading) {
             statusEl.textContent = 'Loading Python (WASM)...';
-            log('Python runtime is still loading (or failed during boot). Please wait...');
+            logOutput('Python runtime is still loading (or failed during boot). Please wait...');
             pyLoading = true;
             await initPython();
             pyLoading = false;
@@ -218,15 +252,16 @@ export const serpentApp = {
           py = getPython();
         }
         
-        const code = openFiles.get(activeFile).editor.getValue();
+        // --- THE FIX: Redirect Python stdout/stderr back to the UI ---
+        py.setStdout({ batched: (str) => logOutput(str) });
+        py.setStderr({ batched: (str) => logOutput(str, true) });
         
-        // Redirect stdout/stderr dynamically if possible, 
-        // but since Pyodide was initialized globally, we'll let it use the global console.
-        // For a better implementation, we can run in a context, but standard runPythonAsync works.
+        const code = openFiles.get(activeFile).editor.getValue();
         await py.runPythonAsync(code);
+        
         consoleStatus.textContent = 'Finished';
       } catch (err) {
-        log(err.message, true);
+        logOutput(err.message, true);
         consoleStatus.textContent = 'Error';
       } finally {
         btnRun.disabled = false;
@@ -234,11 +269,45 @@ export const serpentApp = {
       }
     }
 
+    // --- REPL Input Logic ---
+    replInput.addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter') {
+        const code = replInput.value;
+        if (!code.trim()) return;
+        
+        replInput.value = '';
+        logRepl(`>>> ${code}`);
+        
+        try {
+          let py = getPython();
+          if (!py) {
+            logRepl('Python runtime is loading...', true);
+            await initPython();
+            py = getPython();
+          }
+          
+          // Redirect stdout/stderr for the REPL
+          py.setStdout({ batched: (str) => logRepl(str) });
+          py.setStderr({ batched: (str) => logRepl(str, true) });
+          
+          const result = await py.runPythonAsync(code);
+          if (result !== undefined && result !== null) {
+             logRepl(String(result));
+          }
+        } catch (err) {
+          logRepl(err.message, true);
+        }
+      }
+    });
+
     // --- Events ---
     btnSave.onclick = saveFile;
     btnNew.onclick = newFile;
     btnRun.onclick = runCode;
-    btnClear.onclick = () => { consoleEl.innerHTML = ''; };
+    btnClear.onclick = () => { 
+      outputLog.innerHTML = ''; 
+      replLog.innerHTML = ''; 
+    };
 
     ctx.onCleanup(() => {
       // Cleanup

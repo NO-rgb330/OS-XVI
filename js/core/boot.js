@@ -39,14 +39,14 @@ export async function runBootSequence() {
     });
 
     const steps = [
-      { t: '[    0.000000] Booting Monochrome OS Kernel...', d: 200, c: 'boot-ok' },
-      { t: '[    0.120512] Initializing OPFS block device driver...', d: 400 },
+      { t: '[    0.000000] Booting Kernel', d: 200, c: 'boot-ok' },
+      { t: '[    0.120512] Initializing OPFS', d: 400 },
       { t: '[    0.451223] Mounting root filesystem on /dev/vopfs0', d: 300, c: 'boot-ok' },
       { t: `[    0.512111] EXT4-fs (vopfs0): mounted filesystem with ordered data mode. Opts: (null)`, d: 150 },
       { t: `[    0.812111] random: crng init done`, d: 100 },
       { t: `[    1.104511] systemd[1]: System time before build time, advancing clock.`, d: 200 },
       { t: `[    1.231111] systemd[1]: Detected architecture x86-64.`, d: 150 },
-      { t: `[    1.412412] systemd[1]: Set hostname to <monochrome>.`, d: 100 },
+      { t: `[    1.412412] systemd[1]: Set hostname to <blank>.`, d: 100 },
       { t: `[    2.001511] systemd[1]: Started Journal Service.`, d: 250, c: 'boot-ok' },
       { t: `[    2.112111] systemd[1]: Starting Load Kernel Modules...`, d: 200 },
       { t: `[    2.451111] systemd[1]: Started Load Kernel Modules.`, d: 100, c: 'boot-ok' },
@@ -58,7 +58,7 @@ export async function runBootSequence() {
       { t: `[    5.123511] [drm] Initialized i915 1.6.0 20201103 for 0000:00:02.0 on minor 0`, d: 150 },
       { t: `[    5.551111] systemd[1]: Started VFS Cache Service.`, d: 100, c: 'boot-ok' },
       { t: `[    6.112111] random: crng init done`, d: 100 },
-      { t: `[    6.512111] ip_tables: (C) 2000-2006 Netfilter Core Team`, d: 150 },
+      { t: `[    6.512111] ip_tables: bad magic number: aborted`, d: 150 },
       { t: `[    7.001511] systemd[1]: Reached target Multi-User System.`, d: 300, c: 'boot-ok' },
       { t: `[    7.451111] systemd[1]: Reached target Graphical Interface.`, d: 200, c: 'boot-ok' },
       { t: `[    8.123111] starting version 250.5+`, d: 300 },

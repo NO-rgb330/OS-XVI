@@ -1,12 +1,5 @@
 /* ============================================================
    IDE (Serpent / WebCraft)
-   Monochrome syntax highlighting tokens:
-   .tok-kw  (Keywords)   -> Bold
-   .tok-str (Strings)    -> Italic
-   .tok-com (Comments)   -> Muted grey
-   .tok-num (Numbers)    -> Underlined
-   .tok-tag (HTML tags)  -> Bold + Underlined
-   .tok-attr (Attributes)-> Italic
    ============================================================ */
 
 .ide-app {
@@ -14,8 +7,10 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
   background: var(--bg-window);
   outline: none;
+  overflow: hidden;
 }
 
 /* ---- Toolbar ---- */
@@ -35,6 +30,8 @@
   flex: 1 1 auto;
   display: flex;
   min-height: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* Sidebar (Project tree) */
@@ -76,6 +73,7 @@
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+  overflow: hidden;
 }
 
 /* Tabs */
@@ -112,6 +110,14 @@
 .ide-tab .icon { width: 12px; height: 12px; }
 
 /* ---- Shared Code Editor ---- */
+.code-editor-container {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .code-editor-wrap {
   flex: 1 1 auto;
   display: flex;
@@ -138,6 +144,7 @@
   flex: 1 1 auto;
   position: relative;
   overflow: hidden;
+  min-width: 0;
 }
 
 .code-highlight, .code-input {
@@ -158,7 +165,6 @@
   pointer-events: none;
   z-index: 1;
   color: var(--tx);
-  /* Hide scrollbars on the highlight layer to prevent double scrollbars */
   scrollbar-width: none; 
 }
 .code-highlight::-webkit-scrollbar { 
@@ -185,14 +191,16 @@
 
 /* Bottom Console / Preview Area */
 .ide-bottom-panel {
-  flex: 0 0 220px;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   background: var(--surface);
   border-top: 1px solid var(--bd-soft);
   min-height: 0;
+  overflow: hidden;
 }
 .ide-bottom-header {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -209,6 +217,7 @@
   font-size: 12px;
   white-space: pre-wrap;
   color: var(--tx);
+  min-height: 0;
 }
 .ide-console-error { 
   color: var(--danger-ink); 
@@ -223,6 +232,7 @@
   background: var(--paper);
   width: 100%;
   height: 100%;
+  min-height: 0;
 }
 
 /* ---- Python REPL Input (Serpent) ---- */
@@ -233,6 +243,7 @@
   padding: 6px 12px;
   background: var(--paper);
   border-top: 1px solid var(--bd-soft);
+  flex: 0 0 auto;
 }
 .repl-prompt {
   font-family: var(--font-mono);

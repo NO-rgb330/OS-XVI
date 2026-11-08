@@ -37,7 +37,7 @@ export function showLogin(isLockScreen = false) {
         </div>
         <div class="lock-error" id="lock-err" role="alert"></div>
       </form>
-      <div class="lock-foot">${isLockScreen ? 'Locked' : 'Monochrome OS'}</div>`;
+      <div class="lock-foot">${isLockScreen ? 'Locked' : 'OS-XVI'}</div>`;
 
     // Keep the desktop behind unreachable by keyboard / screen reader while this is up.
     const locked = [...document.body.children].filter((el) => el !== overlay && !el.hasAttribute('inert'));

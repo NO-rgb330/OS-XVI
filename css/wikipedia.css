@@ -55,6 +55,7 @@
 .wp-spinner { width: 28px; height: 28px; border: 3px solid var(--shade-20); border-top-color: var(--ink); border-radius: 50%; animation: wp-spin .8s linear infinite; }
 @keyframes wp-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .wp-spinner { animation-duration: 3s; } }
+.wp-error-detail { max-width: 460px; line-height: 1.5; }
 .wp-error-actions { display: flex; gap: 8px; margin-top: 4px; }
 .wp-error-actions a.app-btn { text-decoration: none; }
 

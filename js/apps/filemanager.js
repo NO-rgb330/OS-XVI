@@ -6,6 +6,7 @@ import { iconFor, openItem, createEntry, renameEntry, deleteEntries, transferInt
 import { showMenu } from '../core/contextmenu.js';
 import { setClipboard, getClipboard, onClipboardChange, isCut, paste } from '../core/clipboard.js';
 import { setDragPaths, readDragPaths, hasPaths, hasFiles, filesFromDrop } from '../core/dnd.js';
+import { buildZip } from '../core/zip.js';
 import { pickFiles, uploadFiles, UPLOADS_DIR } from '../core/upload.js';
 
 const HOME = '/home/user';
@@ -311,57 +312,52 @@ export const fileManagerApp = {
       setTimeout(() => URL.revokeObjectURL(a.href), 10000);
     };
 
-    const dlNodes = async ns => {
-      for (const n of ns) {
-        if (n.kind === 'folder') continue;
-        const blob = await vfs.read(joinPath(cwd, n.name));
-        if (blob) saveBlob(blob, n.name);
-      }
-    };
+    const stat = (msg) => dialogs.toast(msg, { danger: /failed/i.test(msg) });
 
     const download = async () => {
       const ns = selectedItems();
       if (!ns.length) return;
-      
-      // If multiple items or contains a folder, use ZIP
-      if (ns.length > 1 || ns.some(i => i.kind === 'folder')) {
-        return downloadzip();
+      try {
+        // One plain file → download it as-is. Anything else → ZIP.
+        if (ns.length === 1 && ns[0].kind === 'file') {
+          stat('Downloading...');
+          const blob = await vfs.read(joinPath(cwd, ns[0].name));
+          saveBlob(blob, ns[0].name);
+          return stat(`Downloaded ${ns[0].name}.`);
+        }
+        return await downloadzip(ns);
+      } catch (e) {
+        stat('Download failed: ' + e.message);
       }
-      
-      stat('Downloading...');
-      await dlNodes(ns);
-      stat('Download complete.');
     };
 
-    const downloadzip = async () => {
-      if (typeof fflate === 'undefined') return stat('ZIP library failed to load.');
-      const ns = selectedItems(); if (!ns.length) return;
-      
+    const downloadzip = async (ns = selectedItems()) => {
+      if (!ns.length) return;
       stat('Preparing ZIP...');
       const out = {};
-      
-      const gather = async (nd, prefix) => {
-        if (nd.kind === 'folder') {
+      const unique = (name) => {
+        let n = name, i = 2;
+        while (out[n]) n = name.replace(/(\.[^./]+)?$/, ` (${i++})$1`);
+        return n;
+      };
+      const gather = async (nd, prefix, dir) => {
+        const path = joinPath(dir, nd.name);
+        if (nd.kind === 'dir') {
           const base = prefix + nd.name + '/';
-          out[base] = new Uint8Array(0); // empty dir entry
-          const children = await vfs.list(joinPath(cwd, nd.name));
-          for (const k of children) await gather(k, base);
+          out[base] = new Uint8Array(0);
+          for (const k of await vfs.list(path)) await gather(k, base, path);
         } else {
-          const blob = await vfs.read(joinPath(cwd, nd.name));
-          if (blob) {
-            let name = prefix + nd.name;
-            let i = 2;
-            while (out[name]) name = prefix + nd.name.replace(/(\.[^.]+)?$/, ` (${i++})$1`);
-            out[name] = new Uint8Array(await blob.arrayBuffer());
-          }
+          const blob = await vfs.read(path);
+          out[unique(prefix + nd.name)] = new Uint8Array(await blob.arrayBuffer());
         }
       };
-      
-      for (const n of ns) await gather(n, '');
-      if (!Object.keys(out).length) return stat('Nothing to save.');
-      
-      saveBlob(new Blob([fflate.zipSync(out)], { type: 'application/zip' }), ns.length === 1 && ns[0].kind === 'folder' ? ns[0].name + '.zip' : 'Export.zip');
-      stat('ZIP downloaded.');
+      try {
+        for (const n of ns) await gather(n, '', cwd);
+        saveBlob(buildZip(out), ns.length === 1 ? ns[0].name + '.zip' : 'Export.zip');
+        stat('ZIP downloaded.');
+      } catch (e) {
+        stat('Download failed: ' + e.message);
+      }
     };
 
     // ---------- Clipboard ----------

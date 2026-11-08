@@ -103,6 +103,7 @@ export const codeScanApp = {
   launch(body, args, ctx) {
     let activeLang = 'web'; 
     let editor = null;
+    let scanTimer = null; // Moved out of the editor object
 
     body.innerHTML = `
       <div class="cs-app">
@@ -155,8 +156,9 @@ export const codeScanApp = {
         language: activeLang === 'python' ? 'python' : 'html',
         value: defaultCode[activeLang],
         onChange: () => {
-          clearTimeout(editor.scanTimer);
-          editor.scanTimer = setTimeout(runScan, 600);
+          // Use the local scanTimer variable instead of editor.scanTimer
+          clearTimeout(scanTimer);
+          scanTimer = setTimeout(runScan, 600);
         }
       });
       runScan();
@@ -183,7 +185,6 @@ export const codeScanApp = {
               severity: rule.severity,
               snippet: lineText.trim()
             });
-            // Prevent infinite loops on zero-length matches
             if (match.index === rule.re.lastIndex) rule.re.lastIndex++; 
           }
         }
@@ -192,7 +193,6 @@ export const codeScanApp = {
       const weights = { high: 3, medium: 2, low: 1 };
       issues.sort((a, b) => weights[b.severity] - weights[a.severity] || a.line - b.line);
 
-      // Deduplicate (if one line has multiple identical rule triggers, just show once)
       const uniqueIssues = [];
       const seen = new Set();
       issues.forEach(iss => {
@@ -251,6 +251,8 @@ export const codeScanApp = {
     };
 
     initEditor();
-    ctx.onCleanup(() => clearTimeout(editor.scanTimer));
+    
+    // Cleanup the correct local variable
+    ctx.onCleanup(() => clearTimeout(scanTimer));
   }
 };

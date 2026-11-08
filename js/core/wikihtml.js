@@ -118,7 +118,7 @@ function cleanStyle(raw) {
     const val = decl.slice(i + 1).replace(/!important/i, '').trim();
     if (!val) continue;
     if ((prop === 'display' && /^none$/i.test(val)) || (prop === 'visibility' && /^hidden$/i.test(val))) return null;
-    const ok = STYLE_RULES[prop];
+    const ok = Object.hasOwn(STYLE_RULES, prop) ? STYLE_RULES[prop] : null;
     if (ok && !/[\\@]|url\s*\(|expression|var\s*\(/i.test(val) && ok(val)) out.push(`${prop}:${val}`);
   }
   return out.join(';');
@@ -161,7 +161,12 @@ function copyAttrs(src, el, tag, ctx) {
   return !hide;
 }
 
+/** One malformed element must never take the whole article down: skip it and carry on. */
 function build(src, ctx) {
+  try { return buildNode(src, ctx); } catch (err) { ctx.skipped = (ctx.skipped || 0) + 1; console.warn('wikihtml: skipped an element', src.localName, err); return null; }
+}
+
+function buildNode(src, ctx) {
   if (src.nodeType === 3) return document.createTextNode(src.data);
   if (src.nodeType !== 1) return null;
   const tag = src.localName;
@@ -176,8 +181,7 @@ function build(src, ctx) {
   if (!copyAttrs(src, el, tag, ctx)) return null;
 
   if (tag === 'table') ctx.tables++;
-  children(el);
-  if (tag === 'table') ctx.tables--;
+  try { children(el); } finally { if (tag === 'table') ctx.tables--; }
 
   switch (tag) {
     case 'a': {

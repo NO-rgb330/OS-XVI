@@ -1,1 +1,76 @@
-import{register as o}from"./core/registry.js";import{initPanel as r}from"./core/panel.js";import{openWindow as s}from"./core/wm.js";import*as t from"./core/vfs.js";import*as e from"./core/dialogs.js";import{initDesktop as m}from"./core/desktop.js";import{seed as p}from"./seed.js";import{fileManagerApp as a}from"./apps/filemanager.js";import{notepadApp as i}from"./apps/notepad.js";import{calculatorApp as c}from"./apps/calculator.js";import{imageViewerApp as n}from"./apps/imageviewer.js";import{mediaViewerApp as f}from"./apps/mediaviewer.js";import{terminalApp as d}from"./apps/terminal.js";import{serpentApp as l}from"./apps/serpent.js";import{webcraftApp as j}from"./apps/webcraft.js";import{graphCalcApp as w}from"./apps/graphcalc.js";import{codeScanApp as g}from"./apps/codescan.js";import{runSetup as u}from"./core/setup.js";import{runBootSequence as v}from"./core/boot.js";import{showLogin as y}from"./core/login.js";import{clockApp as h}from"./apps/clock.js";const b=[a,i,d,c,w,g,n,f,l,j,h];(async function(){const a=document.getElementById("splash");"1"!==localStorage.getItem("os16.setup_complete")?(a.remove(),await u()):(a.classList.add("hide"),setTimeout(()=>a.remove(),300)),await v();try{await t.mount(),await p()}catch(o){return console.error(o),void(document.body.innerHTML=`<div style="color:white;background:black;padding:20px;font-family:monospace;">VFS Mount Failed: ${o.message}</div>`)}window.vfs=t,window.dialogs=e,await y(!1);for(const r of b)o(r);r(),await m(),window.__wm={openWindow:s}})().catch(o=>{console.error(o)});
+import { register } from './core/registry.js';
+import { initPanel } from './core/panel.js';
+import { openWindow } from './core/wm.js';
+import * as vfs from './core/vfs.js';
+import * as dialogs from './core/dialogs.js';
+import { initDesktop } from './core/desktop.js';
+import { seed } from './seed.js';
+import { fileManagerApp } from './apps/filemanager.js';
+import { notepadApp } from './apps/notepad.js';
+import { calculatorApp } from './apps/calculator.js';
+import { imageViewerApp } from './apps/imageviewer.js';
+import { mediaViewerApp } from './apps/mediaviewer.js';
+import { terminalApp } from './apps/terminal.js';
+import { serpentApp } from './apps/serpent.js';
+import { webcraftApp } from './apps/webcraft.js';
+import { graphCalcApp } from './apps/graphcalc.js';
+import { codeScanApp } from './apps/codescan.js';
+import { clockApp } from './apps/clock.js';
+import { sysMonApp } from './apps/sysmon.js'; // <--- NEW
+
+import { runSetup } from './core/setup.js';
+import { runBootSequence } from './core/boot.js';
+import { showLogin } from './core/login.js';
+
+const APPS = [
+  fileManagerApp,
+  notepadApp,
+  terminalApp,
+  calculatorApp,
+  graphCalcApp,
+  clockApp,
+  codeScanApp,
+  sysMonApp, // <--- NEW
+  imageViewerApp,
+  mediaViewerApp,
+  serpentApp,
+  webcraftApp
+];
+
+async function boot() {
+  const splash = document.getElementById('splash');
+  const isFirstBoot = localStorage.getItem('os16.setup_complete') !== '1';
+  
+  if (isFirstBoot) {
+    splash.remove();
+    await runSetup();
+  } else {
+    splash.classList.add('hide');
+    setTimeout(() => splash.remove(), 300);
+  }
+
+  await runBootSequence();
+
+  try {
+    await vfs.mount();
+    await seed();
+  } catch (err) {
+    console.error(err);
+    document.body.innerHTML = `<div style="color:white;background:black;padding:20px;font-family:monospace;">VFS Mount Failed: ${err.message}</div>`;
+    return;
+  }
+  window.vfs = vfs;
+  window.dialogs = dialogs;
+
+  await showLogin(false);
+
+  for (const app of APPS) register(app);
+  initPanel();
+  await initDesktop();
+
+  window.__wm = { openWindow };
+}
+
+boot().catch((e) => {
+  console.error(e);
+});

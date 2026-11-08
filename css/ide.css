@@ -118,6 +118,15 @@
   overflow: hidden;
 }
 
+/* The wrapper for individual file editors */
+.code-editor-wrapper {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .code-editor-wrap {
   flex: 1 1 auto;
   display: flex;
@@ -145,6 +154,7 @@
   position: relative;
   overflow: hidden;
   min-width: 0;
+  min-height: 0;
 }
 
 .code-highlight, .code-input {
@@ -180,7 +190,7 @@
   outline: none;
 }
 
-/* Syntax highlighting tokens (monochrome only) */
+/* Syntax highlighting tokens */
 .tok-kw { font-weight: 700; }
 .tok-str { font-style: italic; }
 .tok-com { color: var(--tx-muted); }

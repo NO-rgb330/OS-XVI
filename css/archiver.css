@@ -1,0 +1,96 @@
+/* ============================================================
+   ARCHIVER (ZIP Manager)
+   ============================================================ */
+
+.arc-app {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-window);
+  overflow: hidden;
+}
+
+.arc-split {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Left Side: File Picker */
+.arc-picker {
+  flex: 0 0 300px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--bd-soft);
+  background: var(--surface);
+  min-height: 0;
+}
+
+.arc-pathbar {
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  border-bottom: 1px solid var(--bd-soft);
+  background: var(--paper);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.arc-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.arc-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+  border-radius: var(--radius-sm);
+}
+.arc-row:hover { background: var(--hover-bg); }
+.arc-row.selected { background: var(--sel-bg); color: var(--sel-ink); }
+.arc-row .icon { width: 14px; height: 14px; }
+.arc-row .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.arc-row .size { font-size: 11px; color: var(--tx-muted); }
+
+/* Right Side: Archive Contents */
+.arc-main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  min-width: 0;
+  min-height: 0;
+}
+
+.arc-header {
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  border-bottom: 1px solid var(--bd-soft);
+  background: var(--surface);
+  display: flex;
+  justify-content: space-between;
+}
+
+.arc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--tx-muted);
+  font-size: 13px;
+  gap: 12px;
+}
+.arc-empty .icon { width: 40px; height: 40px; opacity: 0.3; }

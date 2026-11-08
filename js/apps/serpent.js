@@ -32,6 +32,7 @@ export const serpentApp = {
       await vfs.write(`${PROJECT_DIR}/main.py`, 'def greet(name):\n    return f"Hello, {name}!"\n\nprint(greet("Developer"))\n');
     }
 
+     // Replace the body.innerHTML in serpent.js with this:
     body.innerHTML = `
       <div class="ide-app">
         <div class="ide-toolbar">
@@ -52,13 +53,13 @@ export const serpentApp = {
           
           <div class="ide-main">
             <div class="ide-tabs" id="serpent-tabs"></div>
-            <div class="code-editor-container" id="serpent-editor" style="flex:1; display:flex; flex-direction:column;"></div>
+            <div class="code-editor-container" id="serpent-editor"></div>
             
             <!-- Split Bottom Panel -->
-            <div class="ide-bottom-panel" style="flex-direction: row; height: 250px;">
+            <div class="ide-bottom-panel" style="flex-direction: row; height: 250px; flex-shrink: 0;">
               
               <!-- Left: REPL -->
-              <div class="ide-main" style="flex: 1; border-right: 1px solid var(--bd-soft);">
+              <div class="ide-main" style="flex: 1; min-width: 0; border-right: 1px solid var(--bd-soft);">
                 <div class="ide-bottom-header">
                   <span>Interactive Console</span>
                 </div>
@@ -70,7 +71,7 @@ export const serpentApp = {
               </div>
 
               <!-- Right: Output -->
-              <div class="ide-main" style="flex: 1;">
+              <div class="ide-main" style="flex: 1; min-width: 0;">
                 <div class="ide-bottom-header">
                   <span>Output</span>
                   <span class="muted" id="serpent-console-status">Idle</span>

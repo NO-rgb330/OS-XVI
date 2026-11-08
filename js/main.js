@@ -41,38 +41,93 @@ const APPS = [
 
 async function boot() {
   const splash = document.getElementById('splash');
-  const isFirstBoot = localStorage.getItem('os16.setup_complete') !== '1';
-  
-  if (isFirstBoot) {
-    splash.remove();
-    await runSetup();
-  } else {
+
+  const hideSplash = () => {
+    if (!splash) return;
     splash.classList.add('hide');
     setTimeout(() => splash.remove(), 300);
-  }
+  };
 
-  await runBootSequence();
+  const showBootError = (title, message, error) => {
+    const fallback = document.createElement('div');
+    fallback.style.cssText = `
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: #000;
+      color: #fff;
+      font-family: monospace;
+      padding: 24px;
+      z-index: 99999;
+    `;
+
+    fallback.innerHTML = `
+      <div style="max-width: 700px; border: 1px solid #444; padding: 24px; background: #111;">
+        <h2 style="margin:0 0 12px 0;">${title}</h2>
+        <p style="margin:0 0 12px 0; color:#ff8888;">${message}</p>
+        <pre style="white-space: pre-wrap; color:#ddd; margin:0;">${error ? String(error).slice(0, 1000) : ''}</pre>
+      </div>
+    `;
+
+    document.body.innerHTML = '';
+    document.body.appendChild(fallback);
+  };
+
+  const isFirstBoot = localStorage.getItem('os16.setup_complete') !== '1';
 
   try {
-    await vfs.mount();
-    await seed();
+    if (isFirstBoot) {
+      if (splash) splash.remove();
+      await runSetup();
+    } else {
+      hideSplash();
+    }
+
+    await runBootSequence();
+
+    try {
+      await vfs.mount();
+      await seed();
+    } catch (err) {
+      console.error(err);
+      showBootError('VFS Mount Failed', 'The virtual filesystem could not initialize.', err);
+      return;
+    }
+
+    window.vfs = vfs;
+    window.dialogs = dialogs;
+
+    await showLogin(false);
+
+    for (const app of APPS) register(app);
+    initPanel();
+    await initDesktop();
+
+    window.__wm = { openWindow };
   } catch (err) {
     console.error(err);
-    document.body.innerHTML = `<div style="color:white;background:black;padding:20px;font-family:monospace;">VFS Mount Failed: ${err.message}</div>`;
-    return;
+    showBootError('System Boot Failed', 'The operating system did not finish booting.', err);
   }
-  window.vfs = vfs;
-  window.dialogs = dialogs;
-
-  await showLogin(false);
-
-  for (const app of APPS) register(app);
-  initPanel();
-  await initDesktop();
-
-  window.__wm = { openWindow };
 }
 
 boot().catch((e) => {
   console.error(e);
+  const splash = document.getElementById('splash');
+  if (splash) splash.remove();
+
+  const fallback = document.createElement('div');
+  fallback.style.cssText = `
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: #000;
+    color: #fff;
+    font-family: monospace;
+    padding: 24px;
+  `;
+  fallback.textContent = 'Boot Error: ' + (e?.message || e);
+  document.body.innerHTML = '';
+  document.body.appendChild(fallback);
 });

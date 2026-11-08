@@ -1,0 +1,126 @@
+/* ============================================================
+   SYSTEM MONITOR
+   ============================================================ */
+
+.sm-app {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-window);
+  outline: none;
+}
+
+.sm-grid {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+/* Stat Cards */
+.sm-card {
+  background: var(--surface);
+  border: 1px solid var(--bd-soft);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-radius: var(--radius-sm);
+}
+
+.sm-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--tx-muted);
+}
+
+.sm-val {
+  font-size: 28px;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  color: var(--tx);
+}
+
+.sm-sub {
+  font-size: 11px;
+  color: var(--tx-muted);
+}
+
+.sm-bar {
+  height: 8px;
+  background: var(--shade-20);
+  border: 1px solid var(--bd);
+  border-radius: 2px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.sm-bar-fill {
+  height: 100%;
+  background: var(--ink);
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+/* Process List (Full width) */
+.sm-processes {
+  grid-column: 1 / -1;
+  background: var(--surface);
+  border: 1px solid var(--bd-soft);
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+  max-height: 300px;
+  overflow-y: auto;
+  border-radius: var(--radius-sm);
+}
+
+.sm-process-header {
+  display: grid;
+  grid-template-columns: 1fr 100px 100px 100px;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--tx-muted);
+  border-bottom: 1px solid var(--bd-soft);
+  background: var(--paper);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.sm-process-row {
+  display: grid;
+  grid-template-columns: 1fr 100px 100px 100px;
+  padding: 6px 12px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--bd-soft);
+  align-items: center;
+}
+.sm-process-row:hover { background: var(--hover-bg); }
+.sm-process-row:nth-child(even) { background: var(--paper); }
+.sm-process-row span:not(:first-child) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--tx-muted);
+}
+.sm-process-row .sm-p-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sm-process-row .sm-p-name .icon {
+  width: 14px;
+  height: 14px;
+  opacity: 0.7;
+}

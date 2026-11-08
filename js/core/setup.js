@@ -5,7 +5,8 @@ const STORAGE_OPTIONS = [
   { id: 1, label: '1 GB', desc: 'Tiny' },
   { id: 5, label: '5 GB', desc: 'Mini' },
   { id: 10, label: '10 GB', desc: 'Normal' },
-  { id: 25, label: '25 GB', desc: 'Extended' }
+  { id: 25, label: '25 GB', desc: 'Extended' },
+  { id: 50, label: '50 GB', desc: 'Maximum' }
 ];
 
 export function runSetup() {

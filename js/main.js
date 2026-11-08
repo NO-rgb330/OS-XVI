@@ -18,6 +18,7 @@ import { codeScanApp } from './apps/codescan.js';
 import { clockApp } from './apps/clock.js';
 import { sysMonApp } from './apps/sysmon.js'; 
 import { archiverApp } from './apps/archiver.js';
+import { wikipediaApp } from './apps/wikipedia.js';
 
 import { runSetup } from './core/setup.js';
 import { runBootSequence } from './core/boot.js';
@@ -36,7 +37,8 @@ const APPS = [
   mediaViewerApp,
   serpentApp,
   webcraftApp,
-  archiverApp
+  archiverApp,
+  wikipediaApp
 ];
 
 async function boot() {

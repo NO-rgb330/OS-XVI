@@ -14,7 +14,7 @@ import { terminalApp } from './apps/terminal.js';
 import { serpentApp } from './apps/serpent.js';
 import { webcraftApp } from './apps/webcraft.js';
 import { graphCalcApp } from './apps/graphcalc.js'; 
-import { codeScanApp } from '.apps/codescan.js':
+import { codeScanApp } from '.apps/codescan.js';
 
 import { runSetup } from './core/setup.js';
 import { runBootSequence } from './core/boot.js';

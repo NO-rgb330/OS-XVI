@@ -2,10 +2,10 @@ import { esc } from './util.js';
 import * as dialogs from './dialogs.js';
 
 const STORAGE_OPTIONS = [
-  { id: 1, label: '1 GB', desc: 'Minimal' },
-  { id: 5, label: '5 GB', desc: 'Standard' },
-  { id: 10, label: '10 GB', desc: 'Extended' },
-  { id: 25, label: '25 GB', desc: 'Maximum' }
+  { id: 1, label: '1 GB', desc: 'Tiny' },
+  { id: 5, label: '5 GB', desc: 'Mini' },
+  { id: 10, label: '10 GB', desc: 'Normal' },
+  { id: 25, label: '25 GB', desc: 'Extended' }
 ];
 
 export function runSetup() {
@@ -23,7 +23,7 @@ export function runSetup() {
     const render = () => {
       overlay.innerHTML = `
         <div class="setup-window">
-          <div class="setup-header">Monochrome OS — Setup</div>
+          <div class="setup-header">OS-XVI — Setup</div>
           <div class="setup-body">
             <div class="setup-sidebar">
               <div class="setup-step ${step === 1 ? 'active' : step > 1 ? 'done' : ''}">1. Storage</div>
@@ -55,7 +55,7 @@ export function runSetup() {
                 </div>
               ` : `
                 <h2>Ready to Install</h2>
-                <p>Monochrome OS is ready to be installed. The virtual disk will be formatted to <b>${config.diskLimit} GB</b>.</p>
+                <p>OS-XVI is ready to be installed. The virtual disk will be formatted to <b>${config.diskLimit} GB</b>.</p>
                 <p>A user account for <b>${config.name}</b> will be created.</p>
               `}
             </div>

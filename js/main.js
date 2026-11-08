@@ -16,7 +16,8 @@ import { webcraftApp } from './apps/webcraft.js';
 import { graphCalcApp } from './apps/graphcalc.js';
 import { codeScanApp } from './apps/codescan.js';
 import { clockApp } from './apps/clock.js';
-import { sysMonApp } from './apps/sysmon.js'; // <--- NEW
+import { sysMonApp } from './apps/sysmon.js'; 
+import { archiverApp } from './apps/archiver.js';
 
 import { runSetup } from './core/setup.js';
 import { runBootSequence } from './core/boot.js';
@@ -34,7 +35,8 @@ const APPS = [
   imageViewerApp,
   mediaViewerApp,
   serpentApp,
-  webcraftApp
+  webcraftApp,
+  archiverApp
 ];
 
 async function boot() {

@@ -16,11 +16,14 @@ import { iconHTML } from '../core/icons.js';
 import { esc } from '../core/util.js';
 import { uniqueName } from '../core/files.js';
 import { renderMarkdown } from '../core/markdown.js';
-import { defaultModel, sizeLabel, trimMessages } from '../core/llm-utils.js';
+import { defaultModel, sizeLabel, trimMessages, suggestForSpeed } from '../core/llm-utils.js';
 
 const CHAT_DIR = '/home/user/AI Chats';
 const SETTINGS_KEY = 'os16.ai.settings';
 const CUSTOM_KEY = 'os16.ai.custom';
+const BENCH_KEY = 'os16.ai.bench';
+const TARGET_TPS = 20;           // what “comfortable” means: the app suggests a lighter model below this
+const PAINT_MS = 70;             // streaming text is repainted at most ~14×/s (was: every frame, re-parsing all markdown)
 
 const DEFAULTS = {
   model: '',
@@ -30,7 +33,8 @@ const DEFAULTS = {
   maxTokens: 1024,
   ctx: 4096,
   showAll: false,
-  keepLoaded: false
+  keepLoaded: false,
+  noThink: true            // Qwen3-style models: skip the long <think> phase (much faster answers)
 };
 
 const SUGGESTIONS = [
@@ -72,6 +76,10 @@ export const localAiApp = {
     let stick = true;               // keep the view pinned to the newest text
     let saveTimer = 0;
     let raf = 0;
+    let paintTimer = 0;
+    let lastPaint = 0;
+    let tuning = false;             // warming up / measuring right after a model loads
+    let bench = readJson(BENCH_KEY, {});
     let closed = false;
 
     const saveSettings = () => writeJson(SETTINGS_KEY, settings);
@@ -133,6 +141,7 @@ export const localAiApp = {
 
               <section class="ai-sec">
                 <label class="ai-check"><input type="checkbox" class="s-keep"> Keep the model in memory after closing this window</label>
+                <label class="ai-check"><input type="checkbox" class="s-nothink"> Skip “thinking” on Qwen3 models (much faster answers; turn off for hard maths or logic)</label>
               </section>
             </aside>
           </div>
@@ -336,7 +345,14 @@ export const localAiApp = {
       el.innerHTML = renderMarkdown(chat.messages[i].content);
       if (stick) elMsgs.scrollTop = elMsgs.scrollHeight;
     }
-    const schedulePaint = () => { raf ||= requestAnimationFrame(() => { raf = 0; paintLast(); }); };
+    const schedulePaint = () => {
+      if (raf || paintTimer) return;
+      const wait = Math.max(0, PAINT_MS - (performance.now() - lastPaint));
+      paintTimer = setTimeout(() => {
+        paintTimer = 0;
+        raf = requestAnimationFrame(() => { raf = 0; lastPaint = performance.now(); paintLast(); });
+      }, wait);
+    };
 
     function renderModelList() {
       const st = llm.getState();
@@ -413,6 +429,7 @@ export const localAiApp = {
 
       $('.ai-s-state').textContent = runtimeError ? 'Runtime unavailable'
         : st.loading ? 'Loading model…'
+        : tuning ? 'Warming up the GPU…'
         : st.generating ? 'Generating…'
         : st.loaded ? 'Ready' : gpu ? (gpu.ok ? 'No model loaded' : 'WebGPU unavailable') : 'Starting…';
       $('.ai-s-speed').textContent = usage?.tps ? `${usage.tps.toFixed(1)} tokens/s` : '';
@@ -446,7 +463,8 @@ export const localAiApp = {
 
       try {
         for await (const part of llm.streamChat(messages, {
-          temperature: Number(settings.temperature), top_p: Number(settings.topP), max_tokens: Number(settings.maxTokens)
+          temperature: Number(settings.temperature), top_p: Number(settings.topP), max_tokens: Number(settings.maxTokens),
+          think: !settings.noThink
         })) {
           if (closed) break;
           if (part.delta) { reply.content += part.delta; schedulePaint(); }
@@ -499,6 +517,7 @@ export const localAiApp = {
         });
         cached.add(m.id);
         dialogs.toast(`${shortName(m.id)} is ready.`);
+        await tune(m);
       } catch (e) {
         dialogs.alert('Couldn’t load the model', `${clean(e)}\n\nIf this is a memory error, pick a smaller model or lower the memory window in Settings.`);
       }
@@ -506,6 +525,37 @@ export const localAiApp = {
       renderMessages();
       updateUi();
       elInput.focus();
+    }
+
+    /** Warm the GPU pipelines, measure real speed once per model + GPU, and say what would reach the target. */
+    async function tune(m) {
+      const key = `${gpu?.name || 'gpu'}|${m.id}`;
+      let tps = bench[key]?.tps || 0;
+      if (!tps) {
+        tuning = true; updateUi();
+        tps = await llm.benchmark();       // also compiles shaders, so the first real reply starts fast
+        tuning = false;
+        if (tps) { bench[key] = { tps, vram: m.vram, at: Date.now() }; writeJson(BENCH_KEY, bench); }
+      }
+      if (closed || !tps) { updateUi(); return; }
+      usage = { tps };
+      let onBattery = false;
+      try { const b = await navigator.getBattery?.(); onBattery = !!b && !b.charging; } catch { /* unsupported */ }
+      if (tps >= TARGET_TPS) {
+        notice = '';
+        dialogs.toast(`${shortName(m.id)}: ${tps.toFixed(0)} tokens/s on this GPU.`);
+      } else {
+        const s = suggestForSpeed(models, { tps, vram: m.vram }, TARGET_TPS);
+        const tips = onBattery ? ' You are on battery: plugging in often gives a big speed-up on laptops.' : '';
+        if (s?.meets && s.model.id !== m.id) {
+          notice = `${shortName(m.id)} runs at about ${tps.toFixed(0)} tokens/s here. ${shortName(s.model.id)} should reach roughly ${Math.round(s.predicted)}.${tips}`;
+        } else if (s && !s.meets) {
+          notice = `This GPU manages about ${tps.toFixed(0)} tokens/s on ${shortName(m.id)}; even ${shortName(s.model.id)} is estimated at ${Math.round(s.predicted)}.${tips || ' Check that the browser uses your fastest GPU and is not in a power-saving mode.'}`;
+        } else notice = '';
+        if (notice) dialogs.toast(notice, { timeout: 12000 });
+      }
+      renderMessages();
+      updateUi();
     }
 
     async function unloadNow() {
@@ -547,6 +597,7 @@ export const localAiApp = {
       $('.s-ctx').value = String(settings.ctx);
       $('.s-system').value = settings.system;
       $('.s-keep').checked = settings.keepLoaded;
+      $('.s-nothink').checked = settings.noThink;
       $('.ai-showall').checked = settings.showAll;
       sync();
 
@@ -556,6 +607,7 @@ export const localAiApp = {
       $('.s-ctx').addEventListener('change', (e) => { settings.ctx = Number(e.target.value); saveSettings(); });
       $('.s-system').addEventListener('input', (e) => { settings.system = e.target.value; saveSettings(); });
       $('.s-keep').addEventListener('change', (e) => { settings.keepLoaded = e.target.checked; saveSettings(); });
+      $('.s-nothink').addEventListener('change', (e) => { settings.noThink = e.target.checked; saveSettings(); });
       $('.ai-showall').addEventListener('change', async (e) => {
         settings.showAll = e.target.checked;
         saveSettings();
@@ -676,6 +728,7 @@ export const localAiApp = {
       closed = true;
       unsub();
       cancelAnimationFrame(raf);
+      clearTimeout(paintTimer);
       clearTimeout(saveTimer);
       if (chat.messages.length) saveChat();
       llm.stopGeneration();

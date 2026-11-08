@@ -171,3 +171,43 @@ export async function readEntry(blob, e) {
   if (((crc ^ 0xffffffff) >>> 0) !== e.crc) throw new ZipError('it failed its checksum (the file is corrupt)');
   return keep ? new Blob(chunks) : raw;
 }
+
+
+/**
+ * Build a ZIP (stored, no compression) from { 'path/name': Uint8Array }.
+ * Names ending in "/" are folder entries. Dependency-free; no Zip64 (≤ 4 GB total).
+ */
+export function buildZip(entries) {
+  const enc = new TextEncoder();
+  const d = new Date();
+  const time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+  const date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  const parts = [], central = [];
+  let offset = 0;
+  for (const [name, data] of Object.entries(entries)) {
+    const nameBytes = enc.encode(name);
+    const crc = (crcUpdate(0xffffffff, data) ^ 0xffffffff) >>> 0;
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, SIG_LOC, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x800, true);
+    lh.setUint16(10, time, true); lh.setUint16(12, date, true);
+    lh.setUint32(14, crc, true); lh.setUint32(18, data.length, true); lh.setUint32(22, data.length, true);
+    lh.setUint16(26, nameBytes.length, true);
+    parts.push(new Uint8Array(lh.buffer), nameBytes, data);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, SIG_CEN, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x800, true);
+    ch.setUint16(12, time, true); ch.setUint16(14, date, true);
+    ch.setUint32(16, crc, true); ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true);
+    ch.setUint16(28, nameBytes.length, true);
+    if (name.endsWith('/')) ch.setUint32(38, 0x10, true);   // MS-DOS directory attribute
+    ch.setUint32(42, offset, true);
+    central.push(new Uint8Array(ch.buffer), nameBytes);
+    offset += 30 + nameBytes.length + data.length;
+  }
+  const cdSize = central.reduce((n, b) => n + b.length, 0);
+  if (offset + cdSize > 0xffffffff - 1024) throw new ZipError('Selection is too large for a ZIP (4 GB limit).');
+  const end = new DataView(new ArrayBuffer(22));
+  const count = central.length / 2;
+  end.setUint32(0, SIG_EOCD, true); end.setUint16(8, count, true); end.setUint16(10, count, true);
+  end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
+  return new Blob([...parts, ...central, new Uint8Array(end.buffer)], { type: 'application/zip' });
+}

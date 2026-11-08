@@ -1,7 +1,7 @@
 import * as vfs from '../core/vfs.js';
 import * as dialogs from '../core/dialogs.js';
 import { iconHTML } from '../core/icons.js';
-import { joinPath, parentPath, baseName, formatBytes } from '../core/util.js';
+import { esc, joinPath, parentPath, baseName, formatBytes } from '../core/util.js';
 
 export const archiverApp = {
   id: 'archiver',
@@ -76,6 +76,75 @@ export const archiverApp = {
       }
     }
 
+    // --- Drag (rubber-band) selection ---
+    let justDragged = false;
+    const THRESHOLD = 4;
+    listEl.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0 || e.target.closest('.arc-row[data-name]') && e.detail > 1) return;
+      const start = { x: e.clientX, y: e.clientY };
+      const additive = e.ctrlKey || e.metaKey || e.shiftKey;
+      const base = additive ? new Set(selectedFiles) : new Set();
+      const box = listEl.getBoundingClientRect();
+      const startScroll = listEl.scrollTop;
+      let marquee = null, active = false, last = start, raf = 0;
+
+      const rows = () => [...listEl.querySelectorAll('.arc-row[data-name]')];
+      const apply = () => {
+        const x1 = Math.min(start.x, last.x), x2 = Math.max(start.x, last.x);
+        // anchor point moves with scroll so the band stays attached to the content
+        const sy = start.y - (listEl.scrollTop - startScroll);
+        const y1 = Math.min(sy, last.y), y2 = Math.max(sy, last.y);
+        selectedFiles = new Set(base);
+        for (const row of rows()) {
+          const r = row.getBoundingClientRect();
+          const hit = r.right > x1 && r.left < x2 && r.bottom > y1 && r.top < y2;
+          if (hit) selectedFiles.add(row.dataset.name);
+          row.classList.toggle('selected', selectedFiles.has(row.dataset.name));
+        }
+        const cx = (v) => Math.max(box.left, Math.min(box.right, v));
+        const cy = (v) => Math.max(box.top, Math.min(box.bottom, v));
+        Object.assign(marquee.style, {
+          left: cx(x1) - box.left + 'px', width: cx(x2) - cx(x1) + 'px',
+          top: cy(y1) - box.top + listEl.scrollTop + 'px', height: cy(y2) - cy(y1) + 'px'
+        });
+      };
+      const autoscroll = () => {
+        if (!active) return;
+        const edge = 28, dy = last.y < box.top + edge ? -12 : last.y > box.bottom - edge ? 12 : 0;
+        if (dy) { listEl.scrollTop += dy; apply(); }
+        raf = requestAnimationFrame(autoscroll);
+      };
+      const move = (ev) => {
+        last = { x: ev.clientX, y: ev.clientY };
+        if (!active) {
+          if (Math.hypot(last.x - start.x, last.y - start.y) < THRESHOLD) return;
+          active = true;
+          marquee = document.createElement('div');
+          marquee.className = 'arc-marquee';
+          listEl.appendChild(marquee);
+          raf = requestAnimationFrame(autoscroll);
+        }
+        apply();
+      };
+      const up = () => {
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', up);
+        window.removeEventListener('pointercancel', up);
+        cancelAnimationFrame(raf);
+        if (active) {
+          marquee.remove();
+          justDragged = true;                      // swallow the click that follows a drag
+          setTimeout(() => { justDragged = false; }, 0);
+        } else if (!e.target.closest('.arc-row') && !additive) {
+          selectedFiles.clear(); renderList();      // plain click on empty space clears
+        }
+        active = false;
+      };
+      window.addEventListener('pointermove', move);
+      window.addEventListener('pointerup', up);
+      window.addEventListener('pointercancel', up);
+    });
+
     function renderList() {
       listEl.innerHTML = '';
       
@@ -90,17 +159,19 @@ export const archiverApp = {
       currentItems.forEach(item => {
         const row = document.createElement('div');
         row.className = 'arc-row' + (selectedFiles.has(item.name) ? ' selected' : '');
+        row.dataset.name = item.name;
         
         let icon = item.kind === 'dir' ? 'folder' : 'file';
         if (item.name.endsWith('.zip')) icon = 'archive';
         
         row.innerHTML = `
           ${iconHTML(icon, 14)}
-          <span class="name">${item.name}</span>
+          <span class="name">${esc(item.name)}</span>
           <span class="size">${item.kind === 'dir' ? '' : formatBytes(item.size)}</span>
         `;
         
         row.onclick = (e) => {
+          if (justDragged) return;
           if (e.ctrlKey || e.metaKey) {
             if (selectedFiles.has(item.name)) selectedFiles.delete(item.name);
             else selectedFiles.add(item.name);

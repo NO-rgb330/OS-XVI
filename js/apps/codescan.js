@@ -97,7 +97,7 @@ const WEB_RULES = [
 export const codeScanApp = {
   id: 'codescan',
   name: 'Code Scanner',
-  icon: 'search',
+  icon: 'shield-search',
   defaultSize: [900, 600],
 
   launch(body, args, ctx) {

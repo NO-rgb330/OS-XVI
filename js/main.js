@@ -19,6 +19,7 @@ import { codeScanApp } from './apps/codescan.js';
 import { runSetup } from './core/setup.js';
 import { runBootSequence } from './core/boot.js';
 import { showLogin } from './core/login.js';
+import { clockApp } from './apps/clock.js';
 
 const APPS = [
   fileManagerApp,
@@ -30,7 +31,8 @@ const APPS = [
   imageViewerApp,
   mediaViewerApp,
   serpentApp,
-  webcraftApp
+  webcraftApp,
+  clockApp
 ];
 
 async function boot() {

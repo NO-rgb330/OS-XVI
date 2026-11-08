@@ -1,6 +1,6 @@
 import * as vfs from '../core/vfs.js';
 import * as dialogs from '../core/dialogs.js';
-import { joinPath, parentPath, baseName } from '../core/util.js';
+import { joinPath, parentPath, baseName, formatBytes } from '../core/util.js';
 import { openWindow, listWindows, closeWindow } from '../core/wm.js';
 
 const HOME = '/home/user';
@@ -76,11 +76,6 @@ export const terminalApp = {
     appEl.addEventListener('focusout', () => appEl.classList.remove('focused'));
 
     // ---- Command Engine ----
-
-    const stdio = (outCb, errCb) => ({
-      out: (text) => outCb(text),
-      err: (text) => errCb(text)
-    });
 
     const commands = {
       help: async (args, io) => {
@@ -365,46 +360,55 @@ export const terminalApp = {
       },
 
       sysinfo: async (args, io) => {
-        const PORT = 8787;
-        const gb = (b) => `${(b / 1024 ** 3).toFixed(b >= 10 * 1024 ** 3 ? 0 : 1)} GB`;
         const row = (k, v) => io.out(`  ${k.padEnd(18)}${v}`);
-        let info = null;
-        try {
-          const ctl = new AbortController();
-          const t = setTimeout(() => ctl.abort(), 20000);
-          const r = await fetch(`http://127.0.0.1:${PORT}/sysinfo`, { signal: ctl.signal, cache: 'no-store' });
-          clearTimeout(t);
-          if (r.ok) info = await r.json();
-        } catch { /* helper not running */ }
 
-        if (info && info.ok) {
-          const m = info.memory, mach = info.machine || {}, notes = info.notes || {};
-          io.out('System information (this computer)');
-          io.out('----------------------------------');
-          row('Laptop model:', [mach.vendor, mach.model].filter(Boolean).join(' ') || `unavailable${notes.machine ? ' - ' + notes.machine : ''}`);
-          row('Processor:', `${info.cpu.model || 'unavailable'} (${info.cpu.threads} threads)`);
-          row('Memory total:', gb(m.totalBytes));
-          row('Memory available:', `${gb(m.availableBytes)} (${Math.round(m.availableBytes / m.totalBytes * 100)}% free)`);
-          row('Memory type:', m.type ? `${m.type}${m.speedMTs ? ' @ ' + m.speedMTs + ' MT/s' : ''}` : `unavailable${notes.memoryType ? ' - ' + notes.memoryType : ''}`);
-          row('Operating system:', `${info.os.name} (${info.os.arch})`);
-          return;
+        // 1. Gather Browser Hardware Data
+        const cores = navigator.hardwareConcurrency || 'Unknown';
+        const mem = navigator.deviceMemory ? `~${navigator.deviceMemory} GB` : 'Restricted by browser';
+        const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        
+        // 2. Gather OS Data
+        const uaData = navigator.userAgentData;
+        const platform = uaData ? uaData.platform : (navigator.platform || 'Unknown');
+        const userAgent = navigator.userAgent;
+        const isMobile = uaData ? uaData.mobile : /Mobi|Android/i.test(userAgent);
+        
+        // 3. Screen Details
+        const screenRes = `${window.screen.width}x${window.screen.height} @ ${window.screen.colorDepth}-bit`;
+        const winRes = `${window.innerWidth}x${window.innerHeight}`;
+
+        // 4. Disk Usage
+        let diskUsed = '0 B', diskQuota = 'Unknown';
+        try {
+          const u = await vfs.usage();
+          diskUsed = formatBytes(u.used);
+          diskQuota = formatBytes(u.capacity);
+        } catch (e) {}
+
+        io.out('System Information (Browser Sandbox)');
+        io.out('--------------------------------------');
+        row('OS / Platform:', platform);
+        row('Device Type:', isMobile ? 'Mobile / Tablet' : 'Desktop');
+        row('Browser Engine:', uaData?.brands?.map(b => `${b.brand} v${b.version}`).join(', ') || 'Unknown');
+        row('Processor Threads:', `${cores} logical cores`);
+        row('Memory (Est.):', mem);
+        io.out('');
+        row('Screen Resolution:', screenRes);
+        row('Window Size:', winRes);
+        row('Timezone:', Intl.DateTimeFormat().resolvedOptions().timeZone);
+        row('Language:', navigator.language);
+        io.out('');
+        row('Disk Used:', diskUsed);
+        row('Disk Quota:', diskQuota);
+        row('Network Status:', navigator.onLine ? 'Online' : 'Offline');
+        
+        if (conn) {
+          row('Network Speed:', `~${conn.downlink || '?'} Mbps (${conn.effectiveType || '?'})`);
+          row('Network Latency:', `~${conn.rtt || '?'} ms`);
         }
 
-        // Fallback: only what the browser itself will reveal.
-        io.out('Helper not running - showing what the browser exposes (limited).');
-        io.out('-----------------------------------------------------------------');
-        let hi = {};
-        try { hi = await navigator.userAgentData?.getHighEntropyValues(['platform', 'platformVersion', 'architecture', 'model']) || {}; } catch {}
-        row('Laptop model:', hi.model || 'not exposed by browsers');
-        row('Processor:', `model not exposed by browsers (${navigator.hardwareConcurrency || '?'} logical threads${hi.architecture ? ', ' + hi.architecture : ''})`);
-        row('Memory total:', navigator.deviceMemory ? `~${navigator.deviceMemory} GB (browser caps this at 8)` : 'not exposed by this browser');
-        row('Memory available:', 'not exposed by browsers');
-        row('Memory type:', 'not exposed by browsers');
-        row('Platform:', `${hi.platform || navigator.platform || '?'} ${hi.platformVersion || ''}`.trim());
-        io.out('');
-        io.out('For the real values, run this once on your computer (needs Node.js):');
-        io.out('    node tools/sysinfo-agent.js');
-        io.out('then run  sysinfo  again.');
+        io.out('\nNote: Exact CPU model, total RAM, and laptop model are');
+        io.out('blocked by web browser privacy policies.');
       },
 
       neofetch: async (args, io) => {

@@ -32,7 +32,6 @@ export const serpentApp = {
       await vfs.write(`${PROJECT_DIR}/main.py`, 'def greet(name):\n    return f"Hello, {name}!"\n\nprint(greet("Developer"))\n');
     }
 
-     // Replace the body.innerHTML in serpent.js with this:
     body.innerHTML = `
       <div class="ide-app">
         <div class="ide-toolbar">
@@ -154,9 +153,8 @@ export const serpentApp = {
         tabsEl.appendChild(tab);
 
         const edWrap = document.createElement('div');
+        edWrap.className = 'code-editor-wrapper';
         edWrap.style.display = 'none';
-        edWrap.style.flex = '1';
-        edWrap.style.flexDirection = 'column';
         editorContainer.appendChild(edWrap);
 
         const editor = new CodeEditor(edWrap, {
@@ -253,7 +251,6 @@ export const serpentApp = {
           py = getPython();
         }
         
-        // --- THE FIX: Redirect Python stdout/stderr back to the UI ---
         py.setStdout({ batched: (str) => logOutput(str) });
         py.setStderr({ batched: (str) => logOutput(str, true) });
         
@@ -287,7 +284,6 @@ export const serpentApp = {
             py = getPython();
           }
           
-          // Redirect stdout/stderr for the REPL
           py.setStdout({ batched: (str) => logRepl(str) });
           py.setStderr({ batched: (str) => logRepl(str, true) });
           
@@ -310,9 +306,7 @@ export const serpentApp = {
       replLog.innerHTML = ''; 
     };
 
-    ctx.onCleanup(() => {
-      // Cleanup
-    });
+    ctx.onCleanup(() => {});
 
     // Init
     await loadTree();

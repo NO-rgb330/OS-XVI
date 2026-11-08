@@ -26,15 +26,34 @@ const pageUrl = (lang, title) => `${wikiHost(lang)}/wiki/${encodeURIComponent(no
 
 class ApiError extends Error { constructor(msg, code) { super(msg); this.code = code; } }
 
+/** fetch() with a timeout that keeps "user navigated away" (rethrown) apart from "Wikipedia is unreachable" (ApiError). */
+async function getJson(url, signal, ms = 40000) {
+  const c = new AbortController();
+  const timer = setTimeout(() => c.abort(), ms);
+  const relay = () => c.abort();
+  signal?.addEventListener('abort', relay);
+  try {
+    const r = await fetch(url, { signal: c.signal });
+    if (!r.ok) throw new ApiError(`Wikipedia answered with error ${r.status}.`, 'http');
+    try { return await r.json(); } catch { throw new ApiError('Wikipedia sent a response that could not be read.', 'badjson'); }
+  } catch (e) {
+    if (e instanceof ApiError) throw e;
+    if (signal?.aborted) throw e;                                   // the user moved on
+    throw new ApiError(e.name === 'AbortError'
+      ? 'Wikipedia took too long to answer.'
+      : 'Couldn’t connect to Wikipedia. It may be blocked on your network, or temporarily unavailable.', 'network');
+  } finally { clearTimeout(timer); signal?.removeEventListener('abort', relay); }
+}
+
 async function api(lang, params, signal) {
   const u = new URL(`${wikiHost(lang)}/w/api.php`);
   u.search = new URLSearchParams({ format: 'json', formatversion: '2', origin: '*', ...params }).toString();
-  const r = await fetch(u, { signal });
-  if (!r.ok) throw new ApiError(`Wikipedia answered ${r.status}.`, 'http');
-  const j = await r.json();
+  const j = await getJson(u, signal);
   if (j.error) throw new ApiError(j.error.info || j.error.code, j.error.code);
   return j;
 }
+
+const isTransport = (e) => e instanceof ApiError && ['network', 'http', 'badjson'].includes(e.code);
 
 export const wikipediaApp = {
   id: 'wikipedia',
@@ -147,33 +166,95 @@ export const wikipediaApp = {
 
     function showError(entry, e) {
       const missing = e.code === 'missingtitle' || e.code === 'invalidtitle';
-      const offline = !(e instanceof ApiError);
+      const network = e instanceof ApiError && ['network', 'http', 'badjson'].includes(e.code);
+      const bug = !(e instanceof ApiError);
+      if (bug) console.error('Wikipedia app error', e);
+      const head = missing ? 'No page with that title' : network ? 'Couldn’t load this page' : bug ? 'This page couldn’t be displayed' : 'Wikipedia reported a problem';
+      const detail = missing ? `“${entry.title}” doesn’t exist on this Wikipedia.`
+        : network ? `${e.message} Your connection may be fine — very large pages sometimes fail, so trying again or opening it on Wikipedia can help.`
+        : bug ? `Unexpected error: ${e.message}` : e.message;
       view.innerHTML = `
         <div class="app-empty wp-error">
           ${iconHTML('info', 40)}
-          <div><strong>${missing ? 'No page with that title' : offline ? 'Couldn’t reach Wikipedia' : 'Something went wrong'}</strong></div>
-          <div class="muted">${esc(missing ? `“${entry.title}” doesn’t exist on this Wikipedia.` : offline ? 'Check your internet connection and try again.' : e.message)}</div>
+          <div><strong>${esc(head)}</strong></div>
+          <div class="muted wp-error-detail">${esc(detail)}</div>
           <div class="wp-error-actions">
             ${missing ? '<button class="app-btn primary" data-search>Search for it</button>' : '<button class="app-btn primary" data-retry>Try again</button>'}
             ${entry.type === 'article' ? `<a class="app-btn" href="${esc(pageUrl(entry.lang, entry.title))}" target="_blank" rel="noopener noreferrer">Open on Wikipedia</a>` : ''}
           </div>
         </div>`;
-      view.querySelector('[data-retry]')?.addEventListener('click', () => show(entry));
+      view.querySelector('[data-retry]')?.addEventListener('click', () => {
+        if (entry.type === 'article') cache.delete(`${entry.lang}:${entry.title}`);
+        show(entry);
+      });
       view.querySelector('[data-search]')?.addEventListener('click', () => go({ type: 'search', lang: entry.lang, query: entry.title }, { replace: true }));
       setStatus('Failed to load');
       ctx.setTitle('Wikipedia');
     }
 
     // ---- Article ----
+    const PARSE = { action: 'parse', redirects: '1', disableeditsection: '1', disabletoc: '1', disablelimitreport: '1', maxage: '3600', smaxage: '3600' };
+
+    /** Very large articles can time out when fetched in one piece: fetch them one top-level section at a time. */
+    async function fetchBySections(l, title, signal) {
+      const head = (await api(l, { ...PARSE, page: title, prop: 'sections|displaytitle|langlinks|categories' }, signal)).parse;
+      const secs = (head.sections || []).filter((x) => x.toclevel === 1 && x.index);
+      const ids = ['0', ...secs.map((x) => x.index)];
+      const parts = new Array(ids.length);
+      let next = 0, failed = 0;
+      const worker = async () => {
+        while (next < ids.length) {
+          const i = next++;
+          try {
+            const j = await api(l, { ...PARSE, page: title, prop: 'text', section: ids[i] }, signal);
+            parts[i] = j.parse?.text || '';
+          } catch (e) {
+            if (signal.aborted) throw e;
+            failed++;
+            parts[i] = `<p><i>[This part of the article could not be loaded. Try reloading.]</i></p>`;
+          }
+        }
+      };
+      await Promise.all([worker(), worker(), worker()]);
+      if (failed === ids.length) throw new ApiError('Wikipedia did not answer.', 'network');
+      return { ...head, text: parts.join('\n') };
+    }
+
+    /** Last resort: Wikipedia's REST endpoint (different servers, same content). */
+    async function fetchRest(l, title, signal) {
+      const c = new AbortController();
+      const relay = () => c.abort(); signal.addEventListener('abort', relay);
+      const timer = setTimeout(() => c.abort(), 45000);
+      try {
+        const r = await fetch(`${wikiHost(l)}/api/rest_v1/page/html/${encodeURIComponent(title.replace(/ /g, '_'))}`, { signal: c.signal });
+        if (r.status === 404) throw new ApiError('There is no page with that title.', 'missingtitle');
+        if (!r.ok) throw new ApiError(`Wikipedia answered with error ${r.status}.`, 'http');
+        return { title, displaytitle: esc(title), text: await r.text(), langlinks: [], categories: [] };
+      } catch (e) {
+        if (e instanceof ApiError || signal.aborted) throw e;
+        throw new ApiError('Couldn’t connect to Wikipedia.', 'network');
+      } finally { clearTimeout(timer); signal.removeEventListener('abort', relay); }
+    }
+
     async function fetchArticle(l, title, signal, fresh) {
       const key = `${l}:${title}`;
       if (!fresh && cache.has(key)) { const v = cache.get(key); cache.delete(key); cache.set(key, v); return v; }
-      const j = await api(l, {
-        action: 'parse', page: title, redirects: '1', prop: 'text|displaytitle|langlinks|categories',
-        disableeditsection: '1', disabletoc: '1', disablelimitreport: '1'
-      }, signal);
-      const res = j.parse;
-      if (!res) throw new ApiError('Empty response from Wikipedia.', 'empty');
+      let res;
+      try {
+        const j = await api(l, { ...PARSE, page: title, prop: 'text|displaytitle|langlinks|categories' }, signal);
+        res = j.parse;
+        if (!res) throw new ApiError('Empty response from Wikipedia.', 'empty');
+      } catch (first) {
+        if (signal.aborted || !isTransport(first)) throw first;
+        setStatus('Retrying in smaller pieces…');
+        try { res = await fetchBySections(l, title, signal); }
+        catch (second) {
+          if (signal.aborted) throw second;
+          if (!isTransport(second)) throw second;
+          setStatus('Trying another Wikipedia server…');
+          try { res = await fetchRest(l, title, signal); } catch (third) { if (signal.aborted) throw third; throw first; }
+        }
+      }
       cache.set(key, res);
       if (cache.size > 20) cache.delete(cache.keys().next().value);
       return res;

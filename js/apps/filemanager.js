@@ -45,10 +45,10 @@ export const fileManagerApp = {
     let viewMode = 'list';
     let sortKey = 'name';
     let sortDir = 'asc';
-    let anchor = null;               // last clicked name (range select / keyboard cursor)
-    let view = 'files';              // 'files' | 'storage'
+    let anchor = null;
+    let view = 'files';
     let storageTab = 'used';
-    let disk = null;                 // last vfs.usage() result
+    let disk = null;
     const selected = new Set();
     const back = [];
     const fwd = [];
@@ -216,7 +216,6 @@ export const fileManagerApp = {
       elSel.textContent = `${selected.size} selected${bytes ? ' · ' + formatBytes(bytes) : ''}`;
     }
 
-    /** Apply `selected` to the DOM by toggling classes (no re-render). */
     function syncSelection() {
       for (const el of elList.children) {
         const sel = selected.has(el.dataset.name);
@@ -236,12 +235,11 @@ export const fileManagerApp = {
     // ---------- Loading / navigation ----------
     let loadSeq = 0;
 
-    /** Load `path` into the view. Returns an Error on failure, otherwise null. */
     async function load(path, { select } = {}) {
       const seq = ++loadSeq;
       let list;
       try { list = await vfs.list(path); } catch (err) { return err; }
-      if (seq !== loadSeq) return null; // superseded by a newer load
+      if (seq !== loadSeq) return null;
       const changedDir = path !== cwd;
       cwd = path;
       items = list;
@@ -272,7 +270,6 @@ export const fileManagerApp = {
 
     async function refresh(select) {
       const err = await load(cwd, { select });
-      // Current folder vanished (deleted elsewhere): fall back to the nearest parent.
       if (err && cwd !== '/') await navigate(parentPath(cwd), { push: false });
     }
 
@@ -293,7 +290,6 @@ export const fileManagerApp = {
     // ---------- Actions ----------
     const selectedItems = () => [...selected].map(itemByName).filter(Boolean);
 
-    /** The single selected .zip item, or null. */
     const selectedZip = () => {
       const [it] = selectedItems();
       return selected.size === 1 && it?.kind === 'file' && isArchive(it.name) ? it : null;
@@ -302,7 +298,7 @@ export const fileManagerApp = {
       const it = selectedZip();
       if (!it) return;
       const res = await extractArchive(pathOf(it.name), { here });
-      if (res?.name && parentPath(res.dir) === cwd && view === 'files') await refresh(res.name);   // jump to the new folder
+      if (res?.name && parentPath(res.dir) === cwd && view === 'files') await refresh(res.name);
     }
 
     // ---------- Downloading ----------
@@ -318,7 +314,6 @@ export const fileManagerApp = {
       const ns = selectedItems();
       if (!ns.length) return;
       try {
-        // One plain file → download it as-is. Anything else → ZIP.
         if (ns.length === 1 && ns[0].kind === 'file') {
           stat('Downloading...');
           const blob = await vfs.read(joinPath(cwd, ns[0].name));
@@ -364,7 +359,6 @@ export const fileManagerApp = {
     const copySelected = () => { if (selected.size) setClipboard('copy', cwd, [...selected]); };
     const cutSelected = () => { if (selected.size) setClipboard('cut', cwd, [...selected]); };
 
-    /** Paste into `dir` (default: this folder) and select what arrived. */
     async function pasteInto(dir = cwd) {
       if (!getClipboard()) return;
       const res = await paste(dir);
@@ -407,7 +401,7 @@ export const fileManagerApp = {
       render();
     }
 
-    // ---------- Upload (everything from the computer lands in UPLOADS) ----------
+    // ---------- Upload ----------
     async function afterUpload(saved) {
       if (!saved.length) return;
       if (await navigate(UPLOADS_DIR)) setSelection(saved.map((f) => f.name), saved[0].name);
@@ -443,11 +437,10 @@ export const fileManagerApp = {
       const freePct = 100 - usedPct;
       let rows = [];
       try { rows = await vfs.breakdown(HOME); } catch { /* home missing: show no breakdown */ }
-      if (view !== 'storage' || tab !== storageTab) return; // user moved on while we were measuring
+      if (view !== 'storage' || tab !== storageTab) return;
 
       const big = tab === 'used' ? formatBytes(disk.used) : formatBytes(disk.free);
-      
-      // Check if storage is persistent
+
       let isPersisted = false;
       if (navigator.storage && navigator.storage.persisted) {
         try { isPersisted = await navigator.storage.persisted(); } catch {}
@@ -458,18 +451,18 @@ export const fileManagerApp = {
         const cfg = JSON.parse(localStorage.getItem('os16.config'));
         if (cfg && cfg.diskLimit) requestedGB = cfg.diskLimit;
       } catch {}
-      
+
       const browserLimitGB = (disk.capacity / 1024 ** 3).toFixed(1);
       const isCapped = parseFloat(browserLimitGB) < requestedGB;
 
       const sub = tab === 'used'
         ? `of ${formatBytes(disk.capacity)} virtual disk used (${fmtPct(usedPct)})${isCapped ? ` <br><span style="color:var(--danger-ink);font-size:11px;">(Capped by browser from ${requestedGB} GB)</span>` : ''}`
         : `free of ${formatBytes(disk.capacity)} (${fmtPct(freePct)})${isCapped ? ` <br><span style="color:var(--danger-ink);font-size:11px;">(Capped by browser from ${requestedGB} GB)</span>` : ''}`;
-      
+
       const fill = tab === 'used' ? usedPct : freePct;
       const warn = usedPct >= 90 ? `<div class="fm-warn">${iconHTML('warning', 14)}<span>The disk is almost full. Delete files to free up space.</span></div>` : '';
 
-      const persistStatus = isPersisted 
+      const persistStatus = isPersisted
         ? `<div style="display:flex; align-items:center; gap:8px; font-weight:600; margin-top:12px;">${iconHTML('check', 16)} Persistent Storage Granted</div>
            <p class="fm-note" style="margin-top:4px;">Your data is safe from automatic eviction. The browser will allow you to use as much space as it can spare.</p>`
         : `<div style="display:flex; align-items:center; gap:8px; font-weight:600; margin-top:12px; color:var(--tx-muted);">${iconHTML('warning', 16)} Persistent Storage Not Granted</div>
@@ -506,12 +499,12 @@ export const fileManagerApp = {
         btnPersist.onclick = async () => {
           btnPersist.textContent = 'Requesting...';
           btnPersist.disabled = true;
-          
+
           const res = await vfs.requestPersist();
-          
+
           if (res.granted) {
             dialogs.toast('Persistent storage granted! Quota updated.', { danger: false });
-            await refreshDisk(); // Refresh the panel
+            await refreshDisk();
           } else {
             dialogs.alert('Storage Request', 'The browser denied the request for persistent storage. You may need to adjust your browser settings or clear some disk space on your computer.');
             btnPersist.textContent = 'Request More Space';
@@ -561,7 +554,7 @@ export const fileManagerApp = {
     const COMMANDS = {
       back: goBack, fwd: goForward, up: goUp, refresh: () => (view === 'storage' ? refreshDisk() : refresh()),
       newfolder: () => newEntry('dir'), newfile: () => newEntry('file'), view: toggleView,
-      upload: uploadFromComputer, download: download, downloadzip: downloadzip, 
+      upload: uploadFromComputer, download: download, downloadzip: downloadzip,
       storage: toggleStorage, cut: cutSelected, copy: copySelected, paste: () => pasteInto(), extract: () => extractSelected(false)
     };
 
@@ -646,36 +639,58 @@ export const fileManagerApp = {
       }
     });
 
-    // ---------- Marquee selection (rects measured once per drag) ----------
+    // ---------- Marquee selection (with autoscroll) ----------
+    // Rects are measured once in *content* coordinates (viewport + scroll offset),
+    // so they stay valid as the view scrolls under a stationary pointer. The
+    // current pointer position is converted to content coordinates each frame
+    // using the *current* scroll offset — that is what makes the marquee extend
+    // as autoscroll brings more items into view.
     let mq = null;
+    const autoScroll = { vx: 0, vy: 0, raf: 0, active: false };
 
-    elArea.addEventListener('pointerdown', (e) => {
-      focusApp();
-      if (e.button !== 0 || e.target.closest('[data-name], .fm-head')) return;
+    function stopAutoScroll() {
+      autoScroll.active = false;
+      autoScroll.vx = autoScroll.vy = 0;
+      if (autoScroll.raf) { cancelAnimationFrame(autoScroll.raf); autoScroll.raf = 0; }
+    }
+
+    function stepAutoScroll() {
+      autoScroll.raf = 0;
+      if (!mq || !autoScroll.active) return;
+      const { vx, vy } = autoScroll;
+      if (!vx && !vy) { autoScroll.active = false; return; }
+      if (vy) elArea.scrollTop += vy;
+      if (vx) elArea.scrollLeft += vx;
+      updateMarquee();
+      autoScroll.raf = requestAnimationFrame(stepAutoScroll);
+    }
+
+    function updateAutoScrollFrom(ev) {
+      if (!mq) return;
+      const EDGE = 28;   // px from the edge where scrolling begins
+      const MAX = 18;    // max px per frame
       const box = elArea.getBoundingClientRect();
-      // Ignore presses on the scrollbars.
-      if (e.clientX >= box.left + elArea.clientWidth || e.clientY >= box.top + elArea.clientHeight) return;
-
-      const additive = e.ctrlKey || e.metaKey || e.shiftKey;
-      const base = additive ? new Set(selected) : new Set();
-      if (!additive && selected.size) setSelection([]);
-
-      const ox = box.left - elArea.scrollLeft, oy = box.top - elArea.scrollTop;
-      const rects = [...elList.querySelectorAll('[data-name]')].map((el) => {
-        const r = el.getBoundingClientRect();
-        return { el, name: el.dataset.name, l: r.left - ox, t: r.top - oy, r: r.right - ox, b: r.bottom - oy };
-      });
-      const el = document.createElement('div');
-      el.className = 'fm-marquee';
-      elArea.appendChild(el);
-      mq = { sx: e.clientX - ox, sy: e.clientY - oy, ox, oy, rects, base, el, raf: 0, ev: null };
-      elArea.setPointerCapture(e.pointerId);
-    });
+      const axis = (pos, lo, hi) => {
+        if (pos < lo + EDGE) return -Math.min(1, (lo + EDGE - pos) / EDGE) * MAX;
+        if (pos > hi - EDGE) return Math.min(1, (pos - (hi - EDGE)) / EDGE) * MAX;
+        return 0;
+      };
+      autoScroll.vx = axis(ev.clientX, box.left, box.left + elArea.clientWidth);
+      autoScroll.vy = axis(ev.clientY, box.top, box.top + elArea.clientHeight);
+      if ((autoScroll.vx || autoScroll.vy) && !autoScroll.active) {
+        autoScroll.active = true;
+        autoScroll.raf = requestAnimationFrame(stepAutoScroll);
+      }
+      if (!autoScroll.vx && !autoScroll.vy) stopAutoScroll();
+    }
 
     const updateMarquee = () => {
-      if (!mq) return;
+      if (!mq || !mq.ev) return;
       mq.raf = 0;
-      const cx = mq.ev.clientX - mq.ox, cy = mq.ev.clientY - mq.oy;
+      const box = elArea.getBoundingClientRect();
+      const ox = box.left - elArea.scrollLeft;
+      const oy = box.top - elArea.scrollTop;
+      const cx = mq.ev.clientX - ox, cy = mq.ev.clientY - oy;
       const l = Math.min(mq.sx, cx), t = Math.min(mq.sy, cy);
       const r = Math.max(mq.sx, cx), b = Math.max(mq.sy, cy);
       Object.assign(mq.el.style, { left: l + 'px', top: t + 'px', width: r - l + 'px', height: b - t + 'px' });
@@ -692,14 +707,40 @@ export const fileManagerApp = {
       }
       if (changed) updateStatus();
     };
+
+    elArea.addEventListener('pointerdown', (e) => {
+      focusApp();
+      if (e.button !== 0 || e.target.closest('[data-name], .fm-head')) return;
+      const box = elArea.getBoundingClientRect();
+      if (e.clientX >= box.left + elArea.clientWidth || e.clientY >= box.top + elArea.clientHeight) return;
+
+      const additive = e.ctrlKey || e.metaKey || e.shiftKey;
+      const base = additive ? new Set(selected) : new Set();
+      if (!additive && selected.size) setSelection([]);
+
+      const ox = box.left - elArea.scrollLeft, oy = box.top - elArea.scrollTop;
+      const rects = [...elList.querySelectorAll('[data-name]')].map((el) => {
+        const r = el.getBoundingClientRect();
+        return { el, name: el.dataset.name, l: r.left - ox, t: r.top - oy, r: r.right - ox, b: r.bottom - oy };
+      });
+      const el = document.createElement('div');
+      el.className = 'fm-marquee';
+      elArea.appendChild(el);
+      mq = { sx: e.clientX - ox, sy: e.clientY - oy, rects, base, el, raf: 0, ev: null };
+      elArea.setPointerCapture(e.pointerId);
+    });
+
     elArea.addEventListener('pointermove', (e) => {
       if (!mq) return;
       mq.ev = e;
+      updateAutoScrollFrom(e);
       if (!mq.raf) mq.raf = requestAnimationFrame(updateMarquee);
     });
+
     const endMarquee = () => {
       if (!mq) return;
       cancelAnimationFrame(mq.raf);
+      stopAutoScroll();
       mq.el.remove();
       mq = null;
     };
@@ -707,9 +748,6 @@ export const fileManagerApp = {
     elArea.addEventListener('pointercancel', endMarquee);
 
     // ---------- Drag & drop ----------
-    // Out:  rows/tiles are draggable (to another Files window, a folder, or the desktop).
-    // In:   files from this or another Files window move (Ctrl = copy) into the folder under the pointer;
-    //       files dragged in from the computer are uploaded to UPLOADS.
     elList.addEventListener('dragstart', (e) => {
       const row = e.target.closest('[data-name]');
       if (!row) return;
@@ -726,7 +764,6 @@ export const fileManagerApp = {
     };
     const clearDrop = () => { setDropEl(null); elApp.classList.remove('drop-upload'); };
 
-    /** Folder (path) and element that a drop at the pointer would land in, or null. */
     function dropTarget(e) {
       const row = e.target.closest('.fm-row, .fm-tile');
       if (row) {
@@ -768,7 +805,6 @@ export const fileManagerApp = {
       clearDrop();
       try {
         if (data && target) {
-          // A folder can't be dropped onto itself.
           const names = data.names.filter((n) => joinPath(data.dir, n) !== target.dir);
           const res = await transferInto(data.dir, names, target.dir, { copy });
           if (res.errors.length) dialogs.alert('Move', res.errors.join('\n'));
@@ -804,7 +840,7 @@ export const fileManagerApp = {
     };
 
     elApp.addEventListener('keydown', (e) => {
-      if (view === 'storage') {            // file shortcuts must not act on the hidden list
+      if (view === 'storage') {
         if ((e.key === 'Escape' || e.key === 'Backspace') && e.target === elApp) { leaveStorage(); e.preventDefault(); }
         return;
       }
@@ -840,7 +876,7 @@ export const fileManagerApp = {
     let refreshTimer = 0;
     const unsub = vfs.on('change', (path) => {
       if (path !== cwd) return;
-      clearTimeout(refreshTimer); // coalesce bursts (e.g. deleting many items)
+      clearTimeout(refreshTimer);
       refreshTimer = setTimeout(() => refresh(), 20);
     });
     const unsubClip = onClipboardChange(paintCut);

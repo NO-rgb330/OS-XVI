@@ -154,54 +154,203 @@
 }
 
 /* ============================================================
-   BOOT SEQUENCE
+   BOOT SEQUENCE — real system check
    ============================================================ */
 #boot-screen {
-  background: #000;
-  color: var(--shade-20);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  align-items: flex-start;
-  padding: 24px;
+  background: var(--shade-90);
+  color: var(--ink-inv);
   flex-direction: column;
+  padding: 24px;
   overflow: hidden;
 }
-.boot-log {
-  white-space: pre-wrap;
-  margin-bottom: 4px;
-}
-.boot-ok { color: var(--paper); font-weight: bold; }
-.boot-warn { color: var(--shade-50); }
-.boot-bar-container {
-  width: 100%;
-  max-width: 400px;
-  height: 12px;
-  border: 1px solid var(--shade-50);
-  margin-top: 16px;
+
+.boot-panel {
+  width: 660px;
+  max-width: 100%;
+  max-height: calc(100vh - 48px);
   display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 26px 30px;
+  background: var(--shade-80);
+  border: 1px solid var(--shade-60);
+  color: var(--ink-inv);
+  overflow: hidden;
 }
-.boot-bar-fill {
+
+.boot-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--shade-60);
+}
+.boot-brand-icon {
+  width: 36px;
+  height: 36px;
+  opacity: .9;
+}
+.boot-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.boot-brand-title {
+  font-size: 20px;
+  font-weight: 300;
+  letter-spacing: .02em;
+}
+.boot-brand-sub {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--shade-40);
+}
+
+.boot-stages {
+  flex: 1 1 auto;
+  min-height: 200px;
+  max-height: 360px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding-right: 4px;
+}
+
+.boot-stage {
+  display: grid;
+  grid-template-columns: 74px minmax(140px, auto) 1fr auto;
+  align-items: baseline;
+  gap: 12px;
+  padding: 7px 4px;
+  border-bottom: 1px solid var(--shade-70);
+}
+
+.boot-stage-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  padding: 2px 6px;
+  text-align: center;
+  border: 1px solid var(--shade-50);
+  color: var(--ink-inv);
+  background: transparent;
+  white-space: nowrap;
+}
+.boot-stage-badge-warn {
+  border-color: var(--shade-40);
+  background: var(--shade-30);
+  color: var(--shade-90);
+}
+.boot-stage-badge-fail {
+  border-color: var(--ink-inv);
+  background: var(--ink-inv);
+  color: var(--shade-90);
+  font-weight: 700;
+}
+
+.boot-stage-label {
+  color: var(--ink-inv);
+  font-weight: 500;
+}
+.boot-stage-msg {
+  color: var(--shade-30);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  min-width: 0;
+}
+.boot-stage-time {
+  color: var(--shade-40);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.boot-stage-note {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--shade-60);
+  opacity: .8;
+}
+
+.boot-progress {
+  height: 4px;
+  background: var(--shade-70);
+  overflow: hidden;
+}
+.boot-progress-fill {
   height: 100%;
-  background: var(--paper);
-  width: 0%;
-  transition: width 0.1s linear;
+  width: 0;
+  background: var(--ink-inv);
+  transition: width .2s ease;
 }
-.boot-cursor {
-  display: inline-block;
-  width: 8px;
-  height: 14px;
-  background: var(--paper);
-  animation: blink 1s step-end infinite;
-  vertical-align: bottom;
-  margin-left: 4px;
+
+.boot-summary {
+  font-size: 13px;
+  color: var(--shade-30);
+  line-height: 1.4;
 }
-@keyframes blink { 50% { opacity: 0; } }
+
+.boot-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.boot-actions .app-btn {
+  background: var(--ink-inv);
+  color: var(--shade-90);
+  border: 1px solid var(--ink-inv);
+  font-weight: 600;
+}
+.boot-actions .app-btn:hover {
+  opacity: .85;
+}
+.boot-actions .app-btn:not(.primary) {
+  background: transparent;
+  color: var(--ink-inv);
+  font-weight: 500;
+}
+
+.boot-error-detail {
+  flex: 1 1 100%;
+  padding: 12px 14px;
+  background: var(--shade-90);
+  border: 1px solid var(--ink-inv);
+  border-left-width: 4px;
+}
+.boot-error-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.boot-error-body {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--shade-30);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.boot-error-actions {
+  flex: 1 1 100%;
+  display: flex;
+  justify-content: flex-end;
+}
 
 /* ============================================================
    LOGIN / LOCK SCREEN
-   Layout: big clock on top, then avatar, name, one pill-shaped
-   password field with the submit arrow inside it. The error line has
-   reserved height so nothing ever shifts.
    ============================================================ */
 #lock-screen {
   flex-direction: column;
@@ -263,7 +412,7 @@
   font-size: 32px;
   font-weight: 600;
 }
-.lock-avatar::after {          /* slow breathing ring */
+.lock-avatar::after {
   content: "";
   position: absolute;
   inset: -7px;
@@ -325,7 +474,7 @@
 }
 
 .lock-error {
-  height: 18px;               /* reserved: no layout shift */
+  height: 18px;
   line-height: 18px;
   font-size: 12px;
   font-weight: 600;
@@ -344,13 +493,11 @@
   transition-delay: .22s;
 }
 
-/* entrance */
 #lock-screen.is-in .lock-clock,
 #lock-screen.is-in .lock-box,
 #lock-screen.is-in .lock-foot { opacity: 1; transform: none; }
 .lock-foot { transform: none; }
 
-/* exit: content lifts away, then the whole screen fades */
 #lock-screen { transition: opacity .35s ease .17s; }
 #lock-screen.is-out { opacity: 0; pointer-events: none; }
 #lock-screen.is-out .lock-clock,
@@ -365,5 +512,5 @@
 
 @media (max-height: 560px) { .lock-time { font-size: 56px; } #lock-screen { gap: 20px; } }
 @media (prefers-reduced-motion: reduce) {
-  #lock-screen *, #lock-screen { animation: none !important; transition-duration: .01s !important; transition-delay: 0s !important; }
+  #lock-screen *, #lock-screen { animation: none !important; transition-duration: .01ms !important; transition-delay: 0s !important; }
 }

@@ -99,7 +99,9 @@
 .fm-head > button.asc .icon { transform: rotate(180deg); }
 
 /* ---- Rows (list view) ---- */
-.fm-list { flex: 1 0 auto; display: flex; flex-direction: column; }
+/* padding-bottom reserves empty space below the last row so a
+   marquee can always be started, even in full folders. */
+.fm-list { flex: 1 0 auto; display: flex; flex-direction: column; padding-bottom: 60px; }
 
 .fm-row {
   flex: 0 0 auto;
@@ -135,7 +137,7 @@
   grid-auto-rows: max-content;
   align-content: start;
   gap: 6px;
-  padding: 10px;
+  padding: 10px 10px 60px 10px;
 }
 .fm-tile {
   display: flex;

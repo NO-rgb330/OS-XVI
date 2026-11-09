@@ -84,7 +84,7 @@ export const calculatorApp = {
         elPreview.textContent = lastExpr ? `${lastExpr} =` : '';
       } else {
         const r = evaluate(expr);
-        // Only preview when the expression is more than a bare number.
+        // Only preview when the expression is more than a bare number (which may be negative).
         const worthPreview = r.ok && r.value !== null && /[^\d.\-−]/.test(expr);
         elPreview.textContent = worthPreview ? '= ' + formatNumber(r.value) : '';
       }
@@ -105,7 +105,7 @@ export const calculatorApp = {
       }
       const i = m.index;
       const before = expr[i - 1];
-      const isUnaryMinus = before === '−' && (i === 1 || /[(+−×÷^]/.test(expr[i - 2]));
+      const isUnaryMinus = before === '−' && (i === 1 || /[+(−×÷^]/.test(expr[i - 2]));
       if (isUnaryMinus) expr = expr.slice(0, i - 1) + expr.slice(i);   // −5 → 5
       else if (before === '−') expr = expr.slice(0, i - 1) + '+' + expr.slice(i); // 5−3 → 5+3
       else if (before === '+') expr = expr.slice(0, i - 1) + '−' + expr.slice(i); // 5+3 → 5−3

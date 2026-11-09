@@ -10,6 +10,13 @@
    Selecting: click, Ctrl/Shift-click to toggle, or drag a rubber band over empty
    desktop. Selected icons move together when one of them is dragged.
 
+   Dragging:
+     · File icons are HTML5-draggable, so they can be dropped onto other
+       windows (Files, Media Viewer, Image Viewer) or repositioned on the
+       desktop via the drop handler.
+     · App and link icons use a custom pointer drag (no HTML5 payload to
+       send to other windows); repositioning works as before.
+
    Layout (which apps are shown, shortcuts, icon positions) lives in localStorage.
    Positions are stored as grid cells so they survive window resizes.
    ============================================================ */
@@ -23,7 +30,7 @@ import { esc, joinPath, parentPath } from './util.js';
 import { iconFor, openItem, createEntry, renameEntry, deleteEntries, transferInto, extractArchive, isArchive } from './files.js';
 import { showMenu } from './contextmenu.js';
 import { setClipboard, getClipboard, onClipboardChange, isCut, paste } from './clipboard.js';
-import { hasPaths, hasFiles, readDragPaths, filesFromDrop } from './dnd.js';
+import { hasPaths, hasFiles, readDragPaths, filesFromDrop, setDragPaths } from './dnd.js';
 import { pickFiles, uploadFiles } from './upload.js';
 
 export const DESKTOP = '/home/user/Desktop';
@@ -42,10 +49,10 @@ function loadState() {
   try { raw = JSON.parse(localStorage.getItem(STORE_KEY)); } catch { /* corrupt or unavailable */ }
   const s = raw && typeof raw === 'object' ? raw : {};
   return {
-    apps: strings(s.apps),      // app ids currently on the desktop, in order
-    seen: strings(s.seen),      // app ids we've already offered (so removed ones stay removed)
-    links: strings(s.links),    // paths of shortcut targets
-    pos: s.pos && typeof s.pos === 'object' && !Array.isArray(s.pos) ? s.pos : {}  // key -> [col, row]
+    apps: strings(s.apps),
+    seen: strings(s.seen),
+    links: strings(s.links),
+    pos: s.pos && typeof s.pos === 'object' && !Array.isArray(s.pos) ? s.pos : {}
   };
 }
 
@@ -55,7 +62,6 @@ function save() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch { /* storage unavailable */ }
 }
 
-/** New apps appear automatically once; apps the user removed stay removed. */
 function syncApps() {
   const ids = listApps().map((a) => a.id);
   for (const id of ids) {
@@ -86,9 +92,9 @@ export function removeAppIcon(id) {
 // ---------- Grid ----------
 let container = null;
 let desktopEl = null;
-let items = [];                 // current icons: { key, type, label, icon, ... }
-let placed = new Map();         // key -> [col, row] as currently displayed
-const selected = new Set();   // keys of selected icons
+let items = [];
+let placed = new Map();
+const selected = new Set();
 let renderSeq = 0;
 let renderTimer = 0;
 
@@ -103,7 +109,6 @@ function metrics() {
   };
 }
 
-/** Grid cell under a viewport point, clamped to the visible grid. */
 function cellAt(clientX, clientY) {
   const { cols, rows } = metrics();
   const rect = container.getBoundingClientRect();
@@ -112,7 +117,6 @@ function cellAt(clientX, clientY) {
   return [Math.max(0, Math.min(cols - 1, c)), Math.max(0, Math.min(rows - 1, r))];
 }
 
-/** Free cell closest to `want`, ignoring `exceptKey`'s own cell. Null if the grid is full. */
 function nearestFree(want, exceptKey) {
   const { cols, rows } = metrics();
   const taken = new Set();
@@ -128,7 +132,6 @@ function nearestFree(want, exceptKey) {
   return best;
 }
 
-/** Decide a cell for every icon. Honours saved positions, flows new icons top-to-bottom, left-to-right. */
 function assignCells(list) {
   const { cols, rows } = metrics();
   const result = new Map();
@@ -147,15 +150,13 @@ function assignCells(list) {
   for (const it of list) {
     if (result.has(it.key)) continue;
     let cell = null;
-    for (let c = 0; !cell; c++) {          // columns are unbounded so nothing is ever dropped
+    for (let c = 0; !cell; c++) {
       for (let r = 0; r < rows; r++) {
         if (!taken.has(key(c, r))) { cell = [c, r]; break; }
       }
     }
     taken.add(key(cell[0], cell[1]));
     result.set(it.key, cell);
-    // Brand-new icons keep their spot. Icons that merely don't fit right now (small window)
-    // are shown elsewhere temporarily without forgetting where the user put them.
     if (!isCell(state.pos[it.key])) { state.pos[it.key] = cell; dirty = true; }
   }
   if (dirty) save();
@@ -204,7 +205,6 @@ async function render() {
 
   placed = assignCells(items);
 
-  // Forget positions of things that no longer exist.
   const live = new Set(items.map((i) => i.key));
   let pruned = false;
   for (const k of Object.keys(state.pos)) if (!live.has(k)) { delete state.pos[k]; pruned = true; }
@@ -217,7 +217,12 @@ async function render() {
     const { x, y } = cellXY(c, r);
     const cls = 'desktop-icon' + (selected.has(it.key) ? ' selected' : '') + (it.type === 'link' ? ' is-link' : '')
       + (it.type === 'file' && isCut(DESKTOP, it.name) ? ' cut' : '');
-    return `<div class="${cls}" role="listitem" tabindex="0" data-key="${esc(it.key)}" style="left:${x}px;top:${y}px" title="${esc(it.label)}">
+    // Only file icons are HTML5-draggable — they carry actual paths that other
+    // windows can accept. Apps and links keep the custom pointer drag for
+    // repositioning (an app has nothing to transfer; a link's target isn't
+    // what the user is dragging).
+    const draggable = it.type === 'file' ? ' draggable="true"' : '';
+    return `<div class="${cls}" role="listitem" tabindex="0" data-key="${esc(it.key)}"${draggable} style="left:${x}px;top:${y}px" title="${esc(it.label)}">
       ${iconHTML(it.icon, 48)}
       <div class="desktop-icon-label">${esc(it.label)}</div>
     </div>`;
@@ -252,7 +257,6 @@ function removeLink(path) {
   scheduleRender(0);
 }
 
-/** Apps and shortcuts leave the desktop; real files are deleted (after one confirmation). */
 async function removeIcons(list) {
   const apps = list.filter((i) => i.type === 'app');
   const links = list.filter((i) => i.type === 'link');
@@ -271,17 +275,11 @@ async function renameIcon(it) {
   if (it?.type !== 'file') return;
   const next = await renameEntry(DESKTOP, it.name);
   if (!next) return;
-  // Keep the icon where it was (positions are keyed by name).
   if (state.pos[it.key]) { state.pos['file:' + next] = state.pos[it.key]; save(); }
   setSelection(['file:' + next]);
 }
 
 // ---------- Clipboard ----------
-/**
- * What an icon selection puts on the clipboard: the real files on the desktop, or — when only
- * shortcuts are selected — the files they point at (copy only, so Cut can never move
- * something out from under a shortcut by surprise).
- */
 function clipboardSource(list, cut) {
   const files = list.filter((i) => i.type === 'file');
   if (files.length) return { dir: DESKTOP, names: files.map((f) => f.name) };
@@ -298,7 +296,6 @@ function copyIcons(list, cut = false) {
   if (src) setClipboard(cut ? 'cut' : 'copy', src.dir, src.names);
 }
 
-/** Paste onto the desktop, placing new icons around `cell` (if given). */
 async function pasteToDesktop(cell) {
   if (!getClipboard()) return;
   const res = await paste(DESKTOP, {
@@ -321,7 +318,6 @@ const paintCut = () => {
   }
 };
 
-/** Extract a zip icon (a desktop file, or a shortcut to one) beside the archive. */
 async function extractIcon(it, here) {
   await extractArchive(pathOfIcon(it), { here });
 }
@@ -338,7 +334,6 @@ function arrangeIcons() {
   scheduleRender(0);
 }
 
-/** Upload files from the computer into UPLOADS and pin a shortcut for each one on the desktop. */
 async function uploadToDesktop(files, cell, skippedFolders = 0) {
   const { saved } = await uploadFiles(files, { skippedFolders });
   if (!saved.length) return;
@@ -352,7 +347,6 @@ async function uploadToDesktop(files, cell, skippedFolders = 0) {
   scheduleRender(0);
 }
 
-/** Files dragged out of a Files window: move (or copy with Ctrl) onto the desktop, or into a folder icon. */
 async function dropPaths(data, cell, copy, targetIcon) {
   const folder = targetIcon?.type === 'file' && targetIcon.kind === 'dir' ? targetIcon : null;
   if (folder) {
@@ -362,7 +356,7 @@ async function dropPaths(data, cell, copy, targetIcon) {
     if (res.errors.length) dialogs.alert('Move', res.errors.join('\n'));
     return;
   }
-  if (data.dir === DESKTOP && !copy) return; // already on the desktop
+  if (data.dir === DESKTOP && !copy) return;
   const res = await transferInto(data.dir, data.names, DESKTOP, {
     copy,
     beforeEach: (finalName) => {
@@ -374,6 +368,35 @@ async function dropPaths(data, cell, copy, targetIcon) {
   save();
   scheduleRender(0);
   if (res.errors.length) dialogs.alert('Move to Desktop', res.errors.join('\n'));
+}
+
+/** Reposition `names` starting at `cell` — used when a desktop file is dropped back onto the desktop. */
+function reorderIcons(names, cell) {
+  const keys = names.map((n) => 'file:' + n).filter((k) => placed.has(k));
+  if (!keys.length) return;
+
+  const { cols, rows } = metrics();
+  for (const key of keys) placed.delete(key);   // free our own cells so overlapping drops work
+
+  let [col, row] = cell;
+  let moved = false;
+  for (const key of keys) {
+    col = Math.max(0, Math.min(cols - 1, col));
+    row = Math.max(0, Math.min(rows - 1, row));
+    const spot = nearestFree([col, row], null);
+    if (spot) {
+      placed.set(key, spot);
+      state.pos[key] = spot;
+      moved = true;
+      col++;
+      if (col >= cols) { col = 0; row++; }
+    }
+  }
+
+  if (moved) {
+    save();
+    scheduleRender(0);
+  }
 }
 
 // ---------- Menus ----------
@@ -447,7 +470,6 @@ function desktopMenu(x, y) {
 // ---------- Pointer: select, move ----------
 let suppressClick = false;
 
-/** Drag one icon — or the whole selection if the pressed icon belongs to it. */
 function startIconDrag(e, el) {
   const key = el.dataset.key;
   const keys = selected.has(key) ? [...selected] : [key];
@@ -491,7 +513,6 @@ function startIconDrag(e, el) {
     const dcol = Math.round(dx / STEP_X), drow = Math.round(dy / STEP_Y);
     const moved = new Map();
     if (ev.type === 'pointerup') {
-      // Lift the group off the grid, then drop each icon at its shifted cell (or the nearest free one).
       for (const g of group) placed.delete(g.key);
       for (const g of [...group].sort((a, b) => a.left - b.left || a.top - b.top)) {
         const o = orig.get(g.key);
@@ -500,7 +521,7 @@ function startIconDrag(e, el) {
         if (spot) { moved.set(g.key, spot); placed.set(g.key, spot); }
       }
     }
-    for (const g of group) {                        // cancelled or no room: snap back
+    for (const g of group) {
       const spot = moved.get(g.key) ?? orig.get(g.key);
       placed.set(g.key, spot);
       state.pos[g.key] = spot;
@@ -516,7 +537,6 @@ function startIconDrag(e, el) {
   el.addEventListener('pointercancel', finish);
 }
 
-/** Rubber-band selection over empty desktop. `base` is kept when extending with Ctrl/Shift. */
 function startMarquee(e, base) {
   const crect = container.getBoundingClientRect();
   const sx = e.clientX - crect.left, sy = e.clientY - crect.top;
@@ -548,7 +568,6 @@ function startMarquee(e, base) {
     desktopEl.removeEventListener('pointerup', end);
     desktopEl.removeEventListener('pointercancel', end);
     box?.remove();
-    // Move keyboard focus onto the selection so Delete / Enter / F2 work straight away.
     if (box && selected.size) container.querySelector('.desktop-icon.selected')?.focus({ preventScroll: true });
   };
   desktopEl.addEventListener('pointermove', onMove);
@@ -564,14 +583,11 @@ export function initDesktop() {
   save();
 
   const iconOf = (e) => e.target.closest?.('.desktop-icon') ?? null;
-
   const additive = (e) => e.ctrlKey || e.metaKey || e.shiftKey;
 
-  // Swallow the click that ends an icon drag.
   container.addEventListener('click', (e) => {
     if (suppressClick) { e.stopPropagation(); e.preventDefault(); }
   }, true);
-  // A plain click (no drag) collapses a multi-selection to the clicked icon.
   container.addEventListener('click', (e) => {
     const el = iconOf(e);
     if (el && !additive(e)) selectOnly(el.dataset.key);
@@ -594,15 +610,33 @@ export function initDesktop() {
     e.preventDefault();
   });
 
+  // ---- HTML5 drag start (file icons only) ----
+  // Sends the desktop files as paths to any window that accepts the drop
+  // (Files, Media Viewer, Image Viewer, another Files window). Dropping back
+  // onto the desktop itself is treated as a reposition, handled below.
+  container.addEventListener('dragstart', (e) => {
+    const el = iconOf(e);
+    if (!el || !el.draggable) return;
+    const it = itemOf(el);
+    if (!it || it.type !== 'file') { e.preventDefault(); return; }
+    if (!selected.has(it.key)) selectOnly(it.key);
+    const files = selectedItems().filter((i) => i.type === 'file');
+    if (!files.length) { e.preventDefault(); return; }
+    setDragPaths(e, DESKTOP, files.map((f) => f.name));
+  });
+
   container.addEventListener('pointerdown', (e) => {
     const el = iconOf(e);
     if (!el || e.button !== 0) return;
     const key = el.dataset.key;
-    if (additive(e)) {                         // Ctrl/Shift-click toggles; no drag
+    if (additive(e)) {
       setSelection(selected.has(key) ? [...selected].filter((k) => k !== key) : [...selected, key]);
       return;
     }
-    if (!selected.has(key)) selectOnly(key);   // pressing inside a selection keeps it (group drag)
+    if (!selected.has(key)) selectOnly(key);
+    // File icons are draggable=true → let the browser fire dragstart and
+    // hand off to the HTML5 drag. App and link icons use the custom drag.
+    if (el.draggable) return;
     startIconDrag(e, el);
   });
 
@@ -656,8 +690,16 @@ export function initDesktop() {
     const external = !internal && hasFiles(e) ? filesFromDrop(e) : null;
     clearDrop();
     try {
-      if (internal) await dropPaths(internal, cell, copy, target);
-      else if (external) await uploadToDesktop(external.files, cell, external.skippedFolders);
+      if (internal) {
+        // Dropping a desktop file back onto the desktop: reposition.
+        if (internal.dir === DESKTOP && !copy && !(target?.type === 'file' && target.kind === 'dir')) {
+          reorderIcons(internal.names, cell);
+          return;
+        }
+        await dropPaths(internal, cell, copy, target);
+      } else if (external) {
+        await uploadToDesktop(external.files, cell, external.skippedFolders);
+      }
     } catch (err) {
       console.error(err);
       dialogs.alert('Desktop', err.message);
@@ -665,7 +707,6 @@ export function initDesktop() {
   });
   window.addEventListener('dragend', clearDrop);
 
-  // Ctrl+V works whenever the desktop itself has the keyboard (nothing else focused, no dialog open).
   document.addEventListener('keydown', (e) => {
     if (!(e.ctrlKey || e.metaKey) || e.altKey || e.key.toLowerCase() !== 'v') return;
     const t = e.target;
@@ -676,7 +717,6 @@ export function initDesktop() {
   });
   onClipboardChange(paintCut);
 
-  // ---- Keep in sync ----
   vfs.on('change', (path) => {
     if (path === DESKTOP || state.links.some((p) => parentPath(p) === path)) scheduleRender();
   });

@@ -270,3 +270,50 @@
   font-size: 13px;
   color: var(--tx);
 }
+
+/* ============================================================
+   CODE EDITOR — plain / raw modes for very large files
+   ============================================================ */
+
+/* The plain-mode gutter is a fixed-size container with absolute children,
+   so only the ~40 visible line numbers exist in the DOM at any time. */
+.code-editor-plain .code-gutter {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+}
+
+.code-editor-plain .code-gutter > div {
+  position: absolute;
+  right: 8px;
+  color: var(--tx-muted);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  line-height: inherit;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Raw mode: textarea-only. No gutter means the .code-area takes full width
+   automatically (flex child with no fixed sibling). */
+
+.code-editor-raw .code-input {
+  /* Same padding as full/plain, but no highlight overlay to sync with. */
+  color: var(--tx);
+  background: var(--bg-window);
+}
+
+/* Optional small marker in the toolbar to hint at the mode. Serpent/WebCraft
+   can render one of these next to the file name if they want to. */
+.code-mode-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tx-muted);
+  border: 1px solid var(--bd-soft);
+  margin-left: 6px;
+}

@@ -238,7 +238,8 @@ export async function writeApp(path, appId, { protected: isProtected = false } =
   if (existing) {
     if (existing.kind !== 'app') throw new Error('EEXIST: ' + path);
     if (existing.protected && !isProtected) throw new Error('EPERM: cannot modify protected entry');
-    node = { ...existing, appId, mtime: Date.now() };
+    // `protected` upgrades, never downgrades.
+    node = { ...existing, appId, protected: existing.protected || isProtected, mtime: Date.now() };
   } else {
     node = {
       id: crypto.randomUUID(),

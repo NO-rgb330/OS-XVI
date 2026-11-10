@@ -6,7 +6,8 @@ import { iconFor, openItem, createEntry, renameEntry, deleteEntries, transferInt
 import { showMenu } from '../core/contextmenu.js';
 import { setClipboard, getClipboard, onClipboardChange, isCut, paste } from '../core/clipboard.js';
 import { setDragPaths, readDragPaths, hasPaths, hasFiles, filesFromDrop } from '../core/dnd.js';
-import { buildZip } from '../core/zip.js';
+import { shouldStore } from '../core/zip.js';
+import { ZIP_METHOD } from '../core/zip-writer.js';
 import { pickFiles, uploadFiles, UPLOADS_DIR } from '../core/upload.js';
 import { SYSTEM_APPS_DIR } from '../core/vfs.js';
 
@@ -209,10 +210,10 @@ export const fileManagerApp = {
     function updateStatus() {
       const sel = selectedItems();
       const anyProtected = sel.some((it) => it.protected);
-      const hasFiles = sel.some((it) => it.kind === 'file');
+      const hasContent = sel.some((it) => it.kind !== 'app');
 
       btn('extract').disabled = view !== 'files' || !selectedZip();
-      btn('download').disabled = view !== 'files' || !hasFiles;
+      btn('download').disabled = view !== 'files' || !hasContent;
       btn('cut').disabled = view !== 'files' || !sel.length || anyProtected;
       btn('copy').disabled = view !== 'files' || !sel.length;
       btn('paste').disabled = view !== 'files' || !getClipboard();
@@ -316,50 +317,120 @@ export const fileManagerApp = {
     const stat = (msg) => dialogs.toast(msg, { danger: /failed/i.test(msg) });
 
     const download = async () => {
-      const ns = selectedItems().filter((it) => it.kind === 'file');
-      if (!ns.length) {
+      // Files OR folders, but not app shortcuts (they have no bytes).
+      const all = selectedItems().filter((it) => it.kind !== 'app');
+      if (!all.length) {
         return dialogs.toast('Nothing to save — app shortcuts have no file data.', { danger: true });
       }
       try {
-        if (ns.length === 1) {
+        if (all.length === 1 && all[0].kind === 'file') {
           stat('Downloading...');
-          const blob = await vfs.read(joinPath(cwd, ns[0].name));
-          saveBlob(blob, ns[0].name);
-          return stat(`Downloaded ${ns[0].name}.`);
+          const blob = await vfs.read(joinPath(cwd, all[0].name));
+          saveBlob(blob, all[0].name);
+          return stat(`Downloaded ${all[0].name}.`);
         }
-        return await downloadzip(ns);
+        return await downloadzip(all);
       } catch (e) {
         stat('Download failed: ' + e.message);
       }
     };
 
-    const downloadzip = async (ns = selectedItems().filter((it) => it.kind === 'file')) => {
+    /**
+     * Zip the selection and download it. Uses the same Worker + streaming
+     * writer as the Archiver app, so large selections don't freeze the OS.
+     *
+     * Folder contents are walked recursively. Empty folders are preserved
+     * as zero-length directory entries (zip path ending in "/").
+     */
+    const downloadzip = async (ns = selectedItems().filter((it) => it.kind !== 'app')) => {
       if (!ns.length) return;
-      stat('Preparing ZIP...');
-      const out = {};
-      const unique = (name) => {
-        let n = name, i = 2;
-        while (out[n]) n = name.replace(/(\.[^./]+)?$/, ` (${i++})$1`);
-        return n;
-      };
-      const gather = async (nd, prefix, dir) => {
+
+      // 1. Walk the tree first — we need the total size for progress, and
+      //    want to fail fast if any read fails before we open a worker.
+      const entries = [];
+      const walk = async (nd, prefix, dir) => {
         if (nd.kind === 'app') return;
         const path = joinPath(dir, nd.name);
+        const fullName = (prefix ? prefix + '/' : '') + nd.name;
         if (nd.kind === 'dir') {
-          const base = prefix + nd.name + '/';
-          out[base] = new Uint8Array(0);
-          for (const k of await vfs.list(path)) await gather(k, base, path);
+          entries.push({ name: fullName + '/', path: null, size: 0, isDir: true });
+          for (const c of await vfs.list(path)) await walk(c, fullName, path);
         } else {
-          const blob = await vfs.read(path);
-          out[unique(prefix + nd.name)] = new Uint8Array(await blob.arrayBuffer());
+          entries.push({ name: fullName, path, size: nd.size || 0, isDir: false });
         }
       };
       try {
-        for (const n of ns) await gather(n, '', cwd);
-        saveBlob(buildZip(out), ns.length === 1 ? ns[0].name + '.zip' : 'Export.zip');
-        stat('ZIP downloaded.');
+        for (const n of ns) await walk(n, '', cwd);
       } catch (e) {
-        stat('Download failed: ' + e.message);
+        return stat('Download failed: ' + e.message);
+      }
+
+      const fileEntries = entries.filter((e) => !e.isDir);
+      if (!fileEntries.length) {
+        return dialogs.toast('Nothing to download — the selected folders are empty.', { danger: true });
+      }
+
+      const totalBytes = fileEntries.reduce((s, e) => s + e.size, 0);
+      const zipName = ns.length === 1 ? ns[0].name + '.zip' : 'Export.zip';
+      const prog = dialogs.progress(`Preparing ${zipName}`);
+
+      let worker;
+      try {
+        worker = new Worker(new URL('../core/zip-worker.js', import.meta.url), { type: 'module' });
+        const resultPromise = new Promise((resolve, reject) => {
+          worker.onmessage = (ev) => {
+            const msg = ev.data;
+            if (msg.type === 'done') resolve(msg);
+            else if (msg.type === 'error') reject(new Error(msg.message || 'Worker error'));
+          };
+          worker.onerror = (err) => reject(new Error(err.message || 'Worker crashed'));
+        });
+
+        let processedBytes = 0;
+        for (const e of entries) {
+          if (prog.cancelled) throw new Error('cancelled');
+
+          if (e.isDir) {
+            // Directory entry: header, no data, descriptor. Preserves the
+            // folder name even when it's empty.
+            worker.postMessage({ type: 'add-start', name: e.name, method: ZIP_METHOD.STORED });
+            worker.postMessage({ type: 'add-end' });
+            continue;
+          }
+
+          // Already-compressed formats (media, images, archives) don't
+          // benefit from deflate — store them raw at disk-copy speed.
+          const method = shouldStore(e.name) ? ZIP_METHOD.STORED : ZIP_METHOD.DEFLATE;
+          worker.postMessage({ type: 'add-start', name: e.name, method });
+
+          const blob = await vfs.read(e.path);
+          const reader = blob.stream().getReader();
+          for (;;) {
+            if (prog.cancelled) throw new Error('cancelled');
+            const { value, done } = await reader.read();
+            if (done) break;
+            processedBytes += value.byteLength;
+            worker.postMessage({ type: 'add-chunk', data: value.buffer }, [value.buffer]);
+            prog.update(
+              `${e.name} · ${formatBytes(processedBytes)} of ${formatBytes(totalBytes)}`,
+              totalBytes ? Math.min(1, processedBytes / totalBytes) : 0
+            );
+          }
+          worker.postMessage({ type: 'add-end' });
+        }
+
+        worker.postMessage({ type: 'finish' });
+        const { chunks } = await resultPromise;
+        prog.close();
+        worker.terminate();
+        worker = null;
+
+        saveBlob(new Blob(chunks, { type: 'application/zip' }), zipName);
+        stat(`Downloaded ${zipName}.`);
+      } catch (e) {
+        if (worker) { try { worker.terminate(); } catch {} }
+        prog.close();
+        stat(e.message === 'cancelled' ? 'Download cancelled.' : 'Download failed: ' + e.message);
       }
     };
 
@@ -414,10 +485,8 @@ export const fileManagerApp = {
       render();
     }
 
-    // ---------- Upload ----------
     async function afterUpload(saved) {
       if (!saved.length) return;
-      // Jump to UPLOADS (or the subfolder that the first saved file landed in)
       const firstPath = saved[0].path;
       const destDir = saved.length === 1 ? parentPath(firstPath) : UPLOADS_DIR;
       if (await navigate(destDir)) {
@@ -434,7 +503,6 @@ export const fileManagerApp = {
       if (files.length) await afterUpload((await uploadFiles(files)).saved);
     }
 
-    // ---------- Storage (virtual disk) ----------
     const pct = (a, b) => (b ? Math.min(100, (a / b) * 100) : 0);
     const fmtPct = (v) => (v > 0 && v < 0.1 ? '<0.1' : v.toFixed(v < 10 ? 1 : 0)) + '%';
 
@@ -631,7 +699,7 @@ export const fileManagerApp = {
         const sel = selectedItems();
         const one = selected.size === 1;
         const anyProtected = sel.some((it) => it.protected);
-        const hasFiles = sel.some((it) => it.kind === 'file');
+        const hasContent = sel.some((it) => it.kind !== 'app');
         const zip = selectedZip();
         const folder = one && sel[0]?.kind === 'dir' ? sel[0] : null;
         showMenu(e.clientX, e.clientY, [
@@ -641,7 +709,7 @@ export const fileManagerApp = {
             { label: 'Extract Here', action: () => extractSelected(true) }
           ] : []),
           { sep: true },
-          { label: 'Save to Device', action: download, disabled: !hasFiles },
+          { label: 'Save to Device', action: download, disabled: !hasContent },
           { sep: true },
           { label: 'Cut', action: cutSelected, disabled: anyProtected, hint: 'Ctrl+X' },
           { label: 'Copy', action: copySelected, hint: 'Ctrl+C' },
@@ -827,8 +895,7 @@ export const fileManagerApp = {
       e.preventDefault();
       const target = paths ? dropTarget(e) : null;
       const data = paths ? readDragPaths(e) : null;
-      // filesFromDrop is async — the synchronous items access happens at the top
-      // of that function, before any await yields the event loop.
+      // filesFromDrop is async — folder entries require recursive reads.
       const ext = (!data && files) ? await filesFromDrop(e) : null;
       const copy = e.ctrlKey;
       clearDrop();

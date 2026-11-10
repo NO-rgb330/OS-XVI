@@ -71,6 +71,7 @@ export const fileManagerApp = {
           ${tpl('paste', 'Paste (Ctrl+V)', 'paste')}
           <div class="toolbar-sep"></div>
           ${tpl('upload', 'Upload files from your computer (saved to UPLOADS)', 'upload')}
+          ${tpl('uploadfolder', 'Upload a folder from your computer (structure preserved under UPLOADS)', 'folder-plus')}
           ${tpl('download', 'Save to Device (download)', 'download')}
           ${tpl('extract', 'Extract the selected .zip into a new folder', 'archive')}
           <div class="toolbar-sep"></div>
@@ -285,17 +286,13 @@ export const fileManagerApp = {
       const from = cwd;
       if (await load(target) === null) { fwd.push(from); leaveStorage(); } else back.push(target);
     }
-
     async function goForward() {
       if (!fwd.length) return;
       const target = fwd.pop();
       const from = cwd;
       if (await load(target) === null) { back.push(from); leaveStorage(); } else fwd.push(target);
     }
-
-    const goUp = () => {
-      if (cwd !== '/') navigate(parentPath(cwd));
-    };
+    const goUp = () => { if (cwd !== '/') navigate(parentPath(cwd)); };
 
     const selectedItems = () => [...selected].map(itemByName).filter(Boolean);
 
@@ -303,7 +300,6 @@ export const fileManagerApp = {
       const [it] = selectedItems();
       return selected.size === 1 && it?.kind === 'file' && isArchive(it.name) ? it : null;
     };
-
     async function extractSelected(here = false) {
       const it = selectedZip();
       if (!it) return;
@@ -312,12 +308,8 @@ export const fileManagerApp = {
     }
 
     const saveBlob = (b, name) => {
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(b);
-      a.download = name;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+      const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 10000);
     };
 
@@ -371,10 +363,7 @@ export const fileManagerApp = {
       }
     };
 
-    const copySelected = () => {
-      if (selected.size) setClipboard('copy', cwd, [...selected]);
-    };
-
+    const copySelected = () => { if (selected.size) setClipboard('copy', cwd, [...selected]); };
     const cutSelected = () => {
       if (!selected.size) return;
       if (selectedItems().some((it) => it.protected)) return;
@@ -390,7 +379,6 @@ export const fileManagerApp = {
         if (res.done.length) setSelection(res.done.map((d) => d.to), res.done[0].to);
       }
     }
-
     const paintCut = () => {
       for (const el of elList.children) if (el.dataset.name) el.classList.toggle('cut', isCut(cwd, el.dataset.name));
       updateStatus();
@@ -400,17 +388,14 @@ export const fileManagerApp = {
       const [it] = selectedItems();
       if (selected.size === 1 && it) openEntry(it);
     }
-
     function openEntry(it) {
       if (it.kind === 'dir') navigate(pathOf(it.name));
       else openItem(pathOf(it.name), it.kind, it.name, it.appId);
     }
-
     async function newEntry(kind) {
       const name = await createEntry(cwd, kind);
       if (name) await refresh(name);
     }
-
     async function renameSelected() {
       if (selected.size !== 1) return;
       const it = selectedItems()[0];
@@ -418,16 +403,10 @@ export const fileManagerApp = {
       const name = await renameEntry(cwd, [...selected][0]);
       if (name) await refresh(name);
     }
-
     async function deleteSelected() {
       if (await deleteEntries(cwd, [...selected])) { selected.clear(); await refresh(); }
     }
-
-    function toggleView() {
-      viewMode = viewMode === 'list' ? 'grid' : 'list';
-      render();
-    }
-
+    function toggleView() { viewMode = viewMode === 'list' ? 'grid' : 'list'; render(); }
     function setSort(key) {
       if (sortKey === key) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
       else { sortKey = key; sortDir = 'asc'; }
@@ -435,16 +414,27 @@ export const fileManagerApp = {
       render();
     }
 
+    // ---------- Upload ----------
     async function afterUpload(saved) {
       if (!saved.length) return;
-      if (await navigate(UPLOADS_DIR)) setSelection(saved.map((f) => f.name), saved[0].name);
+      // Jump to UPLOADS (or the subfolder that the first saved file landed in)
+      const firstPath = saved[0].path;
+      const destDir = saved.length === 1 ? parentPath(firstPath) : UPLOADS_DIR;
+      if (await navigate(destDir)) {
+        const firstName = saved.length === 1 ? baseName(firstPath) : null;
+        if (firstName) setSelection([firstName], firstName);
+      }
     }
-
     async function uploadFromComputer() {
       const files = await pickFiles();
       if (files.length) await afterUpload((await uploadFiles(files)).saved);
     }
+    async function uploadFolderFromComputer() {
+      const files = await pickFiles({ directory: true, multiple: true });
+      if (files.length) await afterUpload((await uploadFiles(files)).saved);
+    }
 
+    // ---------- Storage (virtual disk) ----------
     const pct = (a, b) => (b ? Math.min(100, (a / b) * 100) : 0);
     const fmtPct = (v) => (v > 0 && v < 0.1 ? '<0.1' : v.toFixed(v < 10 ? 1 : 0)) + '%';
 
@@ -469,7 +459,7 @@ export const fileManagerApp = {
       const usedPct = pct(disk.used, disk.capacity);
       const freePct = 100 - usedPct;
       let rows = [];
-      try { rows = await vfs.breakdown(HOME); } catch { /* home missing: show no breakdown */ }
+      try { rows = await vfs.breakdown(HOME); } catch {}
       if (view !== 'storage' || tab !== storageTab) return;
 
       const big = tab === 'used' ? formatBytes(disk.used) : formatBytes(disk.free);
@@ -562,7 +552,6 @@ export const fileManagerApp = {
       updateStatus();
       refreshDisk();
     }
-
     function leaveStorage() {
       if (view === 'files') { syncNav(); return; }
       view = 'files';
@@ -571,7 +560,6 @@ export const fileManagerApp = {
       syncNav();
       updateStatus();
     }
-
     function toggleStorage() { if (view === 'storage') leaveStorage(); else showStorage(); }
 
     elStorage.addEventListener('click', (e) => {
@@ -581,46 +569,31 @@ export const fileManagerApp = {
       if (row && row.dataset.kind === 'dir') navigate(row.dataset.path);
       else if (row) navigate(parentPath(row.dataset.path)).then(() => setSelection([baseName(row.dataset.path)]));
     });
-
     $('.fm-storage-group').addEventListener('click', (e) => {
       const tab = e.target.closest('.fm-store-tab');
       if (tab) { showStorage(tab.dataset.store); focusApp(); }
     });
 
     const COMMANDS = {
-      back: goBack,
-      fwd: goForward,
-      up: goUp,
-      refresh: () => (view === 'storage' ? refreshDisk() : refresh()),
-      newfolder: () => newEntry('dir'),
-      newfile: () => newEntry('file'),
-      view: toggleView,
-      upload: uploadFromComputer,
-      download,
-      downloadzip,
-      storage: toggleStorage,
-      cut: cutSelected,
-      copy: copySelected,
-      paste: () => pasteInto(),
-      extract: () => extractSelected(false)
+      back: goBack, fwd: goForward, up: goUp, refresh: () => (view === 'storage' ? refreshDisk() : refresh()),
+      newfolder: () => newEntry('dir'), newfile: () => newEntry('file'), view: toggleView,
+      upload: uploadFromComputer, uploadfolder: uploadFolderFromComputer, download: download, downloadzip: downloadzip,
+      storage: toggleStorage, cut: cutSelected, copy: copySelected, paste: () => pasteInto(), extract: () => extractSelected(false)
     };
 
     elApp.addEventListener('click', (e) => {
       const b = e.target.closest('[data-cmd]');
       if (b && elApp.contains(b)) { COMMANDS[b.dataset.cmd]?.(); focusApp(); }
     });
-
     elPath.addEventListener('click', (e) => {
       const c = e.target.closest('[data-path]');
       if (c && (c.dataset.path !== cwd || view === 'storage')) navigate(c.dataset.path);
     });
-
     $('.fm-sidebar').addEventListener('click', (e) => {
       const c = e.target.closest('.sidebar-item[data-path]');
       if (c && (c.dataset.path !== cwd || view === 'storage')) navigate(c.dataset.path);
       focusApp();
     });
-
     elHead.addEventListener('click', (e) => {
       const b = e.target.closest('[data-sort]');
       if (b) setSort(b.dataset.sort);
@@ -644,7 +617,6 @@ export const fileManagerApp = {
         setSelection([name], name);
       }
     });
-
     elList.addEventListener('dblclick', (e) => {
       const row = e.target.closest('[data-name]');
       const it = row && itemByName(row.dataset.name);
@@ -687,11 +659,13 @@ export const fileManagerApp = {
           { sep: true },
           { label: 'Paste', action: () => pasteInto(), disabled: !getClipboard(), hint: 'Ctrl+V' },
           { label: 'Upload Files…', action: uploadFromComputer },
+          { label: 'Upload Folder…', action: uploadFolderFromComputer },
           { label: 'Refresh', action: () => refresh(), hint: 'F5' }
         ]);
       }
     });
 
+    // ---------- Marquee selection (with autoscroll) ----------
     let mq = null;
     const autoScroll = { vx: 0, vy: 0, raf: 0, active: false };
 
@@ -791,10 +765,10 @@ export const fileManagerApp = {
       mq.el.remove();
       mq = null;
     };
-
     elArea.addEventListener('pointerup', endMarquee);
     elArea.addEventListener('pointercancel', endMarquee);
 
+    // ---------- Drag & drop ----------
     elList.addEventListener('dragstart', (e) => {
       const row = e.target.closest('[data-name]');
       if (!row) return;
@@ -845,17 +819,17 @@ export const fileManagerApp = {
         setDropEl(t.el);
       }
     });
-
     elApp.addEventListener('dragleave', (e) => { if (!elApp.contains(e.relatedTarget)) clearDrop(); });
     window.addEventListener('dragend', clearDrop);
-
     elApp.addEventListener('drop', async (e) => {
       const paths = hasPaths(e), files = hasFiles(e);
       if (!paths && !files) return;
       e.preventDefault();
       const target = paths ? dropTarget(e) : null;
       const data = paths ? readDragPaths(e) : null;
-      const ext = !data && files ? filesFromDrop(e) : null;
+      // filesFromDrop is async — the synchronous items access happens at the top
+      // of that function, before any await yields the event loop.
+      const ext = (!data && files) ? await filesFromDrop(e) : null;
       const copy = e.ctrlKey;
       clearDrop();
       if (!target && data) return;
@@ -863,9 +837,9 @@ export const fileManagerApp = {
       try {
         if (data && target) {
           const errors = [];
+
           const fileNames = [];
           const appCreates = [];
-
           for (const name of data.names) {
             const hasSrc = data.dir ? await vfs.exists(joinPath(data.dir, name)) : false;
             if (hasSrc) {
@@ -892,7 +866,6 @@ export const fileManagerApp = {
               errors.push(`${name}: ${err.message.replace(/^E[A-Z]+: /, '')}`);
             }
           }
-
           if (created.length && !data.dir) {
             window.dispatchEvent(new CustomEvent('os16:app-dragged-out', { detail: { appIds: created } }));
           }
@@ -902,7 +875,7 @@ export const fileManagerApp = {
             dialogs.toast(`Added ${appCreates.length} app${appCreates.length === 1 ? '' : 's'}`);
           }
         } else if (ext) {
-          await afterUpload((await uploadFiles(ext.files, { skippedFolders: ext.skippedFolders })).saved);
+          await afterUpload((await uploadFiles(ext.files)).saved);
         }
       } catch (err) {
         console.error(err);
@@ -910,6 +883,7 @@ export const fileManagerApp = {
       }
     });
 
+    // ---------- Keyboard ----------
     function moveCursor(delta, extend) {
       if (!items.length) return;
       const cur = items.findIndex((i) => i.name === anchor);
@@ -923,7 +897,6 @@ export const fileManagerApp = {
       }
       elList.querySelector(`[data-name="${CSS.escape(name)}"]`)?.scrollIntoView({ block: 'nearest' });
     }
-
     const gridColumns = () => {
       const tiles = elList.children;
       if (!tiles.length) return 1;
@@ -965,6 +938,7 @@ export const fileManagerApp = {
       if (handled) e.preventDefault();
     });
 
+    // ---------- Lifecycle ----------
     let refreshTimer = 0;
     const unsub = vfs.on('change', (path) => {
       if (path !== cwd) return;

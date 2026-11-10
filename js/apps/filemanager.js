@@ -855,13 +855,20 @@ export const fileManagerApp = {
             errors.push(...res.errors);
           }
 
-          for (const { name, appId } of appCreates) {
-            try {
-              await vfs.writeApp(joinPath(target.dir, name), appId);
-            } catch (err) {
-              errors.push(`${name}: ${err.message.replace(/^E[A-Z]+: /, '')}`);
-            }
-          }
+          const created = [];
+for (const { name, appId } of appCreates) {
+  try {
+    await vfs.writeApp(joinPath(target.dir, name), appId);
+    created.push(appId);
+  } catch (err) {
+    errors.push(`${name}: ${err.message.replace(/^E[A-Z]+: /, '')}`);
+  }
+}
+// Cross-window cleanup: if the drag came from the desktop (dir: '' + appIds),
+// the desktop needs to drop its icon now that a VFS entry exists.
+if (created.length && !data.dir) {
+  window.dispatchEvent(new CustomEvent('os16:app-dragged-out', { detail: { appIds: created } }));
+}
 
           if (errors.length) dialogs.alert('Drop', errors.join('\n'));
           else if (appCreates.length) {

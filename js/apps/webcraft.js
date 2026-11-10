@@ -167,7 +167,7 @@ h1 { font-weight: 300; }`);
                 let editor;
         try {
           editor = new CodeEditor(edWrap, {
-            language: 'python',
+            language: lang,
             value: text,
             onChange: () => {
               if (!openFiles.has(filename)) return;
@@ -186,7 +186,6 @@ h1 { font-weight: 300; }`);
           }
           throw err;
         }
-
         openFiles.set(filename, { editor, tabEl: tab, wrapEl: edWrap, dirty: false });
         switchTab(filename);
         loadTree();

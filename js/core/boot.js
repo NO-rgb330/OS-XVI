@@ -14,7 +14,7 @@
 import { BootCode, codeLabel, mkResult, overallCode } from './boot-codes.js';
 import {
   checkDom, checkStorage, checkVfsMount, checkDisk,
-  checkSeed, checkApps, checkShell
+  checkSeed, checkApps, checkSystemApps, checkShell
 } from './boot-check.js';
 import { initPython } from './python-runtime.js';
 
@@ -25,6 +25,7 @@ const STAGE_TIMEOUTS = {
   disk: 15000,
   seed: 30000,
   apps: 2000,
+  sysapps: 5000,
   shell: 10000
 };
 
@@ -35,6 +36,7 @@ const STAGE_LABELS = {
   disk: 'Virtual disk',
   seed: 'System files',
   apps: 'App registry',
+  sysapps: 'System apps',
   shell: 'Desktop shell'
 };
 
@@ -83,7 +85,6 @@ export async function runBootSequence({ vfs, seed, apps, register, initPanel, in
   const elSummary = overlay.querySelector('#boot-summary');
   const elActions = overlay.querySelector('#boot-actions');
 
-  // Background Python load — status shows up as a note but does not gate boot.
   const pythonNote = document.createElement('div');
   let pythonState = 'loading';
   initPython()
@@ -131,6 +132,7 @@ export async function runBootSequence({ vfs, seed, apps, register, initPanel, in
     { key: 'disk',    run: () => checkDisk(vfs) },
     { key: 'seed',    run: () => checkSeed(seed) },
     { key: 'apps',    run: () => checkApps(apps) },
+    { key: 'sysapps', run: () => checkSystemApps(vfs, apps) },
     {
       key: 'shell',
       run: () => checkShell(async () => {
@@ -168,14 +170,11 @@ export async function runBootSequence({ vfs, seed, apps, register, initPanel, in
     pushStage(result);
     results.push(result);
 
-    // FAILURE or HANG: halt. The shell (register/initPanel/initDesktop) is
-    // not idempotent, so continuing past a broken stage would be worse than
-    // reporting the problem and letting the user reload.
     if (result.code === BootCode.FAILURE || result.code === BootCode.HANG) break;
   }
 
   elProgress.style.width = '100%';
-  await new Promise((r) => setTimeout(r, 120));    // let the bar visibly reach 100%
+  await new Promise((r) => setTimeout(r, 120));
 
   const overall = overallCode(results);
 
@@ -210,7 +209,6 @@ export async function runBootSequence({ vfs, seed, apps, register, initPanel, in
     });
   }
 
-  // FAILURE or HANG — the promise never resolves; the reload button is the only way out.
   elSummary.hidden = false;
   elSummary.textContent = overall === BootCode.HANG
     ? 'Boot halted: a stage did not respond in time.'

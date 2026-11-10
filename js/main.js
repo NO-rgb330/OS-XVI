@@ -20,6 +20,7 @@ import { sysMonApp } from './apps/sysmon.js';
 import { archiverApp } from './apps/archiver.js';
 import { wikipediaApp } from './apps/wikipedia.js';
 import { localAiApp } from './apps/localai.js';
+import { youtubeApp } from './apps/youtube.js';
 
 import { runSetup } from './core/setup.js';
 import { runBootSequence } from './core/boot.js';
@@ -40,7 +41,8 @@ const APPS = [
   webcraftApp,
   archiverApp,
   wikipediaApp,
-  localAiApp
+  localAiApp,
+  youtubeApp
 ];
 
 /** Catastrophic-only fallback. Boot-sequence failures are handled inside boot.js. */

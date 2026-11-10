@@ -1,11 +1,12 @@
 /* ============================================================
    Boot stage checks — pure and side-effect-light enough to test.
-   Each returns a mkResult({ key, label, code, message, ms }).
+   Each returns mkResult({ key, label, code, message, ms }).
    The caller (boot.js) is responsible for timeouts and UI;
    HANG is never produced here, only by the orchestrator.
    ============================================================ */
 
 import { BootCode, mkResult } from './boot-codes.js';
+import { SYSTEM_APPS_DIR } from './vfs.js';
 
 const REQUIRED_DOM = [
   '#desktop', '#desktop-icons', '#window-layer',
@@ -82,7 +83,7 @@ export async function checkDisk(vfs) {
     return mkResult('disk', 'Virtual disk', BootCode.DISK_FULL,
       `Disk is 100% full (${formatBytes(u.used)} used of ${formatBytes(u.capacity)}) — new files cannot be saved`, ms);
   }
-  if (u.free < 50 * 1024 ** 2) {           // < 50 MB free
+  if (u.free < 50 * 1024 ** 2) {
     return mkResult('disk', 'Virtual disk', BootCode.DISK_FULL,
       `Only ${formatBytes(u.free)} left (${(usedPct * 100).toFixed(1)}% used) — saving large files may fail`, ms);
   }
@@ -111,11 +112,11 @@ export function checkApps(apps) {
   for (const app of apps) {
     const id = app?.id;
     if (!id) { problems.push('an app has no id'); continue; }
-    if (seen.has(id)) problems.push(`duplicate id "${id}"`);
+    if (seen.has(id)) problems.push(`duplicate id “${id}”`);
     else seen.add(id);
-    if (!app.name) problems.push(`"${id}" has no name`);
-    if (!app.icon) problems.push(`"${id}" has no icon`);
-    if (typeof app.launch !== 'function') problems.push(`"${id}" has no launch()`);
+    if (!app.name) problems.push(`“${id}” has no name`);
+    if (!app.icon) problems.push(`“${id}” has no icon`);
+    if (typeof app.launch !== 'function') problems.push(`“${id}” has no launch()`);
   }
   const ms = performance.now() - t0;
   if (problems.length) {
@@ -128,6 +129,48 @@ export function checkApps(apps) {
     `${apps.length} app${apps.length === 1 ? '' : 's'} registered`, ms);
 }
 
+/**
+ * Ensure /home/user/SYSTEM APPS exists (protected) and holds one entry per
+ * registered app. Populates missing entries; leaves stale entries alone —
+ * they're harmless (opening one explains the app is gone) and removing them
+ * would need a force-delete path that isn't worth adding for a corner case.
+ */
+export async function checkSystemApps(vfs, apps) {
+  const t0 = performance.now();
+  try {
+    if (!(await vfs.exists(SYSTEM_APPS_DIR))) {
+      await vfs.mkdir(SYSTEM_APPS_DIR, { protected: true });
+    } else {
+      const st = await vfs.stat(SYSTEM_APPS_DIR);
+      if (st.kind !== 'dir') {
+        return mkResult('sysapps', 'System apps', BootCode.FAILURE,
+          `${SYSTEM_APPS_DIR} exists but is not a folder`, performance.now() - t0);
+      }
+    }
+
+    for (const app of apps) {
+      if (!app?.id || !app?.name) continue;
+      await vfs.writeApp(`${SYSTEM_APPS_DIR}/${app.name}`, app.id, { protected: true });
+    }
+
+    const entries = await vfs.list(SYSTEM_APPS_DIR);
+    const presentIds = new Set(entries.filter((e) => e.kind === 'app').map((e) => e.appId));
+    const missing = apps.filter((a) => a?.id && !presentIds.has(a.id));
+    if (missing.length) {
+      return mkResult('sysapps', 'System apps', BootCode.FAILURE,
+        `${missing.length} app${missing.length === 1 ? '' : 's'} missing from SYSTEM APPS: ` +
+        missing.slice(0, 3).map((a) => a.name).join(', ') + (missing.length > 3 ? '…' : ''),
+        performance.now() - t0);
+    }
+
+    return mkResult('sysapps', 'System apps', BootCode.OK,
+      `${entries.length} entr${entries.length === 1 ? 'y' : 'ies'} in SYSTEM APPS`, performance.now() - t0);
+  } catch (e) {
+    return mkResult('sysapps', 'System apps', BootCode.FAILURE,
+      String(e?.message || e), performance.now() - t0);
+  }
+}
+
 /** The shell (panel + desktop) actually built. `initFn` registers apps, runs initPanel(), awaits initDesktop(). */
 export async function checkShell(initFn) {
   const t0 = performance.now();
@@ -137,8 +180,6 @@ export async function checkShell(initFn) {
     return mkResult('shell', 'Desktop shell', BootCode.FAILURE,
       String(e?.message || e), performance.now() - t0);
   }
-  // initPanel() populates #apps-grid; initDesktop() populates #desktop-icons.
-  // If either is empty, one of those steps failed silently.
   const appsGrid = document.querySelector('#apps-grid');
   const deskIcons = document.querySelector('#desktop-icons');
   if (!appsGrid?.children.length) {

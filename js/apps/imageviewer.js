@@ -555,7 +555,7 @@ export const imageViewerApp = {
       if (!hasFiles(e) && !hasPaths(e)) return;
       e.preventDefault();
       const internal = hasPaths(e) ? readDragPaths(e) : null;
-      const external = !internal && hasFiles(e) ? filesFromDrop(e) : null;
+      const external = (!internal && hasFiles(e)) ? await filesFromDrop(e) : null;
       endDrop();
       if (internal) {
         const name = internal.names.find(isImage);

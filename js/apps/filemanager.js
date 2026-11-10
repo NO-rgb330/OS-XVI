@@ -8,6 +8,7 @@ import { setClipboard, getClipboard, onClipboardChange, isCut, paste } from '../
 import { setDragPaths, readDragPaths, hasPaths, hasFiles, filesFromDrop } from '../core/dnd.js';
 import { buildZip } from '../core/zip.js';
 import { pickFiles, uploadFiles, UPLOADS_DIR } from '../core/upload.js';
+import { SYSTEM_APPS_DIR } from '../core/vfs.js';
 
 const HOME = '/home/user';
 const PLACES = [
@@ -19,6 +20,7 @@ const PLACES = [
   ['Videos', 'file-video', HOME + '/Videos'],
   ['Downloads', 'download', HOME + '/Downloads'],
   ['UPLOADS', 'upload', UPLOADS_DIR],
+  ['System Apps', 'grid', SYSTEM_APPS_DIR],
   ['File System', 'folder', '/']
 ];
 
@@ -165,9 +167,10 @@ export const fileManagerApp = {
 
     function rowHTML(it) {
       const sel = selected.has(it.name);
+      const sizeCell = it.kind === 'app' ? 'App' : it.kind === 'dir' ? '—' : formatBytes(it.size);
       return `<div class="fm-row${sel ? ' selected' : ''}${isCut(cwd, it.name) ? ' cut' : ''}" draggable="true" role="option" aria-selected="${sel}" data-name="${esc(it.name)}">
         <div class="fm-cell fm-name">${iconHTML(iconFor(it), 16)}<span>${esc(it.name)}</span></div>
-        <div class="fm-cell fm-size">${it.kind === 'dir' ? '—' : formatBytes(it.size)}</div>
+        <div class="fm-cell fm-size">${sizeCell}</div>
         <div class="fm-cell fm-date" data-col="mtime">${formatDate(it.mtime)}</div>
       </div>`;
     }
@@ -204,16 +207,21 @@ export const fileManagerApp = {
     }
 
     function updateStatus() {
+      const sel = selectedItems();
+      const anyProtected = sel.some((it) => it.protected);
+      const hasFiles = sel.some((it) => it.kind === 'file');
+
       btn('extract').disabled = view !== 'files' || !selectedZip();
-      btn('download').disabled = view !== 'files' || !selected.size;
-      btn('cut').disabled = btn('copy').disabled = view !== 'files' || !selected.size;
+      btn('download').disabled = view !== 'files' || !hasFiles;
+      btn('cut').disabled = view !== 'files' || !sel.length || anyProtected;
+      btn('copy').disabled = view !== 'files' || !sel.length;
       btn('paste').disabled = view !== 'files' || !getClipboard();
       if (view === 'storage') { elCount.textContent = 'Virtual disk'; elSel.textContent = ''; return; }
       elCount.textContent = `${items.length} item${items.length === 1 ? '' : 's'}`;
-      if (!selected.size) { elSel.textContent = ''; return; }
+      if (!sel.length) { elSel.textContent = ''; return; }
       let bytes = 0;
-      for (const n of selected) bytes += itemByName(n)?.size || 0;
-      elSel.textContent = `${selected.size} selected${bytes ? ' · ' + formatBytes(bytes) : ''}`;
+      for (const it of sel) bytes += it.size || 0;
+      elSel.textContent = `${sel.length} selected${bytes ? ' · ' + formatBytes(bytes) : ''}`;
     }
 
     function syncSelection() {
@@ -311,10 +319,12 @@ export const fileManagerApp = {
     const stat = (msg) => dialogs.toast(msg, { danger: /failed/i.test(msg) });
 
     const download = async () => {
-      const ns = selectedItems();
-      if (!ns.length) return;
+      const ns = selectedItems().filter((it) => it.kind === 'file');
+      if (!ns.length) {
+        return dialogs.toast('Nothing to save — app shortcuts have no file data.', { danger: true });
+      }
       try {
-        if (ns.length === 1 && ns[0].kind === 'file') {
+        if (ns.length === 1) {
           stat('Downloading...');
           const blob = await vfs.read(joinPath(cwd, ns[0].name));
           saveBlob(blob, ns[0].name);
@@ -326,7 +336,7 @@ export const fileManagerApp = {
       }
     };
 
-    const downloadzip = async (ns = selectedItems()) => {
+    const downloadzip = async (ns = selectedItems().filter((it) => it.kind === 'file')) => {
       if (!ns.length) return;
       stat('Preparing ZIP...');
       const out = {};
@@ -336,6 +346,7 @@ export const fileManagerApp = {
         return n;
       };
       const gather = async (nd, prefix, dir) => {
+        if (nd.kind === 'app') return;           // app shortcuts have no file content
         const path = joinPath(dir, nd.name);
         if (nd.kind === 'dir') {
           const base = prefix + nd.name + '/';
@@ -357,7 +368,11 @@ export const fileManagerApp = {
 
     // ---------- Clipboard ----------
     const copySelected = () => { if (selected.size) setClipboard('copy', cwd, [...selected]); };
-    const cutSelected = () => { if (selected.size) setClipboard('cut', cwd, [...selected]); };
+    const cutSelected = () => {
+      if (!selected.size) return;
+      if (selectedItems().some((it) => it.protected)) return;    // protected entries can't be cut
+      setClipboard('cut', cwd, [...selected]);
+    };
 
     async function pasteInto(dir = cwd) {
       if (!getClipboard()) return;
@@ -379,7 +394,7 @@ export const fileManagerApp = {
     }
     function openEntry(it) {
       if (it.kind === 'dir') navigate(pathOf(it.name));
-      else openItem(pathOf(it.name), it.kind, it.name);
+      else openItem(pathOf(it.name), it.kind, it.name, it.appId);
     }
     async function newEntry(kind) {
       const name = await createEntry(cwd, kind);
@@ -387,6 +402,8 @@ export const fileManagerApp = {
     }
     async function renameSelected() {
       if (selected.size !== 1) return;
+      const it = selectedItems()[0];
+      if (!it || it.protected) return;
       const name = await renameEntry(cwd, [...selected][0]);
       if (name) await refresh(name);
     }
@@ -482,7 +499,7 @@ export const fileManagerApp = {
         <div class="fm-bd-title">Used by item in Home</div>
         <div class="fm-bd">${rows.length ? rows.map((r) => `
           <button type="button" class="fm-bd-row" data-path="${esc(joinPath(HOME, r.name))}" data-kind="${r.kind}">
-            <span class="fm-bd-name">${iconHTML(r.kind === 'dir' ? 'folder' : 'file', 14)}<span>${esc(r.name)}</span></span>
+            <span class="fm-bd-name">${iconHTML(r.kind === 'dir' ? 'folder' : r.kind === 'app' ? 'grid' : 'file', 14)}<span>${esc(r.name)}</span></span>
             <span class="fm-bd-bar"><span style="width:${pct(r.size, disk.used)}%"></span></span>
             <span class="fm-bd-size">${formatBytes(r.size) || '0 B'}</span>
           </button>`).join('') : '<div class="muted">Nothing stored yet.</div>'}</div>` : `
@@ -606,9 +623,12 @@ export const fileManagerApp = {
       const row = e.target.closest('[data-name]');
       if (row) {
         if (!selected.has(row.dataset.name)) setSelection([row.dataset.name], row.dataset.name);
+        const sel = selectedItems();
         const one = selected.size === 1;
+        const anyProtected = sel.some((it) => it.protected);
+        const hasFiles = sel.some((it) => it.kind === 'file');
         const zip = selectedZip();
-        const folder = one && selectedItems()[0]?.kind === 'dir' ? selectedItems()[0] : null;
+        const folder = one && sel[0]?.kind === 'dir' ? sel[0] : null;
         showMenu(e.clientX, e.clientY, [
           { label: zip ? 'Extract…' : 'Open', action: openSelected, disabled: !one },
           ...(zip ? [
@@ -616,15 +636,15 @@ export const fileManagerApp = {
             { label: 'Extract Here', action: () => extractSelected(true) }
           ] : []),
           { sep: true },
-          { label: 'Save to Device', action: download },
+          { label: 'Save to Device', action: download, disabled: !hasFiles },
           { sep: true },
-          { label: 'Cut', action: cutSelected, hint: 'Ctrl+X' },
+          { label: 'Cut', action: cutSelected, disabled: anyProtected, hint: 'Ctrl+X' },
           { label: 'Copy', action: copySelected, hint: 'Ctrl+C' },
           ...(folder && getClipboard() ? [{ label: `Paste Into “${folder.name}”`, action: () => pasteInto(pathOf(folder.name)) }] : []),
           { label: 'Paste', action: () => pasteInto(), disabled: !getClipboard(), hint: 'Ctrl+V' },
           { sep: true },
-          { label: 'Rename', action: renameSelected, disabled: !one, hint: 'F2' },
-          { label: 'Delete', action: deleteSelected, danger: true, hint: 'Del' }
+          { label: 'Rename', action: renameSelected, disabled: !one || anyProtected, hint: 'F2' },
+          { label: 'Delete', action: deleteSelected, disabled: anyProtected, danger: true, hint: 'Del' }
         ]);
       } else {
         setSelection([]);
@@ -640,11 +660,6 @@ export const fileManagerApp = {
     });
 
     // ---------- Marquee selection (with autoscroll) ----------
-    // Rects are measured once in *content* coordinates (viewport + scroll offset),
-    // so they stay valid as the view scrolls under a stationary pointer. The
-    // current pointer position is converted to content coordinates each frame
-    // using the *current* scroll offset — that is what makes the marquee extend
-    // as autoscroll brings more items into view.
     let mq = null;
     const autoScroll = { vx: 0, vy: 0, raf: 0, active: false };
 
@@ -667,8 +682,8 @@ export const fileManagerApp = {
 
     function updateAutoScrollFrom(ev) {
       if (!mq) return;
-      const EDGE = 28;   // px from the edge where scrolling begins
-      const MAX = 18;    // max px per frame
+      const EDGE = 28;
+      const MAX = 18;
       const box = elArea.getBoundingClientRect();
       const axis = (pos, lo, hi) => {
         if (pos < lo + EDGE) return -Math.min(1, (lo + EDGE - pos) / EDGE) * MAX;
@@ -748,11 +763,20 @@ export const fileManagerApp = {
     elArea.addEventListener('pointercancel', endMarquee);
 
     // ---------- Drag & drop ----------
+    // The drag payload carries `appIds` for any selected app shortcuts. That
+    // lets consumers (desktop, other Files windows) tell "this is a shortcut
+    // to launch the Calculator" apart from "this is a file called Calculator".
     elList.addEventListener('dragstart', (e) => {
       const row = e.target.closest('[data-name]');
       if (!row) return;
       if (!selected.has(row.dataset.name)) setSelection([row.dataset.name], row.dataset.name);
-      setDragPaths(e, cwd, [...selected]);
+      const names = [...selected];
+      const appIds = {};
+      for (const name of names) {
+        const it = itemByName(name);
+        if (it?.kind === 'app' && it.appId) appIds[name] = it.appId;
+      }
+      setDragPaths(e, cwd, names, appIds);
     });
 
     let dropEl = null;
@@ -803,11 +827,46 @@ export const fileManagerApp = {
       const ext = !data && files ? filesFromDrop(e) : null;
       const copy = e.ctrlKey;
       clearDrop();
+      if (!target && data) return;
+
       try {
         if (data && target) {
-          const names = data.names.filter((n) => joinPath(data.dir, n) !== target.dir);
-          const res = await transferInto(data.dir, names, target.dir, { copy });
-          if (res.errors.length) dialogs.alert('Move', res.errors.join('\n'));
+          const errors = [];
+
+          // Split the payload: names that exist at the source become file/dir
+          // transfers; names without a source path but with an appId become
+          // new app shortcuts created in the target folder.
+          const fileNames = [];
+          const appCreates = [];
+          for (const name of data.names) {
+            const hasSrc = data.dir ? await vfs.exists(joinPath(data.dir, name)) : false;
+            if (hasSrc) {
+              fileNames.push(name);
+            } else if (data.appIds?.[name]) {
+              appCreates.push({ name, appId: data.appIds[name] });
+            } else {
+              errors.push(`${name}: source not found`);
+            }
+          }
+
+          const filteredFileNames = fileNames.filter((n) => joinPath(data.dir, n) !== target.dir);
+          if (filteredFileNames.length) {
+            const res = await transferInto(data.dir, filteredFileNames, target.dir, { copy });
+            errors.push(...res.errors);
+          }
+
+          for (const { name, appId } of appCreates) {
+            try {
+              await vfs.writeApp(joinPath(target.dir, name), appId);
+            } catch (err) {
+              errors.push(`${name}: ${err.message.replace(/^E[A-Z]+: /, '')}`);
+            }
+          }
+
+          if (errors.length) dialogs.alert('Drop', errors.join('\n'));
+          else if (appCreates.length) {
+            dialogs.toast(`Added ${appCreates.length} app${appCreates.length === 1 ? '' : 's'}`);
+          }
         } else if (ext) {
           await afterUpload((await uploadFiles(ext.files, { skippedFolders: ext.skippedFolders })).saved);
         }

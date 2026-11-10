@@ -47,6 +47,12 @@
   user-select: none;
 }
 
+/* Reserve scroll space below the last row so a marquee can always be
+   started from empty space, even in a folder that fills the viewport. */
+.arc-picker .arc-list {
+  padding-bottom: 60px;
+}
+
 .arc-row {
   display: flex;
   align-items: center;

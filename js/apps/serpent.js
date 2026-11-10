@@ -1,5 +1,4 @@
 import * as vfs from '../core/vfs.js';
-import * as dialogs from '../core/dialogs.js';
 import { iconHTML } from '../core/icons.js';
 import { CodeEditor } from '../core/code-editor.js';
 import * as dialogs from '../core/dialogs.js';

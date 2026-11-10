@@ -602,7 +602,7 @@ export const mediaViewerApp = {
       if (!hasFiles(e) && !hasPaths(e)) return;
       e.preventDefault();
       const internal = hasPaths(e) ? readDragPaths(e) : null;
-      const external = !internal && hasFiles(e) ? filesFromDrop(e) : null;
+      const external = (!internal && hasFiles(e)) ? await filesFromDrop(e) : null;
       endDrop();
       if (internal) await addPaths(internal.names.map((n) => joinPath(internal.dir, n)));
       else if (external) {

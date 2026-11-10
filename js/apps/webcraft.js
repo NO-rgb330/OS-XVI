@@ -164,16 +164,28 @@ h1 { font-weight: 300; }`);
         edWrap.style.display = 'none';
         editorContainer.appendChild(edWrap);
 
-        const editor = new CodeEditor(edWrap, {
-          language: lang,
-          value: text,
-          onChange: () => {
-            if (!openFiles.has(filename)) return;
-            openFiles.get(filename).dirty = true;
-            tab.innerHTML = `${iconHTML('file-text', 12)} ${filename} *`;
-            btnSave.disabled = false;
+                let editor;
+        try {
+          editor = new CodeEditor(edWrap, {
+            language: 'python',
+            value: text,
+            onChange: () => {
+              if (!openFiles.has(filename)) return;
+              openFiles.get(filename).dirty = true;
+              tab.innerHTML = `${iconHTML('file-text', 12)} ${filename} *`;
+              btnSave.disabled = false;
+            }
+          });
+        } catch (err) {
+          if (err.name === 'EditorTooLargeError') {
+            tab.remove();
+            edWrap.remove();
+            dialogs.alert('File too large', `"${filename}" — ${err.message}\n\n` +
+              'For viewing large text files, open the file in Notepad, which supports up to 1 GB in read-only mode.');
+            return;
           }
-        });
+          throw err;
+        }
 
         openFiles.set(filename, { editor, tabEl: tab, wrapEl: edWrap, dirty: false });
         switchTab(filename);

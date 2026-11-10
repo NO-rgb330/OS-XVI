@@ -6,21 +6,18 @@
                never backed by a VFS node). Losing the icon does not
                uninstall the app — the canonical entry stays in
                /home/user/SYSTEM APPS.
-     · file  : a real item inside /home/user/Desktop — including
-               kind: 'app' VFS entries (shortcuts dragged out of
-               SYSTEM APPS onto the desktop).
+     · file  : a real item inside /home/user/Desktop.
      · link  : a shortcut to a file elsewhere.
 
    Dragging:
-     · Single item   → HTML5 drag. File/app icons can be dropped into
-                       files, into folders, or onto other windows.
-     · Multi-select  → custom pointer drag. Icons move together with
-                       the cursor, and the whole group preserves its
-                       relative layout on release (the delta is
-                       clamped as one unit, so no per-icon clamping
-                       that would collapse the group into a column).
-     · Link icons    → custom pointer drag (single or multi); they
-                       carry no cross-window payload.
+     · Single item   → HTML5 drag. App/file icons can be dropped into
+                       Files, onto folders, or onto other windows.
+     · Multi-select  → custom pointer drag (visible group-move,
+                       layout preserved on release).
+     · Link icons    → custom pointer drag (single or multi).
+
+   External drops (files from the computer, including folders) land in
+   UPLOADS and appear as shortcuts on the desktop.
    ============================================================ */
 
 import * as vfs from './vfs.js';
@@ -134,13 +131,6 @@ function nearestFree(want, exceptKey) {
   return best;
 }
 
-/**
- * Adjust a group's (dcol, drow) so the whole group stays inside the grid.
- * The relative layout of the group is preserved — we only translate the
- * whole delta, never individual cells. If the group is wider or taller
- * than the grid, the caller's delta is returned unchanged and the group
- * will be placed by nearest-free on drop.
- */
 function clampGroupDelta(origins, dcol, drow, cols, rows) {
   let minC = Infinity, maxC = -Infinity, minR = Infinity, maxR = -Infinity;
   for (const p of origins) {
@@ -190,7 +180,6 @@ function assignCells(list) {
   return result;
 }
 
-// ---------- Rendering ----------
 function scheduleRender(delay = 20) {
   clearTimeout(renderTimer);
   renderTimer = setTimeout(render, delay);
@@ -245,9 +234,6 @@ async function render() {
     const { x, y } = cellXY(c, r);
     const cls = 'desktop-icon' + (selected.has(it.key) ? ' selected' : '') + (it.type === 'link' ? ' is-link' : '')
       + (it.type === 'file' && isCut(DESKTOP, it.name) ? ' cut' : '');
-    // App and file icons are draggable=true so single-item drags can be
-    // dropped into other windows. Multi-select pointer drag overrides this
-    // by cancelling dragstart (see the dragstart listener below).
     const draggable = (it.type === 'app' || it.type === 'file') ? ' draggable="true"' : '';
     return `<div class="${cls}" role="listitem" tabindex="0" data-key="${esc(it.key)}"${draggable} style="left:${x}px;top:${y}px" title="${esc(it.label)}">
       ${iconHTML(it.icon, 48)}
@@ -299,7 +285,6 @@ async function renameIcon(it) {
   setSelection(['file:' + next]);
 }
 
-// ---------- Clipboard ----------
 function clipboardSource(list, cut) {
   const files = list.filter((i) => i.type === 'file');
   if (files.length) return { dir: DESKTOP, names: files.map((f) => f.name) };
@@ -382,17 +367,6 @@ async function dropPaths(data, cell, copy) {
   if (res.errors.length) dialogs.alert('Move to Desktop', res.errors.join('\n'));
 }
 
-/**
- * Reposition one or more icons as a group, preserving their relative layout.
- *
- * The delta is applied to each icon's original position — NOT to the group as
- * a whole with per-icon clamping. If the delta would push any icon off the
- * grid, the whole delta is shifted just enough to fit (see clampGroupDelta),
- * so the arrangement stays intact.
- *
- * Used by the single-item HTML5 drop path (single icon) and — for the
- * multi-item case — by startIconDrag's finish handler via the same math.
- */
 function repositionGroup(keys, dropCell) {
   if (!keys.length) return;
   const { cols, rows } = metrics();
@@ -404,7 +378,6 @@ function repositionGroup(keys, dropCell) {
 
   const startCell = dragOrigin?.startCell;
   if (!startCell) {
-    // Fallback: linear placement (no drag-origin to work from)
     for (const [k] of entries) placed.delete(k);
     let [col, row] = dropCell;
     for (const [k] of entries) {
@@ -425,7 +398,6 @@ function repositionGroup(keys, dropCell) {
 
   for (const [k] of entries) placed.delete(k);
 
-  // Sort top-left → bottom-right so ties resolve consistently.
   const ordered = [...entries].sort((a, b) => a[1][1] - b[1][1] || a[1][0] - b[1][0]);
   for (const [k, [oc, or_]] of ordered) {
     const want = [oc + dcol, or_ + drow];
@@ -499,15 +471,22 @@ function desktopMenu(x, y) {
         if (files.length) await uploadToDesktop(files, cell);
       }
     },
+    {
+      label: 'Upload Folder…',
+      action: async () => {
+        const files = await pickFiles({ directory: true, multiple: true });
+        if (files.length) await uploadToDesktop(files, cell);
+      }
+    },
     { sep: true },
     { label: 'Restore App Icons', action: restoreAppIcons, disabled: !missing },
     { label: 'Arrange Icons', action: arrangeIcons }
   ]);
 }
 
-// ---------- Pointer drag (single or multi) ----------
+// ---------- Pointer drag ----------
 let suppressClick = false;
-let dragOrigin = null;      // { startCell: [c, r] } captured at dragstart
+let dragOrigin = null;
 
 function startIconDrag(e, el) {
   const key = el.dataset.key;
@@ -547,17 +526,12 @@ function startIconDrag(e, el) {
     suppressClick = true;
     setTimeout(() => { suppressClick = false; }, 0);
 
-    // Snapshot the group's original cells BEFORE modifying `placed`.
     const orig = new Map(group.map((g) => [g.key, placed.get(g.key)]));
 
     if (ev.type === 'pointerup') {
       const { cols, rows } = metrics();
       let dcol = Math.round(dx / STEP_X);
       let drow = Math.round(dy / STEP_Y);
-
-      // Shift the whole delta so the group stays inside the grid. This is
-      // what prevents individual icons from being clamped to the same edge
-      // cell and then piling into a column.
       [dcol, drow] = clampGroupDelta([...orig.values()], dcol, drow, cols, rows);
 
       for (const g of group) placed.delete(g.key);
@@ -574,7 +548,6 @@ function startIconDrag(e, el) {
       }
     }
 
-    // Snap DOM positions to whatever placement was decided (or back to origin on cancel).
     for (const g of group) {
       const spot = placed.get(g.key) ?? orig.get(g.key);
       if (!spot) continue;
@@ -663,10 +636,6 @@ export function initDesktop() {
     e.preventDefault();
   });
 
-  // ---- HTML5 drag ----
-  // Single-item drags use HTML5 so they can be dropped into other windows.
-  // Multi-select drags cancel the HTML5 drag and rely on startIconDrag for
-  // the visible group-move + layout-preserving drop.
   container.addEventListener('dragstart', (e) => {
     const el = iconOf(e);
     if (!el || !el.draggable) return;
@@ -677,9 +646,6 @@ export function initDesktop() {
     if (!it) { e.preventDefault(); return; }
     if (!selected.has(it.key)) selectOnly(it.key);
 
-    // Snapshot the drag origin so a drop back onto the desktop can preserve
-    // the icon's layout (single-icon repositioning via HTML5 is also more
-    // accurate this way than re-placing at the drop cell).
     dragOrigin = { startCell: cellAt(e.clientX, e.clientY) };
 
     if (it.type === 'app') {
@@ -705,12 +671,10 @@ export function initDesktop() {
     }
     if (!selected.has(key)) selectOnly(key);
 
-    // Multi-select → pointer drag (visible group-move, layout preserved).
     if (selected.size > 1) {
       startIconDrag(e, el);
       return;
     }
-    // Single item → HTML5 for app/file icons, pointer for link icons.
     if (el.draggable) return;
     startIconDrag(e, el);
   });
@@ -763,7 +727,8 @@ export function initDesktop() {
     const cell = cellAt(e.clientX, e.clientY);
     const copy = e.ctrlKey;
     const internal = hasPaths(e) ? readDragPaths(e) : null;
-    const external = !internal && hasFiles(e) ? filesFromDrop(e) : null;
+    // filesFromDrop is async — folder entries require recursive reads.
+    const external = (!internal && hasFiles(e)) ? await filesFromDrop(e) : null;
     clearDrop();
 
     try {
@@ -772,7 +737,6 @@ export function initDesktop() {
         const fromDesktopApps = !internal.dir && internal.appIds && Object.keys(internal.appIds).length > 0;
         const fromDesktopFiles = internal.dir === DESKTOP;
 
-        // ---- Drop onto a folder icon on the desktop ----
         if (folderTarget) {
           const folderPath = pathOfIcon(target);
 
@@ -800,7 +764,6 @@ export function initDesktop() {
           return;
         }
 
-        // ---- Drop on empty desktop → reposition (preserve layout) ----
         if (fromDesktopApps) {
           const keys = Object.values(internal.appIds).map((id) => 'app:' + id);
           repositionGroup(keys, cell);
@@ -853,7 +816,6 @@ export function initDesktop() {
   return render();
 }
 
-/** Remove one or more app ids from the desktop layout (used on drag-out success). */
 function dropAppFromDesktop(appIds) {
   if (!Array.isArray(appIds) || !appIds.length) return;
   const next = state.apps.filter((id) => !appIds.includes(id));

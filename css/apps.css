@@ -1,1 +1,105 @@
 .app-toolbar{flex:0 0 auto;display:flex;align-items:center;gap:2px;padding:4px 6px;min-height:34px;background:var(--bg-toolbar);border-bottom:1px solid var(--bd-soft);user-select:none}.toolbar-btn{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;height:26px;font-size:12px;color:var(--tx);border:1px solid transparent;background:transparent;white-space:nowrap}.toolbar-btn:hover{background:var(--hover-bg);border-color:var(--bd-soft)}.toolbar-btn:active,.toolbar-btn[aria-pressed="true"]{background:var(--surface-2);border-color:var(--bd)}.toolbar-btn.primary{background:var(--ink);color:var(--ink-inv);border-color:var(--ink)}.toolbar-btn.primary:hover{opacity:.85}.toolbar-btn:disabled{opacity:.4;pointer-events:none}.toolbar-btn .icon{width:14px;height:14px}.toolbar-sep{width:1px;align-self:stretch;margin:4px;background:var(--bd-soft)}.app-statusbar{flex:0 0 auto;display:flex;align-items:center;gap:12px;padding:4px 10px;min-height:24px;background:var(--bg-status);border-top:1px solid var(--bd-soft);font-size:11px;color:var(--tx-muted);user-select:none}.app-statusbar .sb-cell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.app-statusbar .sb-cell.grow{flex:1 1 auto;min-width:0}.app-statusbar .sb-cell.strong{color:var(--tx);font-weight:600}.app-split{flex:1 1 auto;display:flex;min-height:0;overflow:hidden}.app-sidebar{flex:0 0 200px;min-width:0;overflow:auto;padding:8px;background:var(--surface);border-right:1px solid var(--bd-soft)}.app-main{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;overflow:hidden}.sidebar-group{margin-bottom:14px}.sidebar-group-title{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--tx-muted);padding:2px 4px 6px}.sidebar-item{display:flex;align-items:center;gap:8px;padding:5px 8px;font-size:12px;color:var(--tx);cursor:default;border:1px solid transparent}.sidebar-item:hover{background:var(--hover-bg)}.sidebar-item.active{background:var(--ink);color:var(--ink-inv)}.sidebar-item .icon{width:14px;height:14px}.sidebar-item .label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.app-list{flex:1 1 auto;overflow:auto;background:var(--bg-window)}.app-list-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px;padding:6px 12px;border-bottom:1px solid var(--bd-soft);font-size:12px;cursor:default;user-select:none}.app-list-row:hover{background:var(--hover-bg)}.app-list-row.selected{background:var(--sel-bg);color:var(--sel-ink)}.app-list-row.selected .icon{color:var(--sel-ink)}.app-list-row .row-name{display:flex;align-items:center;gap:8px;min-width:0}.app-list-row .row-name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.app-list-row .row-meta{color:var(--tx-muted);font-size:11px;font-variant-numeric:tabular-nums}.app-list-row.selected .row-meta{color:var(--sel-ink);opacity:.8}.app-empty{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:40px 20px;color:var(--tx-muted);font-size:13px;text-align:center}.app-empty .icon{width:40px;height:40px;opacity:.4}.app-form{display:flex;flex-direction:column;gap:10px;padding:16px;overflow:auto}.app-form-row{display:flex;flex-direction:column;gap:4px}.app-form-row label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--tx-muted)}.app-input,.app-textarea{width:100%;padding:6px 8px;font:inherit;font-size:13px;color:var(--tx);background:var(--bg-input);border:1px solid var(--bd-inset);border-radius:var(--radius-sm);outline:none}.app-input:focus,.app-textarea:focus{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}.app-textarea{min-height:100px;font-family:var(--font-mono);resize:vertical}.app-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:6px 14px;min-height:28px;font-size:12px;color:var(--tx);background:var(--surface);border:1px solid var(--bd);border-radius:var(--radius-sm);cursor:pointer;white-space:nowrap}.app-btn:hover{background:var(--surface-2)}.app-btn:active{background:var(--shade-20)}.app-btn.primary{background:var(--ink);color:var(--ink-inv);border-color:var(--ink)}.app-btn.primary:hover{opacity:.88}.app-btn:disabled{opacity:.4;pointer-events:none}.app-panel{background:var(--surface);border:1px solid var(--bd-soft);padding:10px 12px}.app-panel + .app-panel{margin-top:10px}.app-panel .panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tx-muted);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--bd-soft)}.np-app{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}.np-editor{flex:1 1 auto;min-height:0;padding:12px;border:0;border-radius:0;resize:none;font-size:13px;line-height:1.5;white-space:pre-wrap}.np-editor:focus{box-shadow:none}
+
+/* ============================================================
+   NOTEPAD — view-mode styles (large-file virtualized viewer)
+   ============================================================ */
+
+.np-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.np-viewer {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  background: var(--bg-window);
+}
+
+.np-viewer-scroll {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: auto;
+  position: relative;
+  outline: none;
+  contain: strict;      /* the browser can skip layout work for offscreen content */
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+/* The visible-content layer.
+   `position: sticky; top: 0` keeps it at the top of the scroll viewport.
+   `height: 0` prevents it from contributing to scroll height — the spacer
+   sibling owns that. Content overflows visibly and is only ever the ~60
+   lines covering the current viewport. */
+.np-visible {
+  position: sticky;
+  top: 0;
+  left: 0;
+  height: 0;
+  margin: 0;
+  padding: 12px 14px 0;
+  font-family: var(--font-mono);
+  font-size: inherit;
+  line-height: inherit;
+  white-space: pre;
+  color: var(--tx);
+  will-change: transform;
+  pointer-events: auto;
+  user-select: text;
+}
+
+/* Invisible block purely for the scrollbar. Its height is set by JS to
+   `lineCount * lineHeight`. */
+.np-spacer {
+  width: 1px;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Indexing overlay (shown while a large file's line index is being built) */
+.np-indexing {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  background: var(--bg-window);
+  text-align: center;
+  z-index: 2;
+}
+.np-indexing-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tx);
+}
+.np-indexing-text {
+  font-size: 12px;
+  color: var(--tx-muted);
+  font-variant-numeric: tabular-nums;
+}
+.np-indexing-bar {
+  width: min(360px, 80%);
+  height: 6px;
+  background: var(--shade-20);
+  border: 1px solid var(--bd);
+}
+.np-indexing-fill {
+  height: 100%;
+  width: 0;
+  background: var(--ink);
+  transition: width 0.2s ease;
+}
+
+/* Status-bar mode indicator */
+.sb-mode {
+  font-weight: 600;
+  padding: 0 8px;
+  color: var(--tx-muted);
+}

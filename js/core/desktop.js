@@ -2,23 +2,33 @@
    Desktop — free-positioned icons for apps, files and shortcuts.
 
    Three kinds of icon share one grid:
-     · app   : a shortcut to an application (state only; removable)
-     · file  : a real item inside /home/user/Desktop
-     · link  : a shortcut to a file elsewhere (e.g. something uploaded by
-               dropping it on the desktop). Removing it never deletes the file.
+     · app   : a shortcut to an application (state.apps; removable,
+               never backed by a VFS node). Losing the icon does not
+               uninstall the app — the canonical entry stays in
+               /home/user/SYSTEM APPS.
+     · file  : a real item inside /home/user/Desktop — including
+               kind: 'app' VFS entries (shortcuts to an app that were
+               dragged out of SYSTEM APPS onto the desktop).
+     · link  : a shortcut to a file elsewhere (e.g. something uploaded
+               by dropping it on the desktop). Removing it never
+               deletes the file.
 
-   Selecting: click, Ctrl/Shift-click to toggle, or drag a rubber band over empty
-   desktop. Selected icons move together when one of them is dragged.
+   Selecting: click, Ctrl/Shift-click to toggle, or drag a rubber band
+   over empty desktop. Selected icons move together when one of them is
+   dragged.
 
    Dragging:
-     · File icons are HTML5-draggable, so they can be dropped onto other
-       windows (Files, Media Viewer, Image Viewer) or repositioned on the
-       desktop via the drop handler.
-     · App and link icons use a custom pointer drag (no HTML5 payload to
-       send to other windows); repositioning works as before.
+     · App icons (`state.apps`) are HTML5-draggable with a special
+       payload (dir: '' + appIds) — dropping them onto a folder or a
+       Files window creates a `kind: 'app'` VFS entry there and removes
+       the icon from state.apps.
+     · File icons are HTML5-draggable with a normal path payload.
+     · Link icons keep the custom pointer drag (nothing cross-window
+       to send — they're references to files elsewhere).
 
-   Layout (which apps are shown, shortcuts, icon positions) lives in localStorage.
-   Positions are stored as grid cells so they survive window resizes.
+   Layout (which apps are shown, shortcuts, icon positions) lives in
+   localStorage. Positions are stored as grid cells so they survive
+   window resizes.
    ============================================================ */
 
 import * as vfs from './vfs.js';
@@ -199,7 +209,8 @@ async function render() {
       icon: iconFor({ kind: l.kind, name: l.name })
     })),
     ...files.map((f) => ({
-      key: 'file:' + f.name, type: 'file', name: f.name, kind: f.kind, label: f.name, icon: iconFor(f)
+      key: 'file:' + f.name, type: 'file', name: f.name, kind: f.kind,
+      appId: f.appId, label: f.name, icon: iconFor(f)
     }))
   ];
 
@@ -217,11 +228,10 @@ async function render() {
     const { x, y } = cellXY(c, r);
     const cls = 'desktop-icon' + (selected.has(it.key) ? ' selected' : '') + (it.type === 'link' ? ' is-link' : '')
       + (it.type === 'file' && isCut(DESKTOP, it.name) ? ' cut' : '');
-    // Only file icons are HTML5-draggable — they carry actual paths that other
-    // windows can accept. Apps and links keep the custom pointer drag for
-    // repositioning (an app has nothing to transfer; a link's target isn't
-    // what the user is dragging).
-    const draggable = it.type === 'file' ? ' draggable="true"' : '';
+    // App and file icons are HTML5-draggable (they can be dropped into folders,
+    // onto other windows, or repositioned on the desktop). Link icons keep the
+    // pointer drag — they don't carry a cross-window payload to send.
+    const draggable = (it.type === 'app' || it.type === 'file') ? ' draggable="true"' : '';
     return `<div class="${cls}" role="listitem" tabindex="0" data-key="${esc(it.key)}"${draggable} style="left:${x}px;top:${y}px" title="${esc(it.label)}">
       ${iconHTML(it.icon, 48)}
       <div class="desktop-icon-label">${esc(it.label)}</div>
@@ -247,14 +257,7 @@ function openIcon(it) {
   if (!it) return;
   if (it.type === 'app') openWindow(it.id);
   else if (it.type === 'link') openItem(it.path, it.kind, it.label);
-  else openItem(joinPath(DESKTOP, it.name), it.kind, it.name);
-}
-
-function removeLink(path) {
-  state.links = state.links.filter((p) => p !== path);
-  delete state.pos['link:' + path];
-  save();
-  scheduleRender(0);
+  else openItem(joinPath(DESKTOP, it.name), it.kind, it.name, it.appId);
 }
 
 async function removeIcons(list) {
@@ -347,15 +350,7 @@ async function uploadToDesktop(files, cell, skippedFolders = 0) {
   scheduleRender(0);
 }
 
-async function dropPaths(data, cell, copy, targetIcon) {
-  const folder = targetIcon?.type === 'file' && targetIcon.kind === 'dir' ? targetIcon : null;
-  if (folder) {
-    const dst = joinPath(DESKTOP, folder.name);
-    if (data.dir === dst && !copy) return;
-    const res = await transferInto(data.dir, data.names.filter((n) => !(data.dir === DESKTOP && n === folder.name)), dst, { copy });
-    if (res.errors.length) dialogs.alert('Move', res.errors.join('\n'));
-    return;
-  }
+async function dropPaths(data, cell, copy) {
   if (data.dir === DESKTOP && !copy) return;
   const res = await transferInto(data.dir, data.names, DESKTOP, {
     copy,
@@ -370,13 +365,17 @@ async function dropPaths(data, cell, copy, targetIcon) {
   if (res.errors.length) dialogs.alert('Move to Desktop', res.errors.join('\n'));
 }
 
-/** Reposition `names` starting at `cell` — used when a desktop file is dropped back onto the desktop. */
+/**
+ * Reposition `names` starting at `cell` — used when a desktop file is dropped
+ * back onto the desktop. Only VFS `file:` keys are affected; app and link keys
+ * are handled separately by `reorderAppsById` (apps) or not at all (links).
+ */
 function reorderIcons(names, cell) {
   const keys = names.map((n) => 'file:' + n).filter((k) => placed.has(k));
   if (!keys.length) return;
 
   const { cols, rows } = metrics();
-  for (const key of keys) placed.delete(key);   // free our own cells so overlapping drops work
+  for (const key of keys) placed.delete(key);
 
   let [col, row] = cell;
   let moved = false;
@@ -393,16 +392,50 @@ function reorderIcons(names, cell) {
     }
   }
 
-  if (moved) {
-    save();
-    scheduleRender(0);
+  if (moved) { save(); scheduleRender(0); }
+}
+
+/** Same as reorderIcons but for built-in app icons (state.apps keys). */
+function reorderAppsById(appIds, cell) {
+  const keys = (appIds || []).map((id) => 'app:' + id).filter((k) => placed.has(k));
+  if (!keys.length) return;
+
+  const { cols, rows } = metrics();
+  for (const key of keys) placed.delete(key);
+
+  let [col, row] = cell;
+  let moved = false;
+  for (const key of keys) {
+    col = Math.max(0, Math.min(cols - 1, col));
+    row = Math.max(0, Math.min(rows - 1, row));
+    const spot = nearestFree([col, row], null);
+    if (spot) {
+      placed.set(key, spot);
+      state.pos[key] = spot;
+      moved = true;
+      col++;
+      if (col >= cols) { col = 0; row++; }
+    }
   }
+
+  if (moved) { save(); scheduleRender(0); }
+}
+
+/** Remove one or more app ids from the desktop layout (used on drag-out success). */
+function dropAppFromDesktop(appIds) {
+  if (!Array.isArray(appIds) || !appIds.length) return;
+  const next = state.apps.filter((id) => !appIds.includes(id));
+  if (next.length === state.apps.length) return;
+  state.apps = next;
+  for (const id of appIds) delete state.pos['app:' + id];
+  save();
+  scheduleRender(0);
 }
 
 // ---------- Menus ----------
 function iconMenu(it, x, y) {
   const open = { label: it.type !== 'app' && it.kind !== 'dir' && isArchive(it.label) ? 'Extract…' : 'Open', action: () => openIcon(it) };
-  const zip = it.type !== 'app' && it.kind === 'file' && isArchive(it.label)
+  const zip = it.type === 'file' && it.kind === 'file' && isArchive(it.label)
     ? [
         { label: `Extract to “${it.label.replace(/\.zip$/i, '') || 'archive'}/”`, action: () => extractIcon(it, false) },
         { label: 'Extract Here', action: () => extractIcon(it, true) }
@@ -470,6 +503,7 @@ function desktopMenu(x, y) {
 // ---------- Pointer: select, move ----------
 let suppressClick = false;
 
+/** Custom pointer drag — used only for link icons (app/file icons use HTML5 drag). */
 function startIconDrag(e, el) {
   const key = el.dataset.key;
   const keys = selected.has(key) ? [...selected] : [key];
@@ -610,19 +644,37 @@ export function initDesktop() {
     e.preventDefault();
   });
 
-  // ---- HTML5 drag start (file icons only) ----
-  // Sends the desktop files as paths to any window that accepts the drop
-  // (Files, Media Viewer, Image Viewer, another Files window). Dropping back
-  // onto the desktop itself is treated as a reposition, handled below.
+  // ---- HTML5 drag start ----
+  // App icons (state.apps) carry `dir: ''` + an appIds map — no real source.
+  // File icons carry a real DESKTOP path. Either way, the payload can be
+  // dropped into a Files window, another folder on the desktop, or another
+  // place where `readDragPaths` + `setDragPaths` are handled.
   container.addEventListener('dragstart', (e) => {
     const el = iconOf(e);
     if (!el || !el.draggable) return;
     const it = itemOf(el);
-    if (!it || it.type !== 'file') { e.preventDefault(); return; }
+    if (!it) { e.preventDefault(); return; }
     if (!selected.has(it.key)) selectOnly(it.key);
-    const files = selectedItems().filter((i) => i.type === 'file');
-    if (!files.length) { e.preventDefault(); return; }
-    setDragPaths(e, DESKTOP, files.map((f) => f.name));
+
+    if (it.type === 'app') {
+      const apps = selectedItems().filter((i) => i.type === 'app');
+      if (!apps.length) { e.preventDefault(); return; }
+      const names = apps.map((i) => i.label);
+      const appIds = {};
+      apps.forEach((i) => { appIds[i.label] = i.id; });
+      setDragPaths(e, '', names, appIds);
+      return;
+    }
+
+    if (it.type === 'file') {
+      const files = selectedItems().filter((i) => i.type === 'file');
+      if (!files.length) { e.preventDefault(); return; }
+      const names = files.map((f) => f.name);
+      const appIds = {};
+      for (const f of files) if (f.kind === 'app' && f.appId) appIds[f.name] = f.appId;
+      setDragPaths(e, DESKTOP, names, appIds);
+      return;
+    }
   });
 
   container.addEventListener('pointerdown', (e) => {
@@ -634,8 +686,8 @@ export function initDesktop() {
       return;
     }
     if (!selected.has(key)) selectOnly(key);
-    // File icons are draggable=true → let the browser fire dragstart and
-    // hand off to the HTML5 drag. App and link icons use the custom drag.
+    // File and app icons are draggable=true → the browser fires dragstart.
+    // Link icons use the custom pointer drag.
     if (el.draggable) return;
     startIconDrag(e, el);
   });
@@ -677,9 +729,10 @@ export function initDesktop() {
     desktopEl.classList.add('drop-active');
     const prev = container.querySelector('.drop-target');
     const over = hasPaths(e) ? iconOf(e) : null;
-    const folder = over && itemOf(over)?.kind === 'dir' && itemOf(over)?.type === 'file' ? over : null;
+    const folder = over && itemOf(over)?.kind === 'dir' ? over : null;
     if (prev !== folder) { prev?.classList.remove('drop-target'); folder?.classList.add('drop-target'); }
   });
+
   desktopEl.addEventListener('drop', async (e) => {
     if (!accepts(e)) return;
     e.preventDefault();
@@ -689,14 +742,56 @@ export function initDesktop() {
     const internal = hasPaths(e) ? readDragPaths(e) : null;
     const external = !internal && hasFiles(e) ? filesFromDrop(e) : null;
     clearDrop();
+
     try {
       if (internal) {
-        // Dropping a desktop file back onto the desktop: reposition.
-        if (internal.dir === DESKTOP && !copy && !(target?.type === 'file' && target.kind === 'dir')) {
+        const folderTarget = target?.kind === 'dir' ? target : null;
+        const fromDesktopApps = !internal.dir && internal.appIds && Object.keys(internal.appIds).length > 0;
+        const fromDesktopFiles = internal.dir === DESKTOP;
+
+        // ---- Drop onto a folder icon ----
+        if (folderTarget) {
+          const folderPath = pathOfIcon(target);
+
+          // Built-in app(s) → create a kind:'app' VFS entry there, then remove
+          // the icon from state.apps. The app itself is untouched; only the
+          // desktop shortcut moves into a real folder.
+          if (fromDesktopApps) {
+            const moved = [];
+            for (const [name, appId] of Object.entries(internal.appIds)) {
+              try {
+                await vfs.writeApp(joinPath(folderPath, name), appId);
+                moved.push(appId);
+              } catch (err) {
+                dialogs.toast(`${name}: ${err.message.replace(/^E[A-Z]+: /, '')}`, { danger: true });
+              }
+            }
+            if (moved.length) dropAppFromDesktop(moved);
+            return;
+          }
+
+          // Files (or links): normal transfer
+          if (internal.dir) {
+            const names = internal.names.filter((n) => joinPath(internal.dir, n) !== folderPath);
+            const res = await transferInto(internal.dir, names, folderPath, { copy });
+            if (res.errors.length) dialogs.alert('Move', res.errors.join('\n'));
+          }
+          return;
+        }
+
+        // ---- Drop on empty desktop ----
+        if (fromDesktopApps) {
+          reorderAppsById(Object.values(internal.appIds), cell);
+          return;
+        }
+        if (fromDesktopFiles && !copy) {
           reorderIcons(internal.names, cell);
           return;
         }
-        await dropPaths(internal, cell, copy, target);
+        if (internal.dir) {
+          await dropPaths(internal, cell, copy);
+          return;
+        }
       } else if (external) {
         await uploadToDesktop(external.files, cell, external.skippedFolders);
       }
@@ -706,6 +801,13 @@ export function initDesktop() {
     }
   });
   window.addEventListener('dragend', clearDrop);
+
+  // When a Files window receives a drag from the desktop and turns it into a
+  // VFS app entry, it fires `os16:app-dragged-out`. Clean up state.apps here
+  // so the desktop doesn't still show the same icon.
+  window.addEventListener('os16:app-dragged-out', (e) => {
+    dropAppFromDesktop(e.detail?.appIds || []);
+  });
 
   document.addEventListener('keydown', (e) => {
     if (!(e.ctrlKey || e.metaKey) || e.altKey || e.key.toLowerCase() !== 'v') return;

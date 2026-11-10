@@ -14,6 +14,13 @@ import { iconHTML } from '../core/icons.js';
 import { esc } from '../core/util.js';
 
 const KEY = 'os16.yt.v1';
+const RECENT_KEY = 'os16.yt.recent';
+const SIDE_KEY = 'os16.yt.side';
+
+function loadRecent() {
+  try { const a = JSON.parse(localStorage.getItem(RECENT_KEY)); return Array.isArray(a) ? a.filter((x) => typeof x === 'string' && x).slice(0, 12) : []; } catch { return []; }
+}
+function saveRecent(a) { try { localStorage.setItem(RECENT_KEY, JSON.stringify(a.slice(0, 12))); } catch { /* storage unavailable */ } }
 
 // Public instances change often. These are starting points; the lists are editable in Settings.
 const DEFAULTS = {
@@ -48,9 +55,11 @@ function loadCfg() {
 
 // ---------- helpers ----------
 const ID_RE = /^[\w-]{11}$/;
+// A bare 11-character word like "programming" is a search, not a video ID: real IDs mix cases or contain digits, - or _.
+const isBareId = (t) => ID_RE.test(t) && (/[0-9_-]/.test(t) || (/[a-z]/.test(t) && /[A-Z]/.test(t)));
 export function parseVideoId(input) {
   const t = String(input || '').trim();
-  if (ID_RE.test(t)) return t;
+  if (isBareId(t)) return t;
   let u;
   try { u = new URL(/^[a-z]+:\/\//i.test(t) ? t : 'https://' + t); } catch { return null; }
   const host = u.hostname.replace(/^(www|m|music)\./, '');
@@ -147,25 +156,44 @@ export const youtubeApp = {
     const hist = []; let pos = -1;
     let ctl = null, nav = 0;
     const cache = new Map();
+    const lastKind = {};                   // op name → tier that last answered
 
+    const sideCollapsed = (() => { try { return localStorage.getItem(SIDE_KEY) === '1'; } catch { return false; } })();
     body.innerHTML = `
       <div class="yt-app">
-        <div class="app-toolbar yt-toolbar">
-          <button class="toolbar-btn" id="yt-back" title="Back" aria-label="Back" disabled>${iconHTML('chevron-left')}</button>
-          <button class="toolbar-btn" id="yt-fwd" title="Forward" aria-label="Forward" disabled>${iconHTML('chevron-right')}</button>
-          <button class="toolbar-btn" id="yt-home" title="Home" aria-label="Home">${iconHTML('home')}</button>
-          <form class="yt-searchbox" id="yt-form">
-            <input type="search" class="app-input" id="yt-q" placeholder="Search, or paste a YouTube link" autocomplete="off" spellcheck="false" aria-label="Search YouTube or paste a link">
-            <button type="submit" class="app-btn primary yt-go">${iconHTML('search', 14)} Search</button>
+        <header class="yt-top">
+          <div class="yt-top-l">
+            <button type="button" class="yt-icon-btn" id="yt-menu" title="Menu" aria-label="Toggle menu" aria-expanded="${!sideCollapsed}">${iconHTML('menu', 18)}</button>
+            <button type="button" class="yt-icon-btn" id="yt-back" title="Back (Alt+←)" aria-label="Back" disabled>${iconHTML('chevron-left', 18)}</button>
+            <button type="button" class="yt-icon-btn" id="yt-fwd" title="Forward (Alt+→)" aria-label="Forward" disabled>${iconHTML('chevron-right', 18)}</button>
+            <button type="button" class="yt-brand" id="yt-brand" title="Home">${iconHTML('video', 24)}<span>YouTube</span></button>
+          </div>
+          <form class="yt-searchbox" id="yt-form" role="search" autocomplete="off">
+            <div class="yt-sfield">
+              <input type="text" id="yt-q" placeholder="Search or paste a link" autocomplete="off" autocapitalize="off" spellcheck="false"
+                     role="combobox" aria-expanded="false" aria-controls="yt-sug" aria-autocomplete="list" aria-label="Search YouTube or paste a link">
+              <button type="button" class="yt-clear" id="yt-clear" aria-label="Clear" hidden>${iconHTML('close', 14)}</button>
+            </div>
+            <button type="submit" class="yt-sbtn" aria-label="Search" title="Search">${iconHTML('search', 18)}</button>
+            <div class="yt-sug" id="yt-sug" role="listbox" hidden></div>
           </form>
-          <button class="toolbar-btn" id="yt-settings" title="Sources and player" aria-label="Settings">${iconHTML('settings')}</button>
+          <div class="yt-top-r">
+            <button type="button" class="yt-icon-btn" id="yt-settings" title="Sources and player" aria-label="Settings">${iconHTML('settings', 18)}</button>
+          </div>
+        </header>
+        <div class="yt-body">
+          <nav class="yt-side${sideCollapsed ? ' mini' : ''}" id="yt-side" aria-label="Browse"></nav>
+          <div class="yt-scroll" id="yt-scroll">
+            <div class="yt-chips" id="yt-chips" hidden></div>
+            <div class="yt-view" id="yt-view"></div>
+          </div>
         </div>
-        <div class="yt-scroll" id="yt-scroll"><div class="yt-view" id="yt-view"></div></div>
         <div class="yt-panel" id="yt-panel" hidden></div>
         <div class="app-statusbar"><span class="sb-cell grow" id="yt-status">Ready</span><span class="sb-cell">Video: YouTube</span></div>
       </div>`;
     const $ = (s) => body.querySelector(s);
     const view = $('#yt-view'), scroller = $('#yt-scroll'), q = $('#yt-q'), panel = $('#yt-panel');
+    const side = $('#yt-side'), chipsEl = $('#yt-chips');
     const btnBack = $('#yt-back'), btnFwd = $('#yt-fwd');
     const setStatus = (t) => { $('#yt-status').textContent = t; };
 
@@ -178,18 +206,20 @@ export const youtubeApp = {
     const bad = (b) => cooldown.set(b, Date.now());
 
     /** ops: { inv(base, sig), piped(base, sig), scrape(proxy, sig) } — any may be omitted. */
-    async function chain(ops, signal) {
+    async function chain(ops, signal, opts = {}) {
       const tiers = [];
-      if (ops.inv) tiers.push({ name: 'Invidious', list: order(cfg.invidious), run: (b) => (sig) => ops.inv(b, sig).then((v) => ({ v, b, label: `Invidious · ${hostOf(b)}`, kind: 'inv' })), mark: true });
-      if (ops.piped) tiers.push({ name: 'Piped', list: order(cfg.piped), run: (b) => (sig) => ops.piped(b, sig).then((v) => ({ v, b, label: `Piped · ${hostOf(b)}`, kind: 'piped' })), mark: true });
-      if (ops.scrape) tiers.push({ name: 'YouTube page via proxy', list: cfg.proxies, run: (p) => (sig) => ops.scrape(p, sig).then((v) => ({ v, b: p, label: `YouTube page · ${hostOf(p)}`, kind: 'scrape' })), mark: false });
+      if (ops.inv) tiers.push({ name: 'Invidious', kind: 'inv', list: order(cfg.invidious), run: (b) => (sig) => ops.inv(b, sig).then((v) => ({ v, b, label: `Invidious · ${hostOf(b)}`, kind: 'inv' })), mark: true });
+      if (ops.piped) tiers.push({ name: 'Piped', kind: 'piped', list: order(cfg.piped), run: (b) => (sig) => ops.piped(b, sig).then((v) => ({ v, b, label: `Piped · ${hostOf(b)}`, kind: 'piped' })), mark: true });
+      if (ops.scrape) tiers.push({ name: 'YouTube page via proxy', kind: 'scrape', list: cfg.proxies, run: (p) => (sig) => ops.scrape(p, sig).then((v) => ({ v, b: p, label: `YouTube page · ${hostOf(p)}`, kind: 'scrape' })), mark: false });
+      if (opts.sticky && lastKind[opts.sticky]) tiers.sort((a, b) => (b.kind === lastKind[opts.sticky]) - (a.kind === lastKind[opts.sticky]));
       const failures = [];
       for (const t of tiers) {
         if (signal?.aborted) throw aborted();
         if (!t.list.length) { failures.push({ tier: t.name, host: '—', msg: 'no instances configured' }); continue; }
-        const tasks = t.list.map((b) => (sig) => t.run(b)(sig).catch((e) => { if (!e.aborted) { e.host = hostOf(b); if (t.mark) bad(b); } throw e; }));
+        const tasks = t.list.map((b) => (sig) => t.run(b)(sig).catch((e) => { if (!e.aborted) { e.host = hostOf(b); if (t.mark && opts.mark !== false) bad(b); } throw e; }));
         try {
-          const r = await firstOk(tasks, t.name === 'Invidious' || t.name === 'Piped' ? 2500 : 4000, signal);
+          const r = await firstOk(tasks, opts.stagger ?? (t.kind === 'scrape' ? 4000 : 2500), signal);
+          if (opts.sticky) lastKind[opts.sticky] = t.kind;
           if (t.mark) lastGood[r.b] = true;
           return r;
         } catch (e) {
@@ -252,6 +282,15 @@ export const youtubeApp = {
       piped: page > 1 ? null : async (b, s) => { const j = await getJson(`${b}/search?q=${enc(text)}&filter=videos`, s); const a = list(j.items, normPiped); if (!a) throw new Error('unexpected reply'); return a; },
       scrape: page > 1 ? null : async (p, s) => parseResultsPage(await getText(`${p}${enc(`https://www.youtube.com/results?search_query=${enc(text)}&sp=EgIQAQ%3D%3D&hl=en`)}`, s, 9000))
     });
+    const opSuggest = (text) => ({
+      inv: async (b, s) => { const j = await getJson(`${b}/api/v1/search/suggestions?q=${enc(text)}`, s, 4000); if (!Array.isArray(j?.suggestions)) throw new Error('unexpected reply'); return j.suggestions.map(String); },
+      piped: async (b, s) => { const j = await getJson(`${b}/suggestions?query=${enc(text)}`, s, 4000); if (!Array.isArray(j)) throw new Error('unexpected reply'); return j.map(String); },
+      scrape: async (p, s) => {
+        const j = JSON.parse(await getText(`${p}${enc(`https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q=${enc(text)}`)}`, s, 4000));
+        if (!Array.isArray(j?.[1])) throw new Error('unexpected reply');
+        return j[1].map(String);
+      }
+    });
     const opTrending = () => ({
       inv: async (b, s) => { const a = list(await getJson(`${b}/api/v1/trending`, s), normInv); if (!a?.length) throw new Error('no trending data'); return a; },
       piped: async (b, s) => { const a = list(await getJson(`${b}/trending?region=US`, s), normPiped); if (!a?.length) throw new Error('no trending data'); return a; }
@@ -278,54 +317,113 @@ export const youtubeApp = {
     function step(d) { const n = pos + d; if (n < 0 || n >= hist.length) return; pos = n; syncNav(); show(hist[pos]); }
     const goHome = () => go({ type: 'home' });
     const goSearch = (text) => go({ type: 'search', q: text });
-    const goWatch = (id, title) => go({ type: 'watch', id, title });
+    const goWatch = (id, title, author) => go({ type: 'watch', id, title, author });
 
     function submit(raw) {
       const t = raw.trim();
       if (!t) return;
-      if (looksLikeLink(t) || ID_RE.test(t)) {
+      if (looksLikeLink(t) || isBareId(t)) {
         const id = parseVideoId(t);
         if (id) return goWatch(id);
         if (looksLikeLink(t)) return toast('That link doesn’t look like a YouTube video.');
       }
+      recent = [t, ...recent.filter((r) => r.toLowerCase() !== t.toLowerCase())].slice(0, 12); saveRecent(recent);
       goSearch(t);
     }
     const toast = (m) => { setStatus(m); };
 
-    // ---------- views ----------
-    function begin() {
-      ctl?.abort(); ctl = new AbortController();
-      return { my: ++nav, signal: ctl.signal };
+    // ---------- sidebar + category chips ----------
+    const NAVS = [['home', 'Home', null], ['music', 'Music', 'music'], ['gamepad', 'Gaming', 'gaming'], ['news', 'News', 'news'], ['live', 'Live', 'live'], ['book', 'Learning', 'learning']];
+    side.innerHTML = '';
+    for (const [icon, label, term] of NAVS) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'yt-nav'; b.dataset.term = term || '';
+      b.innerHTML = `${iconHTML(icon, 20)}<span></span>`;
+      b.querySelector('span').textContent = label;
+      b.addEventListener('click', () => (term ? goSearch(term) : goHome()));
+      side.append(b);
     }
+    const sep = document.createElement('div'); sep.className = 'yt-nav-sep'; side.append(sep);
+    const navSet = document.createElement('button');
+    navSet.type = 'button'; navSet.className = 'yt-nav';
+    navSet.innerHTML = `${iconHTML('settings', 20)}<span>Sources</span>`;
+    navSet.addEventListener('click', () => openSettings());
+    side.append(navSet);
+    function markNav(entry) {
+      const term = entry.type === 'search' ? entry.q.toLowerCase() : entry.type === 'home' ? '' : null;
+      side.querySelectorAll('.yt-nav[data-term]').forEach((b) => b.classList.toggle('active', term !== null && b.dataset.term === term));
+    }
+    const CHIPS = ['All', 'Music', 'Gaming', 'Live', 'News', 'Sports', 'Podcasts', 'Cooking', 'Coding', 'Science', 'Comedy', 'Movies', 'Learning'];
+    function showChips(entry) {
+      const active = entry.type === 'search' ? entry.q.toLowerCase() : entry.type === 'home' ? 'all' : null;
+      chipsEl.hidden = false; chipsEl.innerHTML = '';
+      for (const c of CHIPS) {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'yt-chip'; b.textContent = c;
+        const on = c.toLowerCase() === active;
+        b.classList.toggle('active', on); b.setAttribute('aria-pressed', String(on));
+        b.addEventListener('click', () => (c === 'All' ? goHome() : goSearch(c.toLowerCase())));
+        chipsEl.append(b);
+      }
+    }
+    const hideChips = () => { chipsEl.hidden = true; chipsEl.innerHTML = ''; };
+
+    // ---------- views ----------
+    function begin() { ctl?.abort(); ctl = new AbortController(); return { my: ++nav, signal: ctl.signal }; }
     const stale = (my) => my !== nav;
 
-    function loading(msg) {
-      view.innerHTML = `<div class="app-empty yt-loading"><div class="wp-spinner" aria-hidden="true"></div><div>${esc(msg)}</div></div>`;
+    const tone = (s) => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h) % 5; };
+    function avatar(name, small) {
+      const a = document.createElement('span');
+      a.className = 'yt-avatar' + (small ? ' sm' : '');
+      a.dataset.tone = String(tone(name));
+      a.textContent = (String(name).trim().charAt(0) || '?').toUpperCase();
+      a.setAttribute('aria-hidden', 'true');
+      return a;
     }
+    const div = (cls, text) => { const d = document.createElement('div'); d.className = cls; if (text != null) d.textContent = text; return d; };
 
-    function card(v) {
-      const b = document.createElement('button');
-      b.type = 'button'; b.className = 'yt-card';
-      const th = document.createElement('div'); th.className = 'yt-thumb';
+    /** kind: 'grid' (home), 'row' (search results), 'side' (related) */
+    function card(v, kind = 'grid') {
+      const el = document.createElement('article');
+      el.className = `yt-card yt-card-${kind}`; el.tabIndex = 0; el.setAttribute('role', 'link'); el.setAttribute('aria-label', v.title);
+      const th = div('yt-thumb');
       const img = document.createElement('img');
       img.src = thumb(v.id); img.alt = ''; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer';
       img.addEventListener('error', () => img.remove());
       th.append(img);
       const d = v.live ? 'LIVE' : fmtDur(v.dur);
       if (d) { const t = document.createElement('span'); t.className = 'yt-dur' + (v.live ? ' live' : ''); t.textContent = d; th.append(t); }
-      const info = document.createElement('div'); info.className = 'yt-info';
-      const title = document.createElement('div'); title.className = 'yt-title'; title.textContent = v.title;
-      const meta = document.createElement('div'); meta.className = 'yt-meta muted';
-      meta.textContent = [v.author, v.viewsText || fmtViews(v.views), v.when].filter(Boolean).join(' · ');
-      info.append(title, meta);
-      b.append(th, info);
-      b.addEventListener('click', () => goWatch(v.id, v.title));
-      return b;
+      const stats = [v.viewsText || fmtViews(v.views), v.when].filter(Boolean).join(' · ');
+      const info = div('yt-info');
+      info.append(div('yt-title', v.title));
+      if (kind === 'row') {
+        info.append(div('yt-meta muted', stats));
+        if (v.author) { const a = div('yt-author-line'); a.append(avatar(v.author, true), div('yt-author muted', v.author)); info.append(a); }
+        el.append(th, info);
+      } else if (kind === 'side') {
+        info.append(div('yt-author muted', v.author || ''), div('yt-meta muted', stats));
+        el.append(th, info);
+      } else {
+        info.append(div('yt-author muted', v.author || ''), div('yt-meta muted', stats));
+        const row = div('yt-card-body'); row.append(avatar(v.author || '?'), info);
+        el.append(th, row);
+      }
+      const open = () => goWatch(v.id, v.title, v.author);
+      el.addEventListener('click', open);
+      el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+      return el;
     }
-    function grid(items) {
-      const g = document.createElement('div'); g.className = 'yt-grid';
-      items.forEach((v) => g.append(card(v)));
+    function grid(items, kind = 'grid') {
+      const g = div(kind === 'row' ? 'yt-list' : 'yt-grid');
+      items.forEach((v) => g.append(card(v, kind)));
       return g;
+    }
+    function skeletonHTML(kind) {
+      return `<div class="yt-sk-card yt-sk-${kind}" aria-hidden="true"><div class="yt-thumb"></div><div class="yt-card-body"><span class="yt-avatar"></span><div class="yt-info"><div class="yt-sk-line"></div><div class="yt-sk-line short"></div></div></div></div>`;
+    }
+    function skeleton(kind = 'grid', n = 12) {
+      view.innerHTML = `<div class="${kind === 'row' ? 'yt-list' : 'yt-grid'}" aria-busy="true" role="status" aria-label="Loading">${skeletonHTML(kind).repeat(n)}</div>`;
     }
 
     function unavailable(err, retry) {
@@ -337,11 +435,11 @@ export const youtubeApp = {
           <div class="muted yt-unavail-text">Every search source failed. Public instances go up and down all the time. You can still watch a video by pasting its link.</div>
           <form class="yt-paste" id="yt-paste">
             <input class="app-input" id="yt-paste-in" placeholder="Paste a YouTube link or video ID" spellcheck="false" aria-label="YouTube link">
-            <button type="submit" class="app-btn primary">Play</button>
+            <button type="submit" class="yt-pill primary">Play</button>
           </form>
           <div class="yt-actions">
-            <button type="button" class="app-btn" id="yt-retry">Try again</button>
-            <button type="button" class="app-btn" id="yt-open-set">Edit sources</button>
+            <button type="button" class="yt-pill" id="yt-retry">Try again</button>
+            <button type="button" class="yt-pill" id="yt-open-set">Edit sources</button>
           </div>
           ${rows ? `<details class="yt-why"><summary>What was tried</summary><ul>${rows}</ul></details>` : ''}
         </div>`;
@@ -359,17 +457,19 @@ export const youtubeApp = {
     async function showHome() {
       const { my, signal } = begin();
       ctx.setTitle('YouTube');
-      loading('Loading popular videos…');
+      showChips({ type: 'home' });
+      skeleton('grid');
       setStatus('Looking for a working source…');
       try {
         const r = cache.get('home') || await chain(opTrending(), signal);
         if (stale(my)) return;
         cache.set('home', r);
-        view.innerHTML = '<h2 class="yt-h">Popular right now</h2>';
+        view.innerHTML = '';
         view.append(grid(r.v));
         setStatus(`Showing ${r.v.length} videos via ${r.label}`);
       } catch (e) {
         if (e.aborted || stale(my)) return;
+        hideChips();
         unavailable(e, showHome);
       }
       scroller.scrollTop = 0;
@@ -378,8 +478,8 @@ export const youtubeApp = {
     async function showSearch(entry) {
       const { my, signal } = begin();
       ctx.setTitle(`${entry.q} — YouTube`);
-      q.value = entry.q;
-      loading(`Searching for “${entry.q}”…`);
+      showChips(entry);
+      skeleton('row', 7);
       setStatus('Looking for a working source…');
       try {
         const key = 's:' + entry.q;
@@ -387,20 +487,20 @@ export const youtubeApp = {
         if (stale(my)) return;
         cache.set(key, r); if (cache.size > 30) cache.delete(cache.keys().next().value);
         view.innerHTML = '';
-        const h = document.createElement('h2'); h.className = 'yt-h'; h.textContent = `Results for “${entry.q}”`;
+        const h = document.createElement('h2'); h.className = 'yt-h yt-sr'; h.textContent = `Results for “${entry.q}”`;
         view.append(h);
-        if (!r.v.length) { view.insertAdjacentHTML('beforeend', '<div class="app-empty"><div>No videos found.</div><div class="muted">Try different words.</div></div>'); setStatus(`No results · ${r.label}`); return; }
-        const g = grid(r.v); view.append(g);
-        let seen = new Set(r.v.map((v) => v.id)), page = 1;
+        if (!r.v.length) { view.insertAdjacentHTML('beforeend', '<div class="app-empty"><div><strong>No results found</strong></div><div class="muted">Try different keywords.</div></div>'); setStatus(`No results · ${r.label}`); return; }
+        const g = grid(r.v, 'row'); view.append(g);
+        const seen = new Set(r.v.map((v) => v.id)); let page = 1;
         if (r.kind === 'inv') {            // Invidious can page; the other tiers return one page
-          const more = document.createElement('button'); more.type = 'button'; more.className = 'app-btn yt-more'; more.textContent = 'Load more';
+          const more = document.createElement('button'); more.type = 'button'; more.className = 'yt-pill yt-more'; more.textContent = 'Load more';
           more.addEventListener('click', async () => {
             more.disabled = true; more.textContent = 'Loading…';
             try {
               const a = await getJson(`${r.b}/api/v1/search?q=${enc(entry.q)}&type=video&page=${page + 1}`, signal);
               const items = (list(a, normInv) || []).filter((v) => !seen.has(v.id));
               if (stale(my)) return;
-              page++; items.forEach((v) => { seen.add(v.id); g.append(card(v)); });
+              page++; items.forEach((v) => { seen.add(v.id); g.append(card(v, 'row')); });
               if (!items.length) more.remove(); else { more.disabled = false; more.textContent = 'Load more'; }
             } catch (e) { if (!e.aborted) { more.disabled = false; more.textContent = 'Couldn’t load more — try again'; } }
           });
@@ -422,19 +522,23 @@ export const youtubeApp = {
       const { my, signal } = begin();
       const id = entry.id;
       ctx.setTitle(entry.title ? `${entry.title} — YouTube` : 'YouTube');
+      hideChips();
       view.innerHTML = `
         <div class="yt-watch">
           <div class="yt-main">
             <div class="yt-player" id="yt-player"></div>
-            <h2 class="yt-vtitle" id="yt-vtitle"></h2>
-            <div class="yt-vmeta muted" id="yt-vmeta"></div>
-            <div class="yt-vactions">
-              <a class="app-btn" id="yt-ext" target="_blank" rel="noopener noreferrer">Open on YouTube</a>
-              <button type="button" class="app-btn" id="yt-swap"></button>
+            <h1 class="yt-vtitle" id="yt-vtitle"></h1>
+            <div class="yt-chan">
+              <div class="yt-chan-l" id="yt-chan-l" hidden></div>
+              <div class="yt-vactions">
+                <span class="yt-pill static" id="yt-likes" hidden></span>
+                <a class="yt-pill" id="yt-ext" target="_blank" rel="noopener noreferrer">Open on YouTube</a>
+                <button type="button" class="yt-pill" id="yt-swap"></button>
+              </div>
             </div>
-            <div class="yt-desc" id="yt-desc" hidden></div>
+            <div class="yt-desc" id="yt-desc" hidden><div class="yt-desc-stats" id="yt-desc-stats"></div><div class="yt-desc-text" id="yt-desc-text"></div></div>
           </div>
-          <aside class="yt-related" id="yt-related" aria-label="Related videos"></aside>
+          <aside class="yt-related" id="yt-related" aria-label="Related videos">${skeletonHTML('side').repeat(6)}</aside>
         </div>`;
       const player = view.querySelector('#yt-player');
       const mount = () => {
@@ -446,12 +550,19 @@ export const youtubeApp = {
         f.referrerPolicy = 'strict-origin-when-cross-origin';
         f.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox');
         player.append(f);
-        const sw = view.querySelector('#yt-swap');
-        sw.textContent = cfg.player === 'invidious' ? 'Use YouTube player' : 'Use Invidious player';
+        view.querySelector('#yt-swap').textContent = cfg.player === 'invidious' ? 'Use YouTube player' : 'Use Invidious player';
       };
       mount();
+      const setChannel = (name) => {
+        const c = view.querySelector('#yt-chan-l');
+        if (!name) return;
+        c.hidden = false; c.innerHTML = '';
+        const n = document.createElement('span'); n.className = 'yt-chan-name'; n.textContent = name;
+        c.append(avatar(name), n);
+      };
       view.querySelector('#yt-vtitle').textContent = entry.title || 'Video';
-      const ext = view.querySelector('#yt-ext'); ext.href = `https://www.youtube.com/watch?v=${id}`;
+      setChannel(entry.author);
+      view.querySelector('#yt-ext').href = `https://www.youtube.com/watch?v=${id}`;
       view.querySelector('#yt-swap').addEventListener('click', () => {
         cfg.player = cfg.player === 'invidious' ? 'youtube' : 'invidious';
         persist(); mount();
@@ -466,19 +577,25 @@ export const youtubeApp = {
         const d = r.v;
         ctx.setTitle(`${d.title} — YouTube`);
         view.querySelector('#yt-vtitle').textContent = d.title;
-        view.querySelector('#yt-vmeta').textContent = [d.author, fmtViews(d.views), d.likes > 0 ? `${compact.format(d.likes)} likes` : '', d.when].filter(Boolean).join(' · ');
+        setChannel(d.author);
+        if (d.likes > 0) { const l = view.querySelector('#yt-likes'); l.hidden = false; l.textContent = `${compact.format(d.likes)} likes`; }
         const desc = view.querySelector('#yt-desc');
-        if (d.desc) {
-          desc.hidden = false; desc.textContent = d.desc;
-          if (d.desc.length > 280 || d.desc.split('\n').length > 4) {
+        const stats = [fmtViews(d.views), d.when].filter(Boolean).join('  ·  ');
+        if (stats || d.desc) {
+          desc.hidden = false;
+          view.querySelector('#yt-desc-stats').textContent = stats;
+          view.querySelector('#yt-desc-text').textContent = d.desc;
+          if (d.desc.length > 200 || d.desc.split('\n').length > 3) {
             desc.classList.add('collapsed');
-            desc.addEventListener('click', () => desc.classList.toggle('collapsed'));
-            desc.title = 'Click to expand';
+            desc.tabIndex = 0; desc.setAttribute('role', 'button'); desc.setAttribute('aria-expanded', 'false');
+            const flip = () => { const c = desc.classList.toggle('collapsed'); desc.setAttribute('aria-expanded', String(!c)); };
+            desc.addEventListener('click', flip);
+            desc.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } });
           }
         }
         const rel = view.querySelector('#yt-related');
         rel.innerHTML = '';
-        d.related.filter((v) => v.id !== id).slice(0, 20).forEach((v) => rel.append(card(v)));
+        d.related.filter((v) => v.id !== id).slice(0, 20).forEach((v) => rel.append(card(v, 'side')));
         setStatus(`Playing · details via ${r.label}`);
       } catch (e) {
         if (e.aborted || stale(my)) return;
@@ -488,9 +605,11 @@ export const youtubeApp = {
     }
 
     function show(entry) {
-      closePanel();
-      if (entry.type === 'home') { q.value = ''; return showHome(); }
-      if (entry.type === 'search') return showSearch(entry);
+      closePanel(); hideSug();
+      markNav(entry);
+      side.classList.toggle('force-mini', entry.type === 'watch');   // like YouTube: more room for the player
+      if (entry.type === 'home') { setQ(''); return showHome(); }
+      if (entry.type === 'search') { setQ(entry.q); return showSearch(entry); }
       return showWatch(entry);
     }
 
@@ -514,8 +633,8 @@ export const youtubeApp = {
               </select>
             </label>
             <div class="yt-actions">
-              <button type="button" class="app-btn primary" id="yt-s-save">Save</button>
-              <button type="button" class="app-btn" id="yt-s-reset">Reset to defaults</button>
+              <button type="button" class="yt-pill primary" id="yt-s-save">Save</button>
+              <button type="button" class="yt-pill" id="yt-s-reset">Reset to defaults</button>
             </div>
           </div>
         </div>`;
@@ -539,19 +658,110 @@ export const youtubeApp = {
       panel.querySelector('#yt-s-reset').addEventListener('click', () => fill({ ...DEFAULTS }));
     }
 
+    // ---------- search box + autocomplete ----------
+    const sugEl = $('#yt-sug'), clearBtn = $('#yt-clear');
+    let sugItems = [], sugActive = -1, typed = '', sugCtl = null, sugTimer = 0, sugSeq = 0, recent = loadRecent();
+    const sugCache = new Map();
+    function setQ(v) { q.value = v; typed = v; clearBtn.hidden = !v; }
+
+    function hideSug() {
+      clearTimeout(sugTimer); sugCtl?.abort(); sugSeq++;
+      sugEl.hidden = true; sugEl.innerHTML = ''; sugItems = []; sugActive = -1;
+      q.setAttribute('aria-expanded', 'false'); q.removeAttribute('aria-activedescendant');
+    }
+    function drawSug() {
+      if (!sugItems.length) { sugEl.hidden = true; sugEl.innerHTML = ''; q.setAttribute('aria-expanded', 'false'); q.removeAttribute('aria-activedescendant'); return; }
+      sugEl.innerHTML = '';
+      const t = typed.trim();
+      sugItems.forEach((it, i) => {
+        const row = document.createElement('div');
+        row.className = 'yt-sug-row' + (i === sugActive ? ' active' : '');
+        row.id = 'yt-sug-' + i; row.setAttribute('role', 'option'); row.setAttribute('aria-selected', String(i === sugActive));
+        const ic = document.createElement('span'); ic.className = 'yt-sug-ic'; ic.innerHTML = iconHTML(it.recent ? 'clock' : 'search', 16);
+        const tx = document.createElement('span'); tx.className = 'yt-sug-tx';
+        if (t && it.text.toLowerCase().startsWith(t.toLowerCase())) {
+          tx.append(it.text.slice(0, t.length));
+          const b = document.createElement('b'); b.textContent = it.text.slice(t.length); tx.append(b);
+        } else tx.textContent = it.text;
+        row.append(ic, tx);
+        if (it.recent) {
+          const x = document.createElement('button');
+          x.type = 'button'; x.className = 'yt-sug-x'; x.textContent = 'Remove'; x.setAttribute('aria-label', `Remove “${it.text}” from search history`);
+          x.addEventListener('mousedown', (e) => e.preventDefault());
+          x.addEventListener('click', (e) => { e.stopPropagation(); recent = recent.filter((r) => r !== it.text); saveRecent(recent); mergeSug(sugCache.get(t.toLowerCase())); });
+          row.append(x);
+        }
+        row.addEventListener('mousedown', (e) => e.preventDefault());      // keep focus in the box
+        row.addEventListener('click', () => { setQ(it.text); hideSug(); submit(it.text); });
+        sugEl.append(row);
+      });
+      sugEl.hidden = false; q.setAttribute('aria-expanded', 'true');
+      if (sugActive >= 0) q.setAttribute('aria-activedescendant', 'yt-sug-' + sugActive); else q.removeAttribute('aria-activedescendant');
+    }
+    function mergeSug(net) {
+      const t = typed.trim().toLowerCase();
+      const rec = recent.filter((r) => !t || r.toLowerCase().includes(t)).slice(0, t ? 3 : 8).map((text) => ({ text, recent: true }));
+      const seen = new Set(rec.map((r) => r.text.toLowerCase()));
+      const rest = (net || []).filter((s) => s && !seen.has(s.toLowerCase())).slice(0, Math.max(0, 10 - rec.length)).map((text) => ({ text, recent: false }));
+      sugItems = [...rec, ...rest]; sugActive = -1; drawSug();
+    }
+    function onType() {
+      typed = q.value; clearBtn.hidden = !typed;
+      clearTimeout(sugTimer); sugCtl?.abort();
+      const t = typed.trim();
+      if (!t) { mergeSug([]); return; }
+      if (looksLikeLink(t)) { hideSug(); return; }
+      const hit = sugCache.get(t.toLowerCase());
+      if (hit) { mergeSug(hit); return; }
+      mergeSug([]);                                          // history matches appear instantly
+      const seq = ++sugSeq;
+      sugTimer = setTimeout(async () => {
+        sugCtl = new AbortController();
+        try {
+          const r = await chain(opSuggest(t), sugCtl.signal, { stagger: 900, sticky: 'suggest', mark: false });
+          if (seq !== sugSeq) return;
+          sugCache.set(t.toLowerCase(), r.v); if (sugCache.size > 100) sugCache.delete(sugCache.keys().next().value);
+          if (document.activeElement === q) mergeSug(r.v);
+        } catch { /* offline or unsupported: history only */ }
+      }, 140);
+    }
+    q.addEventListener('input', onType);
+    q.addEventListener('focus', () => { if (!q.value) onType(); q.select(); });
+    q.addEventListener('blur', hideSug);
+    q.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        if (sugEl.hidden) { if (e.key === 'ArrowDown') { e.preventDefault(); onType(); } return; }
+        e.preventDefault();
+        const n = sugItems.length;
+        sugActive = e.key === 'ArrowDown' ? (sugActive + 1 >= n ? -1 : sugActive + 1) : (sugActive - 1 < -1 ? n - 1 : sugActive - 1);
+        q.value = sugActive >= 0 ? sugItems[sugActive].text : typed;      // like YouTube: the box previews the highlighted line
+        drawSug();
+        sugEl.querySelector('.active')?.scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'Escape' && !sugEl.hidden) {
+        q.value = typed; hideSug(); e.stopPropagation();
+      }
+    });
+    clearBtn.addEventListener('mousedown', (e) => e.preventDefault());
+    clearBtn.addEventListener('click', () => { setQ(''); q.focus(); onType(); });
+
     // ---------- wiring ----------
-    $('#yt-form').addEventListener('submit', (e) => { e.preventDefault(); submit(q.value); });
+    $('#yt-form').addEventListener('submit', (e) => { e.preventDefault(); const v = q.value; hideSug(); submit(v); });
     btnBack.addEventListener('click', () => step(-1));
     btnFwd.addEventListener('click', () => step(1));
-    $('#yt-home').addEventListener('click', goHome);
+    $('#yt-brand').addEventListener('click', goHome);
     $('#yt-settings').addEventListener('click', () => (panel.hidden ? openSettings() : closePanel()));
+    $('#yt-menu').addEventListener('click', () => {
+      const mini = side.classList.toggle('mini');
+      $('#yt-menu').setAttribute('aria-expanded', String(!mini));
+      try { localStorage.setItem(SIDE_KEY, mini ? '1' : '0'); } catch { /* storage unavailable */ }
+    });
     body.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && !panel.hidden) { closePanel(); e.stopPropagation(); }
       else if (e.altKey && e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
       else if (e.altKey && e.key === 'ArrowRight') { e.preventDefault(); step(1); }
-      else if (e.key === '/' && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) { e.preventDefault(); q.focus(); q.select(); }
+      else if (e.key === '/' && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) { e.preventDefault(); q.focus(); }
     });
-    ctx.onCleanup(() => { ctl?.abort(); nav++; });
+    ctx.onCleanup(() => { ctl?.abort(); sugCtl?.abort(); clearTimeout(sugTimer); nav++; });
 
     // args: { url } or { query } so other apps/terminal can open a video
     const startId = args?.url ? parseVideoId(args.url) : null;

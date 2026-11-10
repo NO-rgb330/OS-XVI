@@ -1,9 +1,15 @@
 /* File-level helpers shared by the desktop and the file manager:
-   icon choice, "open with", and create / rename / delete flows with validation. */
+   icon choice, "open with", and create / rename / delete flows with validation.
+
+   Nodes of kind 'app' are application shortcuts (no blob, protected inside
+   SYSTEM APPS). They open by launching the referenced app, show the app's
+   icon, and can be copied out of SYSTEM APPS but not moved or deleted from
+   there. */
 
 import * as vfs from './vfs.js';
 import * as dialogs from './dialogs.js';
 import { openWindow } from './wm.js';
+import { get as getApp } from './registry.js';
 import { extOf, joinPath, parentPath, baseName, formatBytes, nameError } from './util.js';
 import { listZip, readEntry, safeSegments } from './zip.js';
 
@@ -14,7 +20,7 @@ export const VIDEO = new Set(['mp4', 'm4v', 'webm', 'ogv', 'mkv', 'mov']);
 export const MEDIA = new Set([...AUDIO, ...VIDEO]);
 export const ARCHIVE = new Set(['zip']);
 
-/** 'image' | 'audio' | 'video' | 'text' | 'other' */
+/** 'image' | 'audio' | 'video' | 'text' | 'archive' | 'other' */
 export function kindOf(name) {
   const ext = extOf(name);
   if (IMAGE.has(ext)) return 'image';
@@ -29,8 +35,12 @@ export const isImage = (name) => IMAGE.has(extOf(name));
 export const isMedia = (name) => MEDIA.has(extOf(name));
 export const isArchive = (name) => ARCHIVE.has(extOf(name));
 
-/** Sprite icon id for a vfs node. */
+/** Sprite icon id for a vfs node (file, dir, or app shortcut). */
 export function iconFor(item) {
+  if (item.kind === 'app') {
+    const app = getApp(item.appId);
+    return app?.icon ?? 'file';
+  }
   if (item.kind === 'dir') return 'folder';
   const ext = extOf(item.name);
   if (TEXT.has(ext)) return 'file-text';
@@ -41,14 +51,28 @@ export function iconFor(item) {
   return 'file';
 }
 
-export function openItem(path, kind, name) {
+/**
+ * Open a vfs node.
+ *   kind 'app'  → launch the app (or explain why the shortcut is broken)
+ *   kind 'dir'  → Files window at that path
+ *   files       → dispatch by extension
+ *   archive     → extract with confirmation
+ * `appId` is required when kind is 'app' — pass item.appId from the caller.
+ */
+export function openItem(path, kind, name, appId = null) {
+  if (kind === 'app') {
+    if (!appId) return dialogs.alert('Open App', `The shortcut “${name}” is missing its app id.`);
+    const app = getApp(appId);
+    if (!app) return dialogs.alert('Open App', `The app “${name}” is no longer installed.`);
+    return openWindow(appId);
+  }
   if (kind === 'dir') return openWindow('files', { path });
   const k = kindOf(name);
   if (k === 'text') return openWindow('notepad', { path });
   if (k === 'image') return openWindow('imageviewer', { path });
   if (k === 'audio' || k === 'video') return openWindow('mediaviewer', { path });
   if (k === 'archive') return extractArchive(path, { ask: true });
-  return dialogs.alert('Open File', `No app is available to open "${name}" yet.`);
+  return dialogs.alert('Open File', `No app is available to open “${name}” yet.`);
 }
 
 export async function uniqueName(dir, name) {
@@ -73,7 +97,7 @@ export async function createEntry(dir, kind) {
   const err = nameError(name);
   if (err) { await dialogs.alert('Error', err); return null; }
   const path = joinPath(dir, name);
-  if (await vfs.exists(path)) { await dialogs.alert('Error', `"${name}" already exists.`); return null; }
+  if (await vfs.exists(path)) { await dialogs.alert('Error', `“${name}” already exists.`); return null; }
   try {
     if (isDir) await vfs.mkdir(path); else await vfs.write(path, '');
     return name;
@@ -95,18 +119,38 @@ export async function renameEntry(dir, oldName) {
     await vfs.mv(joinPath(dir, oldName), joinPath(dir, name));
     return name;
   } catch (e) {
-    await dialogs.alert('Error', e.message.startsWith('EEXIST') ? `"${name}" already exists.` : e.message);
+    await dialogs.alert('Error', e.message.startsWith('EEXIST') ? `“${name}” already exists.` : e.message);
     return null;
   }
 }
 
-/** Confirms and deletes. Returns true if anything was deleted. */
+/**
+ * Confirms and deletes. Protected entries are refused up-front with a clear
+ * message instead of letting vfs throw EPERM mid-loop.
+ */
 export async function deleteEntries(dir, names) {
   if (!names.length) return false;
-  const what = names.length === 1 ? `"${names[0]}"` : `${names.length} items`;
+
+  const deletable = [];
+  const protectedNames = [];
+  for (const name of names) {
+    try {
+      const st = await vfs.stat(joinPath(dir, name));
+      if (st.protected) protectedNames.push(name); else deletable.push(name);
+    } catch { /* skip missing — nothing to delete */ }
+  }
+
+  if (protectedNames.length) {
+    const what = protectedNames.length === 1 ? `“${protectedNames[0]}”` : `${protectedNames.length} protected items`;
+    await dialogs.alert('Delete', `${what} ${protectedNames.length === 1 ? 'is' : 'are'} part of the system and can’t be deleted.`);
+    if (!deletable.length) return false;
+  }
+  if (!deletable.length) return false;
+
+  const what = deletable.length === 1 ? `“${deletable[0]}”` : `${deletable.length} items`;
   if (!(await dialogs.confirm('Delete', `Delete ${what}? This cannot be undone.`, 'Delete'))) return false;
   try {
-    for (const name of names) await vfs.rm(joinPath(dir, name));
+    for (const name of deletable) await vfs.rm(joinPath(dir, name));
   } catch (e) {
     await dialogs.alert('Error', e.message);
   }
@@ -114,9 +158,13 @@ export async function deleteEntries(dir, names) {
 }
 
 /**
- * Move (or copy) entries between folders, renaming on collision ("name (2).ext").
- * `beforeEach(finalName)` runs just before each operation. Never throws:
- * returns { done: [{ from, to }], errors: [message] }.
+ * Move (or copy) entries between folders, renaming on collision.
+ * A move from a protected source silently becomes a copy — the original
+ * stays untouched, the destination gets a fresh unprotected entry. This
+ * is what makes "drag an app from SYSTEM APPS to the desktop" work as the
+ * user expects without an error.
+ *
+ * Returns { done: [{ from, to }], errors: [message] }.
  */
 export async function transferInto(srcDir, names, dstDir, { copy = false, beforeEach } = {}) {
   const done = [], errors = [];
@@ -124,10 +172,21 @@ export async function transferInto(srcDir, names, dstDir, { copy = false, before
     try {
       if (!copy && srcDir === dstDir) continue;
       const src = joinPath(srcDir, name);
-      const finalName = copy || (await vfs.exists(joinPath(dstDir, name))) ? await uniqueName(dstDir, name) : name;
+
+      let opCopy = copy;
+      if (!opCopy) {
+        try {
+          const st = await vfs.stat(src);
+          if (st.protected) opCopy = true;
+        } catch { /* surface below */ }
+      }
+
+      const finalName = opCopy || (await vfs.exists(joinPath(dstDir, name)))
+        ? await uniqueName(dstDir, name)
+        : name;
       beforeEach?.(finalName);
       const dst = joinPath(dstDir, finalName);
-      if (copy) await vfs.cp(src, dst); else await vfs.mv(src, dst);
+      if (opCopy) await vfs.cp(src, dst); else await vfs.mv(src, dst);
       done.push({ from: name, to: finalName });
     } catch (e) {
       errors.push(`${name}: ${e.message.replace(/^E[A-Z]+: /, '')}`);
@@ -145,7 +204,7 @@ const tick = () => new Promise((r) => setTimeout(r));
  *   here:false (default) → into a new folder named after the archive, beside it
  *   here:true            → straight into the archive's own folder
  *   ask:true             → confirm first (used when the user simply opens the archive)
- * Existing files are never overwritten: clashes become "name (2).ext".
+ * Existing files are never overwritten: clashes become “name (2).ext”.
  * Returns { dir, name } (name = new folder's name, or null for "here"), or null if nothing happened.
  */
 export async function extractArchive(path, { here = false, ask = false } = {}) {
@@ -181,7 +240,6 @@ export async function extractArchive(path, { here = false, ask = false } = {}) {
   let files = 0, bytes = 0, done = 0;
   const made = new Set();
 
-  /** Create every folder along `segs` below `dest` (idempotent). */
   const mkdirs = async (segs) => {
     let cur = dest;
     for (const s of segs) {
@@ -201,7 +259,7 @@ export async function extractArchive(path, { here = false, ask = false } = {}) {
     for (let i = 0; i < jobs.length && !prog.cancelled; i++) {
       const e = jobs[i];
       prog.update(`${i + 1} of ${jobs.length} — ${e.name}`, need ? done / need : i / jobs.length);
-      if (i % 8 === 0) await tick();               // let the dialog repaint and Cancel register
+      if (i % 8 === 0) await tick();
 
       const segs = safeSegments(e.name);
       const bad = segs && segs.map(nameError).find(Boolean);
@@ -216,7 +274,7 @@ export async function extractArchive(path, { here = false, ask = false } = {}) {
       } catch (err) {
         const why = err.message.replace(/^E[A-Z]+: /, '');
         failed.push(`${e.name}: ${why}`);
-        if (/ENOSPC|disk space/i.test(err.message)) break;   // nothing else will fit either
+        if (/ENOSPC|disk space/i.test(err.message)) break;
       }
     }
   } catch (err) {

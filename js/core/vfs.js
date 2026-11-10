@@ -3,17 +3,32 @@
    Metadata: IndexedDB (fast tree traversal, renaming, moving)
    Blobs:    OPFS (fast raw data storage)
    API:      Promise-based, path-centric.
+
+   Three node kinds:
+     · file  — content in OPFS, tracked in IndexedDB
+     · dir   — folder metadata
+     · app   — shortcut to a registered app (metadata only, no blob).
+               Used by the SYSTEM APPS folder to expose every app in
+               the file manager without storing them as real files.
+
+   Protected nodes (`protected: true`) can be read but not modified —
+   used for the SYSTEM APPS folder and its app entries. A protected
+   entry can't be deleted, renamed or moved; it can be copied out to
+   create an unprotected copy elsewhere.
    ============================================================ */
 
 import { formatBytes } from './util.js';
 
 /** Default fallback size. Updated by the setup wizard via localStorage. */
-const DISK_CAPACITY_DEFAULT = 25 * 1024 ** 3; // 25 GiB
+const DISK_CAPACITY_DEFAULT = 25 * 1024 ** 3;
 
 const DB_NAME = 'os_vfs_db';
 const DB_VERSION = 1;
 const STORE_NODES = 'nodes';
 const STORE_BLOBS = 'blobs';
+
+/** Canonical location of the auto-populated app shortcuts folder. */
+export const SYSTEM_APPS_DIR = '/home/user/SYSTEM APPS';
 
 let db = null;
 let opfsBlobs = null;
@@ -40,7 +55,6 @@ export async function mount() {
         store.createIndex('pid', 'pid', { unique: false });
         store.createIndex('pid_name', ['pid', 'name'], { unique: true });
       }
-      // Fallback blob store if OPFS is flaky
       if (!d.objectStoreNames.contains(STORE_BLOBS)) {
         d.createObjectStore(STORE_BLOBS, { keyPath: 'id' });
       }
@@ -149,10 +163,15 @@ export async function list(path) {
     a.kind !== b.kind ? (a.kind === 'dir' ? -1 : 1) : collator.compare(a.name, b.name));
 }
 
-export async function mkdir(path) {
+export async function mkdir(path, { protected: isProtected = false } = {}) {
   const { parent, name } = splitPath(path);
   assertName(name);
   const pid = await dirId(parent);
+
+  const parentNode = await getNode(parent);
+  if (parentNode?.protected && !isProtected) {
+    throw new Error('EPERM: ' + parent + ' is read-only');
+  }
 
   const existing = await idbIndexGet('pid_name', [pid, name]);
   if (existing) {
@@ -161,7 +180,7 @@ export async function mkdir(path) {
   }
 
   const id = crypto.randomUUID();
-  await idbPut({ id, pid, name, kind: 'dir', mtime: Date.now() });
+  await idbPut({ id, pid, name, kind: 'dir', protected: isProtected, mtime: Date.now() });
   emit('change', parent);
   return id;
 }
@@ -170,13 +189,17 @@ export async function write(path, data) {
   const { parent, name } = splitPath(path);
   assertName(name);
   const pid = await dirId(parent);
+  const parentNode = await getNode(parent);
+  if (parentNode?.protected) throw new Error('EPERM: ' + parent + ' is read-only');
   const blob = data instanceof Blob ? data : new Blob([data]);
 
   let node = await idbIndexGet('pid_name', [pid, name]);
   if (node?.kind === 'dir') throw new Error('EISDIR: ' + path);
-  
+  if (node?.kind === 'app') throw new Error('EEXIST: ' + path + ' (app shortcut exists)');
+  if (node?.protected) throw new Error('EPERM: cannot overwrite protected entry');
+
   await assertSpace(blob.size - (node?.size || 0));
-  
+
   node = node
     ? { ...node, size: blob.size, mtime: Date.now() }
     : { id: crypto.randomUUID(), pid, name, kind: 'file', size: blob.size, mtime: Date.now() };
@@ -184,7 +207,6 @@ export async function write(path, data) {
   try {
     await writeBlob(node.id, blob);
   } catch (err) {
-    // Catch the browser's hard quota limit
     if (err.name === 'QuotaExceededError' || err.message.includes('quota')) {
       throw new Error('ENOSPC: The browser storage limit has been reached. You cannot save more files.');
     }
@@ -196,19 +218,60 @@ export async function write(path, data) {
   return node.id;
 }
 
+/**
+ * Create an app shortcut entry (metadata only — no blob).
+ * Used by the boot sequence to populate SYSTEM APPS with every registered
+ * app, and by drag-and-drop when an app is moved from the desktop or
+ * copied out of SYSTEM APPS.
+ */
+export async function writeApp(path, appId, { protected: isProtected = false } = {}) {
+  const { parent, name } = splitPath(path);
+  assertName(name);
+  const pid = await dirId(parent);
+  const parentNode = await getNode(parent);
+  if (parentNode?.protected && !isProtected) {
+    throw new Error('EPERM: ' + parent + ' is read-only');
+  }
+
+  const existing = await idbIndexGet('pid_name', [pid, name]);
+  let node;
+  if (existing) {
+    if (existing.kind !== 'app') throw new Error('EEXIST: ' + path);
+    if (existing.protected && !isProtected) throw new Error('EPERM: cannot modify protected entry');
+    node = { ...existing, appId, mtime: Date.now() };
+  } else {
+    node = {
+      id: crypto.randomUUID(),
+      pid, name, kind: 'app', appId,
+      protected: isProtected,
+      size: 0,
+      mtime: Date.now()
+    };
+  }
+  await idbPut(node);
+  emit('change', parent);
+  return node.id;
+}
+
 export async function read(path) {
   const node = await getNode(path);
   if (!node) throw new Error('ENOENT: ' + path);
   if (node.kind === 'dir') throw new Error('EISDIR: ' + path);
+  if (node.kind === 'app') throw new Error('EAPPN: ' + path + ' is an application shortcut');
   return readBlob(node);
 }
 
 async function removeNode(node) {
+  if (node.protected) throw new Error('EPERM: cannot delete protected entry');
   if (node.kind === 'dir') {
-    for (const child of await idbIndexAll('pid', node.id)) await removeNode(child);
-  } else {
+    for (const child of await idbIndexAll('pid', node.id)) {
+      if (child.protected) throw new Error('EPERM: folder contains protected entries');
+      await removeNode(child);
+    }
+  } else if (node.kind === 'file') {
     try { await opfsBlobs.removeEntry(node.id); } catch { /* already gone */ }
   }
+  // app entries have no blob
   await idbDel(node.id);
 }
 
@@ -229,10 +292,13 @@ export async function mv(src, dst) {
 
   const srcNode = await getNode(s);
   if (!srcNode) throw new Error('ENOENT: ' + src);
+  if (srcNode.protected) throw new Error('EPERM: cannot move protected entry');
 
   const { parent: dstParent, name: dstName } = splitPath(d);
   assertName(dstName);
   const dstPid = await dirId(dstParent);
+  const dstParentNode = await getNode(dstParent);
+  if (dstParentNode?.protected) throw new Error('EPERM: ' + dstParent + ' is read-only');
 
   if (srcNode.kind === 'dir' && d.startsWith(s + '/')) {
     throw new Error('EINVAL: cannot move a folder into itself');
@@ -250,6 +316,16 @@ async function copyNode(node, pid, name) {
   if (node.kind === 'dir') {
     await idbPut({ id, pid, name, kind: 'dir', mtime: Date.now() });
     for (const child of await idbIndexAll('pid', node.id)) await copyNode(child, id, child.name);
+  } else if (node.kind === 'app') {
+    // Copies of app shortcuts lose their protected flag — the copy is a
+    // user-owned reference, only the original in SYSTEM APPS is protected.
+    await idbPut({
+      id, pid, name, kind: 'app',
+      appId: node.appId,
+      protected: false,
+      size: 0,
+      mtime: Date.now()
+    });
   } else {
     const blob = await readBlob(node);
     await writeBlob(id, blob);
@@ -266,6 +342,8 @@ export async function cp(src, dst) {
   const { parent: dstParent, name: dstName } = splitPath(d);
   assertName(dstName);
   const dstPid = await dirId(dstParent);
+  const dstParentNode = await getNode(dstParent);
+  if (dstParentNode?.protected) throw new Error('EPERM: ' + dstParent + ' is read-only');
 
   if (srcNode.kind === 'dir' && d.startsWith(s + '/')) {
     throw new Error('EINVAL: cannot copy a folder into itself');
@@ -283,10 +361,9 @@ let capacityCache = { t: 0, v: DISK_CAPACITY_DEFAULT };
 async function diskCapacity() {
   const now = Date.now();
   if (now - capacityCache.t < 30000) return capacityCache.v;
-  
+
   let requested = DISK_CAPACITY_DEFAULT;
-  
-  // Read user preference from setup wizard
+
   try {
     const cfg = JSON.parse(localStorage.getItem('os16.config'));
     if (cfg && cfg.diskLimit) {
@@ -301,7 +378,7 @@ async function diskCapacity() {
       actual = Math.min(requested, est.quota);
     }
   } catch { /* estimate() unavailable: use the nominal size */ }
-  
+
   capacityCache = { t: now, v: actual };
   return actual;
 }
@@ -312,7 +389,8 @@ export async function usage() {
   for (const n of await wrap(nodes().getAll())) {
     if (n.id === 'root') continue;
     if (n.kind === 'dir') dirs++;
-    else { files++; used += n.size || 0; }
+    else if (n.kind === 'file') { files++; used += n.size || 0; }
+    // app entries take up no disk space and are not counted as files
   }
   const capacity = await diskCapacity();
   return { used, files, dirs, capacity, free: Math.max(0, capacity - used) };
@@ -369,10 +447,9 @@ export async function requestPersist() {
       console.error('Error requesting persist:', e);
     }
   }
-  
-  // Clear the cache so the next usage() call asks the browser for the new limit
+
   capacityCache = { t: 0, v: DISK_CAPACITY_DEFAULT };
-  
+
   const stats = await usage();
   return { granted, capacity: stats.capacity };
 }

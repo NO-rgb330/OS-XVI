@@ -177,6 +177,31 @@ export async function readEntry(blob, e) {
  * Build a ZIP (stored, no compression) from { 'path/name': Uint8Array }.
  * Names ending in "/" are folder entries. Dependency-free; no Zip64 (≤ 4 GB total).
  */
+/* ---- Store-vs-deflate classification ----
+   Files whose bytes are already compressed (media, archives, PDFs) should
+   be stored as-is: deflating them burns CPU for ~0% reduction. Text and
+   source files compress well and should be deflated at a fast level. */
+
+const STORED_EXT = new Set([
+  // video
+  'mp4', 'm4v', 'webm', 'ogv', 'mkv', 'mov', 'avi', 'flv', 'wmv',
+  // audio
+  'mp3', 'm4a', 'aac', 'ogg', 'oga', 'opus', 'flac', 'wav', 'weba',
+  // images (already-compressed formats)
+  'jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'heic', 'heif',
+  // archives
+  'zip', 'gz', 'tgz', 'rar', '7z', 'bz2', 'xz', 'zst', 'tar',
+  // misc binary
+  'pdf', 'docx', 'xlsx', 'pptx', 'epub', 'wasm', 'o', 'obj'
+]);
+
+/** True if a file's extension makes it a "store, don't deflate" candidate. */
+export function shouldStore(name) {
+  const dot = name.lastIndexOf('.');
+  if (dot < 0) return false;
+  return STORED_EXT.has(name.slice(dot + 1).toLowerCase());
+}
+
 export function buildZip(entries) {
   const enc = new TextEncoder();
   const d = new Date();

@@ -162,3 +162,57 @@
 .yt-panel-body p { margin: 0; line-height: 1.5; }
 .yt-panel-body label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; }
 .yt-panel-body textarea { font-family: var(--font-mono); font-size: 12px; resize: vertical; }
+
+/* ============================================================
+   v3: chips with icons, Popular / Latest bar, region, comments, Shorts
+   ============================================================ */
+.yt-chip { display: inline-flex; align-items: center; gap: 6px; }
+.yt-modebar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 4px 20px 6px; }
+.yt-modebar[hidden] { display: none; }
+@container yt (max-width: 640px) { .yt-modebar { padding: 4px 12px 6px; } }
+.yt-seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 18px; background: var(--surface-2); }
+.yt-seg-b { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border: 0; border-radius: 14px; background: transparent; color: var(--tx); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.yt-seg-b:hover:not(.active) { background: var(--shade-30); }
+.yt-seg-b.active { background: var(--ink); color: var(--ink-inv); }
+.yt-seg-b:focus-visible, .yt-region select:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+.yt-region { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 6px 0 12px; border-radius: 17px; background: var(--surface-2); color: var(--tx); }
+.yt-region select { height: 28px; max-width: 190px; border: 0; background: transparent; color: var(--tx); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.yt-region select option { background: var(--paper); color: var(--ink); }
+.yt-icon-btn.big { width: 44px; height: 44px; background: var(--surface-2); }
+.yt-icon-btn.big:hover:not(:disabled) { background: var(--shade-30); }
+
+/* comments */
+.yt-comments { margin-top: 24px; }
+.yt-c-head { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.yt-c-head h3 { margin: 0; font-size: 18px; font-weight: 700; }
+.yt-comment { display: flex; gap: 12px; margin-bottom: 18px; min-width: 0; }
+.yt-c-body { min-width: 0; flex: 1 1 auto; }
+.yt-c-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: 13px; }
+.yt-c-when { font-size: 12px; }
+.yt-c-pin { padding: 0 8px; border-radius: 10px; background: var(--surface-2); font-size: 11px; font-weight: 600; }
+.yt-c-text { margin-top: 3px; font-size: 14px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.yt-c-stats { margin-top: 4px; font-size: 12px; }
+.yt-c-foot { padding: 4px 0 24px; font-size: 13px; }
+
+/* shorts */
+.yt-shorts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; max-width: 1200px; margin: 0 auto; }
+.yt-short-card { position: relative; aspect-ratio: 9 / 16; border-radius: 12px; overflow: hidden; background: var(--shade-20); cursor: pointer; outline: none; }
+.yt-short-card:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.yt-short-card img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .2s; }
+.yt-short-card:hover img { transform: scale(1.04); }
+.yt-short-cap { position: absolute; left: 0; right: 0; bottom: 0; padding: 36px 10px 10px; background: linear-gradient(transparent, rgba(0,0,0,.85)); color: #fff; }
+.yt-short-title { font-size: 13px; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.yt-short-meta { margin-top: 3px; font-size: 11px; opacity: .8; }
+.yt-sk-short .yt-thumb { aspect-ratio: 9 / 16; border-radius: 12px; }
+.yt-shorts { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.yt-short-stage { display: flex; align-items: center; justify-content: center; gap: 16px; }
+.yt-short-player { position: relative; height: var(--yt-vh, 560px); aspect-ratio: 9 / 16; max-width: 100%; border-radius: 14px; overflow: hidden; background: #000; }
+.yt-short-player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.yt-short-nav { display: flex; flex-direction: column; gap: 12px; }
+.yt-short-info { width: min(100%, 560px); text-align: left; }
+.yt-short-info .yt-vtitle { margin-top: 0; font-size: 16px; }
+.yt-short-info .yt-chan-l { margin-top: 8px; }
+.yt-short-info .yt-vactions { margin: 10px 0 0; margin-left: 0; }
+@container yt (max-width: 520px) { .yt-short-stage { flex-direction: column; } .yt-short-nav { flex-direction: row; } }
+
+.yt-shorts:focus { outline: none; }

@@ -13,6 +13,64 @@
 import { iconHTML } from '../core/icons.js';
 import { esc } from '../core/util.js';
 
+// Icons and stylesheet travel with this file, so the app looks right even if index.html wasn't updated.
+const SYMBOLS = {
+  video: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5-4.5-2.5z" fill="currentColor"/>',
+  music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+  gamepad: '<rect x="2" y="7" width="20" height="11" rx="5"/><path d="M7 10v5M4.5 12.5h5"/><circle cx="15.5" cy="11.5" r=".9" fill="currentColor"/><circle cx="18" cy="14" r=".9" fill="currentColor"/>',
+  news: '<path d="M5 4h11v15a1 1 0 01-1 1H6a2 2 0 01-2-2V5a1 1 0 011-1z"/><path d="M16 8h3v10a2 2 0 01-2 2M8 8h5M8 12h5M8 16h5"/>',
+  live: '<circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M7.8 7.8a6 6 0 000 8.4M16.2 7.8a6 6 0 010 8.4M5 5a10 10 0 000 14M19 5a10 10 0 010 14"/>',
+  shorts: '<rect x="7" y="2.5" width="10" height="19" rx="3.5"/><path d="M11 9.5v5l4-2.5-4-2.5z" fill="currentColor"/>',
+  fire: '<path d="M12 3c.5 3.5 5 5.5 5 10.5a5 5 0 01-10 0c0-2.2 1.2-3.6 2.4-4.8.2 1.6.9 2.5 1.8 2.8C11 9 10.8 6 12 3z"/>',
+  comment: '<path d="M4 5a2 2 0 012-2h12a2 2 0 012 2v9a2 2 0 01-2 2H10l-5 4v-4H6a2 2 0 01-2-2V5z"/>'
+};
+function ensureAssets() {
+  try {
+    const missing = Object.entries(SYMBOLS).filter(([id]) => !document.getElementById('i-' + id));
+    if (missing.length) {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('aria-hidden', 'true');
+      svg.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
+      svg.innerHTML = missing.map(([id, d]) => `<symbol id="i-${id}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</symbol>`).join('');
+      document.body.appendChild(svg);
+    }
+    if (!document.querySelector('link[href$="css/youtube.css"]')) {
+      const l = document.createElement('link');
+      l.rel = 'stylesheet'; l.href = new URL('../../css/youtube.css', import.meta.url).href;
+      document.head.appendChild(l);
+    }
+  } catch { /* cosmetic only */ }
+}
+ensureAssets();
+
+// ---------- region (no location permission needed: time zone first, then browser language) ----------
+const REGIONS = ['US', 'GB', 'CA', 'AU', 'NZ', 'IE', 'SG', 'MY', 'ID', 'TH', 'PH', 'VN', 'HK', 'TW', 'JP', 'KR', 'IN', 'PK', 'BD', 'LK', 'NP', 'AE', 'SA', 'IL', 'TR', 'EG', 'NG', 'KE', 'ZA', 'MA',
+  'FR', 'DE', 'ES', 'IT', 'PT', 'NL', 'BE', 'CH', 'AT', 'SE', 'NO', 'DK', 'FI', 'PL', 'CZ', 'HU', 'RO', 'GR', 'UA', 'RU', 'MX', 'BR', 'AR', 'CO', 'PE', 'CL'];
+const TZ = {
+  'Asia/Singapore': 'SG', 'Asia/Kuala_Lumpur': 'MY', 'Asia/Kuching': 'MY', 'Asia/Jakarta': 'ID', 'Asia/Makassar': 'ID', 'Asia/Jayapura': 'ID', 'Asia/Bangkok': 'TH', 'Asia/Manila': 'PH',
+  'Asia/Ho_Chi_Minh': 'VN', 'Asia/Saigon': 'VN', 'Asia/Hong_Kong': 'HK', 'Asia/Taipei': 'TW', 'Asia/Tokyo': 'JP', 'Asia/Seoul': 'KR', 'Asia/Kolkata': 'IN', 'Asia/Calcutta': 'IN',
+  'Asia/Karachi': 'PK', 'Asia/Dhaka': 'BD', 'Asia/Colombo': 'LK', 'Asia/Kathmandu': 'NP', 'Asia/Dubai': 'AE', 'Asia/Riyadh': 'SA', 'Asia/Jerusalem': 'IL', 'Asia/Tel_Aviv': 'IL',
+  'Europe/London': 'GB', 'Europe/Dublin': 'IE', 'Europe/Paris': 'FR', 'Europe/Berlin': 'DE', 'Europe/Madrid': 'ES', 'Europe/Rome': 'IT', 'Europe/Lisbon': 'PT', 'Europe/Amsterdam': 'NL',
+  'Europe/Brussels': 'BE', 'Europe/Zurich': 'CH', 'Europe/Vienna': 'AT', 'Europe/Stockholm': 'SE', 'Europe/Oslo': 'NO', 'Europe/Copenhagen': 'DK', 'Europe/Helsinki': 'FI',
+  'Europe/Warsaw': 'PL', 'Europe/Prague': 'CZ', 'Europe/Budapest': 'HU', 'Europe/Bucharest': 'RO', 'Europe/Athens': 'GR', 'Europe/Istanbul': 'TR', 'Europe/Kiev': 'UA', 'Europe/Kyiv': 'UA',
+  'Europe/Moscow': 'RU', 'Africa/Cairo': 'EG', 'Africa/Lagos': 'NG', 'Africa/Nairobi': 'KE', 'Africa/Johannesburg': 'ZA', 'Africa/Casablanca': 'MA', 'Pacific/Auckland': 'NZ',
+  'America/Toronto': 'CA', 'America/Vancouver': 'CA', 'America/Edmonton': 'CA', 'America/Winnipeg': 'CA', 'America/Halifax': 'CA', 'America/Montreal': 'CA',
+  'America/Mexico_City': 'MX', 'America/Sao_Paulo': 'BR', 'America/Argentina/Buenos_Aires': 'AR', 'America/Buenos_Aires': 'AR', 'America/Bogota': 'CO', 'America/Lima': 'PE', 'America/Santiago': 'CL',
+  'America/New_York': 'US', 'America/Chicago': 'US', 'America/Denver': 'US', 'America/Los_Angeles': 'US', 'America/Phoenix': 'US', 'America/Anchorage': 'US', 'America/Detroit': 'US', 'Pacific/Honolulu': 'US'
+};
+export function detectRegion() {
+  let tz = '';
+  try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch { /* no Intl */ }
+  const fromTz = TZ[tz] || (tz.startsWith('Australia/') ? 'AU' : '');
+  if (fromTz && REGIONS.includes(fromTz)) return fromTz;
+  for (const l of (navigator.languages || [navigator.language || ''])) {
+    const m = /-([A-Za-z]{2})\b/.exec(l || '');
+    if (m && REGIONS.includes(m[1].toUpperCase())) return m[1].toUpperCase();
+  }
+  return 'US';
+}
+const AUTO_REGION = detectRegion();
+
 const KEY = 'os16.yt.v1';
 const RECENT_KEY = 'os16.yt.recent';
 const SIDE_KEY = 'os16.yt.side';
@@ -27,7 +85,8 @@ const DEFAULTS = {
   invidious: ['https://inv.nadeko.net', 'https://invidious.nerdvpn.de', 'https://yt.chocolatemoo53.com'],
   piped: ['https://pipedapi.kavin.rocks', 'https://pipedapi.leptons.xyz', 'https://pipedapi.adminforge.de'],
   proxies: ['https://corsproxy.io/?url=', 'https://api.allorigins.win/raw?url='],
-  player: 'youtube'                       // 'youtube' (youtube-nocookie embed) | 'invidious'
+  player: 'youtube',                      // 'youtube' (youtube-nocookie embed) | 'invidious'
+  region: 'auto'                          // 'auto' = detected from time zone / language, or a 2-letter code
 };
 
 const cleanList = (v, fallback, keepTail = false) => {
@@ -49,7 +108,8 @@ function loadCfg() {
     invidious: cleanList(s.invidious, DEFAULTS.invidious),
     piped: cleanList(s.piped, DEFAULTS.piped),
     proxies: cleanList(s.proxies, DEFAULTS.proxies, true),
-    player: s.player === 'invidious' ? 'invidious' : 'youtube'
+    player: s.player === 'invidious' ? 'invidious' : 'youtube',
+    region: REGIONS.includes(s.region) ? s.region : 'auto'
   };
 }
 
@@ -156,6 +216,7 @@ export const youtubeApp = {
     const hist = []; let pos = -1;
     let ctl = null, nav = 0;
     const cache = new Map();
+    let feedMode = 'popular';              // Popular | Latest for Home and the category pages
     const lastKind = {};                   // op name → tier that last answered
 
     const sideCollapsed = (() => { try { return localStorage.getItem(SIDE_KEY) === '1'; } catch { return false; } })();
@@ -185,6 +246,7 @@ export const youtubeApp = {
           <nav class="yt-side${sideCollapsed ? ' mini' : ''}" id="yt-side" aria-label="Browse"></nav>
           <div class="yt-scroll" id="yt-scroll">
             <div class="yt-chips" id="yt-chips" hidden></div>
+            <div class="yt-modebar" id="yt-modebar" hidden></div>
             <div class="yt-view" id="yt-view"></div>
           </div>
         </div>
@@ -233,14 +295,14 @@ export const youtubeApp = {
     // ---------- normalisers ----------
     const normInv = (v) => {
       if (!v || (v.type && v.type !== 'video') || !ID_RE.test(v.videoId || '')) return null;
-      return { id: v.videoId, title: v.title || 'Untitled', author: v.author || '', views: v.viewCount ?? null, when: v.publishedText || '', dur: v.lengthSeconds, live: !!v.liveNow };
+      return { id: v.videoId, title: v.title || 'Untitled', author: v.author || '', views: v.viewCount ?? null, when: v.publishedText || '', dur: v.lengthSeconds, live: !!v.liveNow, ts: v.published > 0 ? v.published * 1000 : 0 };
     };
     const normPiped = (v) => {
       if (!v || (v.type && v.type !== 'stream')) return null;
       let id = null;
       try { id = new URL(v.url || '', 'https://x.invalid').searchParams.get('v'); } catch { /* bad url */ }
       if (!ID_RE.test(id || '')) return null;
-      return { id, title: v.title || 'Untitled', author: v.uploaderName || '', views: v.views ?? null, when: v.uploadedDate || '', dur: v.duration, live: v.duration === -1 };
+      return { id, title: v.title || 'Untitled', author: v.uploaderName || '', views: v.views ?? null, when: v.uploadedDate || '', dur: v.duration, live: v.duration === -1, ts: v.uploaded > 0 ? v.uploaded : 0 };
     };
     const list = (arr, fn) => (Array.isArray(arr) ? arr.map(fn).filter(Boolean) : null);
 
@@ -277,23 +339,31 @@ export const youtubeApp = {
 
     // ---------- data operations ----------
     const enc = encodeURIComponent;
-    const opSearch = (text, page = 1) => ({
-      inv: async (b, s) => { const a = list(await getJson(`${b}/api/v1/search?q=${enc(text)}&type=video&page=${page}`, s), normInv); if (!a) throw new Error('unexpected reply'); return a; },
-      piped: page > 1 ? null : async (b, s) => { const j = await getJson(`${b}/search?q=${enc(text)}&filter=videos`, s); const a = list(j.items, normPiped); if (!a) throw new Error('unexpected reply'); return a; },
-      scrape: page > 1 ? null : async (p, s) => parseResultsPage(await getText(`${p}${enc(`https://www.youtube.com/results?search_query=${enc(text)}&sp=EgIQAQ%3D%3D&hl=en`)}`, s, 9000))
+    const region = () => (cfg.region === 'auto' ? AUTO_REGION : cfg.region);
+    const regionName = (c) => { try { return new Intl.DisplayNames(['en'], { type: 'region' }).of(c) || c; } catch { return c; } };
+    const SORT_INV = { relevance: 'relevance', popular: 'view_count', latest: 'upload_date' };
+    const SORT_SP = { relevance: 'EgIQAQ%3D%3D', popular: 'CAMSAhAB', latest: 'CAISAhAB' };     // YouTube's own "sp" filter codes
+    const sortLocal = (arr, sort) => (sort === 'latest' ? [...arr].sort((a, b) => (b.ts || 0) - (a.ts || 0)) : sort === 'popular' ? [...arr].sort((a, b) => (+b.views || 0) - (+a.views || 0)) : arr);
+
+    const invSearchUrl = (b, text, o) => `${b}/api/v1/search?q=${enc(text)}&type=video&page=${o.page || 1}&sort_by=${SORT_INV[o.sort || 'relevance']}${o.date ? `&date=${o.date}` : ''}${o.live ? '&features=live' : ''}&region=${region()}`;
+    /** o: { page, sort: relevance|popular|latest, date, live } */
+    const opSearch = (text, o = {}) => ({
+      inv: async (b, s) => { const a = list(await getJson(invSearchUrl(b, text, o), s), normInv); if (!a) throw new Error('unexpected reply'); return a; },
+      piped: (o.page > 1 || o.live) ? null : async (b, s) => { const j = await getJson(`${b}/search?q=${enc(text)}&filter=videos`, s); const a = list(j.items, normPiped); if (!a) throw new Error('unexpected reply'); return sortLocal(a, o.sort); },
+      scrape: o.page > 1 ? null : async (p, s) => parseResultsPage(await getText(`${p}${enc(`https://www.youtube.com/results?search_query=${enc(text)}&sp=${o.live ? 'EgJAAQ%3D%3D' : SORT_SP[o.sort || 'relevance']}&hl=en&gl=${region()}`)}`, s, 9000))
     });
     const opSuggest = (text) => ({
       inv: async (b, s) => { const j = await getJson(`${b}/api/v1/search/suggestions?q=${enc(text)}`, s, 4000); if (!Array.isArray(j?.suggestions)) throw new Error('unexpected reply'); return j.suggestions.map(String); },
       piped: async (b, s) => { const j = await getJson(`${b}/suggestions?query=${enc(text)}`, s, 4000); if (!Array.isArray(j)) throw new Error('unexpected reply'); return j.map(String); },
       scrape: async (p, s) => {
-        const j = JSON.parse(await getText(`${p}${enc(`https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q=${enc(text)}`)}`, s, 4000));
+        const j = JSON.parse(await getText(`${p}${enc(`https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&gl=${region()}&q=${enc(text)}`)}`, s, 4000));
         if (!Array.isArray(j?.[1])) throw new Error('unexpected reply');
         return j[1].map(String);
       }
     });
     const opTrending = () => ({
-      inv: async (b, s) => { const a = list(await getJson(`${b}/api/v1/trending`, s), normInv); if (!a?.length) throw new Error('no trending data'); return a; },
-      piped: async (b, s) => { const a = list(await getJson(`${b}/trending?region=US`, s), normPiped); if (!a?.length) throw new Error('no trending data'); return a; }
+      inv: async (b, s) => { const a = list(await getJson(`${b}/api/v1/trending?region=${region()}`, s), normInv); if (!a?.length) throw new Error('no trending data'); return a; },
+      piped: async (b, s) => { const a = list(await getJson(`${b}/trending?region=${region()}`, s), normPiped); if (!a?.length) throw new Error('no trending data'); return a; }
     });
     const opDetails = (id) => ({
       inv: async (b, s) => {
@@ -307,6 +377,27 @@ export const youtubeApp = {
         return { title: j.title, author: j.uploader, views: j.views, likes: j.likes, when: j.uploadDate, desc: htmlToText(j.description), related: list(j.relatedStreams, normPiped) || [] };
       }
     });
+    const normCommentInv = (c) => (c && (c.content || c.contentHtml) ? { author: c.author || 'Unknown', text: c.content ? String(c.content) : htmlToText(c.contentHtml), likes: +c.likeCount || 0, when: c.publishedText || '', replies: +c.replies?.replyCount || 0, pinned: !!c.isPinned } : null);
+    const normCommentPiped = (c) => (c && c.commentText ? { author: String(c.author || 'Unknown').replace(/^@/, ''), text: htmlToText(c.commentText), likes: +c.likeCount || 0, when: c.commentedTime || '', replies: +c.replyCount || 0, pinned: !!c.pinned } : null);
+    const opComments = (id) => ({
+      inv: async (b, s) => {
+        const j = await getJson(`${b}/api/v1/comments/${id}`, s, 9000);
+        const items = list(j.comments, normCommentInv);
+        if (!items) throw new Error('comments unavailable');
+        return { items, count: j.commentCount ?? null, token: j.continuation || '' };
+      },
+      piped: async (b, s) => {
+        const j = await getJson(`${b}/comments/${id}`, s, 9000);
+        const items = list(j.comments, normCommentPiped);
+        if (!items || j.disabled) throw new Error('comments unavailable');
+        return { items, count: j.commentCount > 0 ? j.commentCount : null, token: j.nextpage || '' };
+      }
+    });
+    const moreComments = async (r, id, token, signal) => {
+      if (r.kind === 'inv') { const j = await getJson(`${r.b}/api/v1/comments/${id}?continuation=${enc(token)}`, signal, 9000); return { items: list(j.comments, normCommentInv) || [], token: j.continuation || '' }; }
+      const j = await getJson(`${r.b}/nextpage/comments/${id}?nextpage=${enc(token)}`, signal, 9000);
+      return { items: list(j.comments, normCommentPiped) || [], token: j.nextpage || '' };
+    };
 
     // ---------- history ----------
     const syncNav = () => { btnBack.disabled = pos <= 0; btnFwd.disabled = pos >= hist.length - 1; };
@@ -315,8 +406,11 @@ export const youtubeApp = {
       syncNav(); show(entry);
     }
     function step(d) { const n = pos + d; if (n < 0 || n >= hist.length) return; pos = n; syncNav(); show(hist[pos]); }
-    const goHome = () => go({ type: 'home' });
-    const goSearch = (text) => go({ type: 'search', q: text });
+    const replaceEntry = (e) => { hist[pos] = e; show(e); };
+    const goHome = (sort) => go({ type: 'home', sort: sort || feedMode });
+    const goSearch = (text, extra = {}) => go({ type: 'search', q: text, sort: 'relevance', ...extra });
+    const goShorts = () => go({ type: 'shorts' });
+    const goShort = (id, title, author) => go({ type: 'shorts', id, title, author });
     const goWatch = (id, title, author) => go({ type: 'watch', id, title, author });
 
     function submit(raw) {
@@ -324,6 +418,7 @@ export const youtubeApp = {
       if (!t) return;
       if (looksLikeLink(t) || isBareId(t)) {
         const id = parseVideoId(t);
+        if (id && /\/shorts\//i.test(t)) return goShort(id);
         if (id) return goWatch(id);
         if (looksLikeLink(t)) return toast('That link doesn’t look like a YouTube video.');
       }
@@ -332,15 +427,16 @@ export const youtubeApp = {
     }
     const toast = (m) => { setStatus(m); };
 
-    // ---------- sidebar + category chips ----------
-    const NAVS = [['home', 'Home', null], ['music', 'Music', 'music'], ['gamepad', 'Gaming', 'gaming'], ['news', 'News', 'news'], ['live', 'Live', 'live'], ['book', 'Learning', 'learning']];
+    // ---------- sidebar + category chips + sort/region bar ----------
+    const NAVS = [['home', 'Home', 'home'], ['shorts', 'Shorts', 'shorts'], ['music', 'Music', 'music'], ['gamepad', 'Gaming', 'gaming'], ['news', 'News', 'news'], ['live', 'Live', 'live'], ['book', 'Learning', 'learning']];
+    const openCategory = (key) => (key === 'home' ? goHome() : key === 'shorts' ? goShorts() : goSearch(key, { cat: true, sort: feedMode }));
     side.innerHTML = '';
-    for (const [icon, label, term] of NAVS) {
+    for (const [icon, label, key] of NAVS) {
       const b = document.createElement('button');
-      b.type = 'button'; b.className = 'yt-nav'; b.dataset.term = term || '';
+      b.type = 'button'; b.className = 'yt-nav'; b.dataset.key = key;
       b.innerHTML = `${iconHTML(icon, 20)}<span></span>`;
       b.querySelector('span').textContent = label;
-      b.addEventListener('click', () => (term ? goSearch(term) : goHome()));
+      b.addEventListener('click', () => openCategory(key));
       side.append(b);
     }
     const sep = document.createElement('div'); sep.className = 'yt-nav-sep'; side.append(sep);
@@ -349,24 +445,53 @@ export const youtubeApp = {
     navSet.innerHTML = `${iconHTML('settings', 20)}<span>Sources</span>`;
     navSet.addEventListener('click', () => openSettings());
     side.append(navSet);
+    const keyOf = (entry) => (entry.type === 'home' ? 'home' : entry.type === 'shorts' ? 'shorts' : entry.type === 'search' && entry.cat ? entry.q.toLowerCase() : null);
     function markNav(entry) {
-      const term = entry.type === 'search' ? entry.q.toLowerCase() : entry.type === 'home' ? '' : null;
-      side.querySelectorAll('.yt-nav[data-term]').forEach((b) => b.classList.toggle('active', term !== null && b.dataset.term === term));
+      const k = keyOf(entry);
+      side.querySelectorAll('.yt-nav[data-key]').forEach((b) => b.classList.toggle('active', k !== null && b.dataset.key === k));
     }
-    const CHIPS = ['All', 'Music', 'Gaming', 'Live', 'News', 'Sports', 'Podcasts', 'Cooking', 'Coding', 'Science', 'Comedy', 'Movies', 'Learning'];
-    function showChips(entry) {
-      const active = entry.type === 'search' ? entry.q.toLowerCase() : entry.type === 'home' ? 'all' : null;
+    const CHIPS = [['All', null, 'home'], ['Shorts', 'shorts', 'shorts'], ['Music', 'music', 'music'], ['Gaming', 'gamepad', 'gaming'], ['Live', 'live', 'live'], ['News', 'news', 'news'], ['Sports', null, 'sports'],
+      ['Podcasts', null, 'podcasts'], ['Cooking', null, 'cooking'], ['Coding', null, 'coding'], ['Science', null, 'science'], ['Comedy', null, 'comedy'], ['Movies', null, 'movies'], ['Learning', null, 'learning']];
+    const modebar = $('#yt-modebar');
+
+    /** Chips on Home, categories and search; the Popular / Latest (or Relevant) switch and region picker under them. */
+    function renderBars(entry, withModes = true) {
+      const active = keyOf(entry);
       chipsEl.hidden = false; chipsEl.innerHTML = '';
-      for (const c of CHIPS) {
+      for (const [label, icon, key] of CHIPS) {
         const b = document.createElement('button');
-        b.type = 'button'; b.className = 'yt-chip'; b.textContent = c;
-        const on = c.toLowerCase() === active;
+        b.type = 'button'; b.className = 'yt-chip';
+        if (icon) b.innerHTML = iconHTML(icon, 16);
+        b.append(label);
+        const on = key === active;
         b.classList.toggle('active', on); b.setAttribute('aria-pressed', String(on));
-        b.addEventListener('click', () => (c === 'All' ? goHome() : goSearch(c.toLowerCase())));
+        b.addEventListener('click', () => openCategory(key));
         chipsEl.append(b);
       }
+      modebar.innerHTML = '';
+      modebar.hidden = !withModes;
+      if (!withModes) return;
+      const isFeed = entry.type === 'home' || (entry.type === 'search' && entry.cat);
+      const modes = isFeed ? [['popular', 'Popular', 'fire'], ['latest', 'Latest', 'clock']] : [['relevance', 'Relevant', 'search'], ['latest', 'Latest', 'clock'], ['popular', 'Popular', 'fire']];
+      const cur = entry.sort || (isFeed ? feedMode : 'relevance');
+      const seg_ = document.createElement('div'); seg_.className = 'yt-seg'; seg_.setAttribute('role', 'group'); seg_.setAttribute('aria-label', 'Order');
+      for (const [k, label, icon] of modes) {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'yt-seg-b'; b.innerHTML = `${iconHTML(icon, 15)}<span></span>`; b.querySelector('span').textContent = label;
+        b.classList.toggle('active', k === cur); b.setAttribute('aria-pressed', String(k === cur));
+        b.addEventListener('click', () => { if (k === cur) return; if (isFeed) feedMode = k; replaceEntry({ ...entry, sort: k }); });
+        seg_.append(b);
+      }
+      const reg = document.createElement('label'); reg.className = 'yt-region';
+      reg.innerHTML = `${iconHTML('web', 16)}<select aria-label="Region" title="Region for trending and search results"></select>`;
+      const sel = reg.querySelector('select');
+      sel.add(new Option(`Auto · ${regionName(AUTO_REGION)}`, 'auto'));
+      [...REGIONS].sort((a, b) => regionName(a).localeCompare(regionName(b))).forEach((c) => sel.add(new Option(regionName(c), c)));
+      sel.value = cfg.region;
+      sel.addEventListener('change', () => { cfg.region = sel.value; persist(); cache.clear(); sugCache.clear(); show(hist[pos]); });
+      modebar.append(seg_, reg);
     }
-    const hideChips = () => { chipsEl.hidden = true; chipsEl.innerHTML = ''; };
+    const hideChips = () => { chipsEl.hidden = true; chipsEl.innerHTML = ''; modebar.hidden = true; modebar.innerHTML = ''; };
 
     // ---------- views ----------
     function begin() { ctl?.abort(); ctl = new AbortController(); return { my: ++nav, signal: ctl.signal }; }
@@ -454,38 +579,51 @@ export const youtubeApp = {
       setStatus('Search unavailable');
     }
 
-    async function showHome() {
+    const catTerm = (entry) => {
+      if (!entry.cat) return entry.q;
+      const n = regionName(region()), k = entry.q.toLowerCase();
+      return k === 'news' ? `${n} news` : k === 'music' ? `${n} music` : k === 'sports' ? `${n} sports` : entry.q;      // local flavour for the categories where it makes sense
+    };
+
+    async function showHome(entry) {
       const { my, signal } = begin();
+      const sort = entry.sort || 'popular';
       ctx.setTitle('YouTube');
-      showChips({ type: 'home' });
+      renderBars(entry);
       skeleton('grid');
       setStatus('Looking for a working source…');
       try {
-        const r = cache.get('home') || await chain(opTrending(), signal);
+        const key = 'home:' + region();
+        const r = cache.get(key) || await chain(opTrending(), signal);
         if (stale(my)) return;
-        cache.set('home', r);
+        cache.set(key, r);
+        const items = sort === 'latest' ? sortLocal(r.v, 'latest') : r.v;      // Popular = the order the service ranks them in
         view.innerHTML = '';
-        view.append(grid(r.v));
-        setStatus(`Showing ${r.v.length} videos via ${r.label}`);
+        view.append(grid(items));
+        const noTime = sort === 'latest' && !r.v.some((v) => v.ts);
+        setStatus(`${sort === 'latest' ? 'Newest of what’s trending' : 'Popular'} in ${regionName(region())} · ${items.length} videos via ${r.label}${noTime ? ' · upload times unavailable' : ''}`);
       } catch (e) {
         if (e.aborted || stale(my)) return;
         hideChips();
-        unavailable(e, showHome);
+        unavailable(e, () => showHome(entry));
       }
       scroller.scrollTop = 0;
     }
 
     async function showSearch(entry) {
       const { my, signal } = begin();
+      const sort = entry.sort || 'relevance';
+      const term = catTerm(entry);
+      const o = { sort, date: entry.cat && sort === 'popular' ? 'month' : '', live: entry.cat && entry.q.toLowerCase() === 'live' };
       ctx.setTitle(`${entry.q} — YouTube`);
-      showChips(entry);
+      renderBars(entry);
       skeleton('row', 7);
       setStatus('Looking for a working source…');
       try {
-        const key = 's:' + entry.q;
-        const r = cache.get(key) || await chain(opSearch(entry.q), signal);
+        const key = `s:${region()}:${sort}:${o.live ? 'L' : ''}${o.date}:${term}`;
+        const r = cache.get(key) || await chain(opSearch(term, o), signal);
         if (stale(my)) return;
-        cache.set(key, r); if (cache.size > 30) cache.delete(cache.keys().next().value);
+        cache.set(key, r); if (cache.size > 40) cache.delete(cache.keys().next().value);
         view.innerHTML = '';
         const h = document.createElement('h2'); h.className = 'yt-h yt-sr'; h.textContent = `Results for “${entry.q}”`;
         view.append(h);
@@ -497,7 +635,7 @@ export const youtubeApp = {
           more.addEventListener('click', async () => {
             more.disabled = true; more.textContent = 'Loading…';
             try {
-              const a = await getJson(`${r.b}/api/v1/search?q=${enc(entry.q)}&type=video&page=${page + 1}`, signal);
+              const a = await getJson(invSearchUrl(r.b, term, { ...o, page: page + 1 }), signal);
               const items = (list(a, normInv) || []).filter((v) => !seen.has(v.id));
               if (stale(my)) return;
               page++; items.forEach((v) => { seen.add(v.id); g.append(card(v, 'row')); });
@@ -506,7 +644,7 @@ export const youtubeApp = {
           });
           view.append(more);
         }
-        setStatus(`${r.v.length} results via ${r.label}`);
+        setStatus(`${r.v.length} results via ${r.label}${r.kind === 'piped' && sort !== 'relevance' ? ' · sorted here' : ''}`);
       } catch (e) {
         if (e.aborted || stale(my)) return;
         unavailable(e, () => showSearch(entry));
@@ -514,9 +652,103 @@ export const youtubeApp = {
       scroller.scrollTop = 0;
     }
 
-    const playerSrc = (id) => cfg.player === 'invidious'
-      ? `${order(cfg.invidious)[0] || DEFAULTS.invidious[0]}/embed/${id}?autoplay=1`
-      : `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`;
+    // ---------- Shorts ----------
+    async function loadShorts(signal) {
+      const key = 'shorts:' + region();
+      if (cache.has(key)) return cache.get(key);
+      const r = await chain(opSearch('#shorts', { sort: 'popular', date: 'week' }), signal);
+      let items = r.v.filter((v) => !v.live && v.dur > 0 && v.dur <= 90);
+      if (items.length < 6) items = r.v.filter((v) => !v.live && v.dur > 0 && v.dur <= 180);
+      const out = { v: items, label: r.label };
+      cache.set(key, out);
+      return out;
+    }
+    function shortCard(v) {
+      const el = document.createElement('article');
+      el.className = 'yt-short-card'; el.tabIndex = 0; el.setAttribute('role', 'link'); el.setAttribute('aria-label', v.title);
+      const img = document.createElement('img');
+      img.src = thumb(v.id); img.alt = ''; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer';
+      img.addEventListener('error', () => img.remove());
+      const cap = div('yt-short-cap'); cap.append(div('yt-short-title', v.title), div('yt-short-meta', v.viewsText || fmtViews(v.views)));
+      el.append(img, cap);
+      const open = () => goShort(v.id, v.title, v.author);
+      el.addEventListener('click', open);
+      el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+      return el;
+    }
+    let shortsRO = null;
+    async function showShorts(entry) {
+      const { my, signal } = begin();
+      shortsRO?.disconnect(); shortsRO = null;
+      ctx.setTitle('Shorts — YouTube');
+      if (!entry.id) {
+        renderBars(entry, false);
+        view.innerHTML = `<div class="yt-shorts-grid" aria-busy="true">${'<div class="yt-sk-card yt-sk-short" aria-hidden="true"><div class="yt-thumb"></div></div>'.repeat(10)}</div>`;
+        setStatus('Looking for a working source…');
+        try {
+          const r = await loadShorts(signal);
+          if (stale(my)) return;
+          if (!r.v.length) { view.innerHTML = '<div class="app-empty"><div><strong>No Shorts found right now</strong></div><div class="muted">Try again in a moment.</div></div>'; setStatus('No Shorts'); return; }
+          const g = div('yt-shorts-grid'); r.v.forEach((v) => g.append(shortCard(v)));
+          view.innerHTML = ''; view.append(g);
+          setStatus(`${r.v.length} Shorts via ${r.label}`);
+        } catch (e) { if (e.aborted || stale(my)) return; hideChips(); unavailable(e, () => showShorts(entry)); }
+        scroller.scrollTop = 0;
+        return;
+      }
+      hideChips();
+      const id = entry.id;
+      view.innerHTML = `
+        <div class="yt-shorts">
+          <div class="yt-short-stage">
+            <div class="yt-short-player" id="yt-sp"></div>
+            <div class="yt-short-nav">
+              <button type="button" class="yt-icon-btn big" id="yt-sprev" aria-label="Previous Short" title="Previous (↑)" disabled>${iconHTML('chevron-down', 22)}</button>
+              <button type="button" class="yt-icon-btn big" id="yt-snext" aria-label="Next Short" title="Next (↓)" disabled>${iconHTML('chevron-down', 22)}</button>
+            </div>
+          </div>
+          <div class="yt-short-info">
+            <h1 class="yt-vtitle" id="yt-stitle"></h1>
+            <div class="yt-chan-l" id="yt-sch" hidden></div>
+            <div class="yt-vactions"><a class="yt-pill" id="yt-sext" target="_blank" rel="noopener noreferrer">Open on YouTube</a><button type="button" class="yt-pill" id="yt-sall">All Shorts</button></div>
+          </div>
+        </div>`;
+      const player = view.querySelector('#yt-sp');
+      const f = document.createElement('iframe');
+      f.src = playerSrc(id, true); f.title = 'Short';
+      f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen'; f.allowFullscreen = true;
+      f.referrerPolicy = 'strict-origin-when-cross-origin';
+      f.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox');
+      player.append(f);
+      view.querySelector('#yt-stitle').textContent = entry.title || 'Short';
+      if (entry.author) { const c = view.querySelector('#yt-sch'); c.hidden = false; const n = document.createElement('span'); n.className = 'yt-chan-name'; n.textContent = entry.author; c.append(avatar(entry.author), n); }
+      view.querySelector('#yt-sext').href = `https://www.youtube.com/shorts/${id}`;
+      view.querySelector('#yt-sall').addEventListener('click', goShorts);
+      const fit = () => { view.style.setProperty('--yt-vh', Math.max(340, scroller.clientHeight - 150) + 'px'); };
+      fit();
+      if (typeof ResizeObserver === 'function') { shortsRO = new ResizeObserver(fit); shortsRO.observe(scroller); }
+      scroller.scrollTop = 0;
+      const stageEl = view.querySelector('.yt-shorts'); stageEl.tabIndex = -1; stageEl.focus({ preventScroll: true });   // so ↑ ↓ work right away
+      setStatus('Playing Short');
+      try {
+        const r = await loadShorts(signal);
+        if (stale(my)) return;
+        const items = r.v.some((v) => v.id === id) ? r.v : [{ id, title: entry.title || 'Short', author: entry.author || '' }, ...r.v];
+        const i = items.findIndex((v) => v.id === id);
+        const to = (j) => { const v = items[j]; if (v) replaceEntry({ type: 'shorts', id: v.id, title: v.title, author: v.author }); };
+        const prev = view.querySelector('#yt-sprev'), next = view.querySelector('#yt-snext');
+        prev.disabled = i <= 0; next.disabled = i >= items.length - 1;
+        prev.querySelector('svg').style.transform = 'rotate(180deg)';
+        prev.addEventListener('click', () => to(i - 1)); next.addEventListener('click', () => to(i + 1));
+        shortNav = { prev: () => i > 0 && to(i - 1), next: () => i < items.length - 1 && to(i + 1) };
+        setStatus(`Playing Short · ${i + 1} of ${items.length} via ${r.label}`);
+      } catch (e) { if (!e.aborted && !stale(my)) setStatus('Playing Short · more Shorts unavailable'); }
+    }
+    let shortNav = null;
+
+    const playerSrc = (id, loop) => cfg.player === 'invidious'
+      ? `${order(cfg.invidious)[0] || DEFAULTS.invidious[0]}/embed/${id}?autoplay=1${loop ? '&loop=1' : ''}`
+      : `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0${loop ? `&loop=1&playlist=${id}` : ''}`;
 
     async function showWatch(entry) {
       const { my, signal } = begin();
@@ -537,6 +769,11 @@ export const youtubeApp = {
               </div>
             </div>
             <div class="yt-desc" id="yt-desc" hidden><div class="yt-desc-stats" id="yt-desc-stats"></div><div class="yt-desc-text" id="yt-desc-text"></div></div>
+            <section class="yt-comments" id="yt-comments" aria-label="Comments">
+              <div class="yt-c-head">${iconHTML('comment', 18)}<h3>Comments</h3><span class="muted" id="yt-c-count"></span></div>
+              <div id="yt-c-list"></div>
+              <div class="yt-c-foot" id="yt-c-foot"></div>
+            </section>
           </div>
           <aside class="yt-related" id="yt-related" aria-label="Related videos">${skeletonHTML('side').repeat(6)}</aside>
         </div>`;
@@ -569,6 +806,62 @@ export const youtubeApp = {
       });
       scroller.scrollTop = 0;
       setStatus('Playing · loading details…');
+
+      // comments load when you scroll to them
+      const cWrap = view.querySelector('#yt-comments'), cList = view.querySelector('#yt-c-list'), cFoot = view.querySelector('#yt-c-foot'), cCount = view.querySelector('#yt-c-count');
+      const commentEl = (c) => {
+        const el = div('yt-comment');
+        const bodyEl = div('yt-c-body');
+        const meta = div('yt-c-meta');
+        const who = document.createElement('strong'); who.textContent = c.author;
+        meta.append(who);
+        if (c.pinned) meta.append(div('yt-c-pin', 'Pinned'));
+        if (c.when) meta.append(div('yt-c-when muted', c.when));
+        const foot = [c.likes ? `${compact.format(c.likes)} likes` : '', c.replies ? `${c.replies} ${c.replies === 1 ? 'reply' : 'replies'}` : ''].filter(Boolean).join(' · ');
+        bodyEl.append(meta, div('yt-c-text', c.text), ...(foot ? [div('yt-c-stats muted', foot)] : []));
+        el.append(avatar(c.author), bodyEl);
+        return el;
+      };
+      const loadComments = async () => {
+        cFoot.innerHTML = '<span class="muted">Loading comments…</span>';
+        try {
+          const r = cache.get('c:' + id) || await chain(opComments(id), signal);
+          if (stale(my)) return;
+          cache.set('c:' + id, r);
+          cList.innerHTML = ''; cFoot.innerHTML = '';
+          if (r.v.count) cCount.textContent = compact.format(r.v.count);
+          if (!r.v.items.length) { cFoot.innerHTML = '<span class="muted">No comments yet.</span>'; return; }
+          r.v.items.forEach((c) => cList.append(commentEl(c)));
+          let token = r.v.token;
+          const showMore = () => {
+            cFoot.innerHTML = '';
+            if (!token) return;
+            const b = document.createElement('button'); b.type = 'button'; b.className = 'yt-pill'; b.textContent = 'Show more comments';
+            b.addEventListener('click', async () => {
+              b.disabled = true; b.textContent = 'Loading…';
+              try {
+                const m = await moreComments(r, id, token, signal);
+                if (stale(my)) return;
+                m.items.forEach((c) => cList.append(commentEl(c)));
+                token = m.items.length ? m.token : '';
+                showMore();
+              } catch (e) { if (!e.aborted) { b.disabled = false; b.textContent = 'Couldn’t load more — try again'; } }
+            });
+            cFoot.append(b);
+          };
+          showMore();
+        } catch (e) {
+          if (e.aborted || stale(my)) return;
+          cFoot.innerHTML = '<span class="muted">Comments are turned off or couldn’t be loaded.</span> ';
+          const b = document.createElement('button'); b.type = 'button'; b.className = 'yt-pill'; b.textContent = 'Try again';
+          b.addEventListener('click', loadComments); cFoot.append(b);
+        }
+      };
+      if (typeof IntersectionObserver === 'function') {
+        const io = new IntersectionObserver((es) => { if (es.some((x) => x.isIntersecting)) { io.disconnect(); loadComments(); } }, { root: scroller, rootMargin: '400px' });
+        io.observe(cWrap);
+        ctx.onCleanup(() => io.disconnect());
+      } else loadComments();
 
       try {
         const r = cache.get('d:' + id) || await chain(opDetails(id), signal);
@@ -607,9 +900,11 @@ export const youtubeApp = {
     function show(entry) {
       closePanel(); hideSug();
       markNav(entry);
-      side.classList.toggle('force-mini', entry.type === 'watch');   // like YouTube: more room for the player
-      if (entry.type === 'home') { setQ(''); return showHome(); }
+      shortNav = null;
+      side.classList.toggle('force-mini', entry.type === 'watch' || (entry.type === 'shorts' && !!entry.id));   // like YouTube: more room for the player
+      if (entry.type === 'home') { setQ(''); return showHome(entry); }
       if (entry.type === 'search') { setQ(entry.q); return showSearch(entry); }
+      if (entry.type === 'shorts') { setQ(''); return showShorts(entry); }
       return showWatch(entry);
     }
 
@@ -626,6 +921,9 @@ export const youtubeApp = {
             <label>Invidious instances<textarea class="app-textarea" id="yt-s-inv" rows="3" spellcheck="false"></textarea></label>
             <label>Piped API addresses<textarea class="app-textarea" id="yt-s-piped" rows="3" spellcheck="false"></textarea></label>
             <label>CORS proxies <span class="muted">(prefix; the page address is appended, encoded)</span><textarea class="app-textarea" id="yt-s-prox" rows="2" spellcheck="false"></textarea></label>
+            <label>Region <span class="muted">(trending, search results and local categories)</span>
+              <select class="app-input" id="yt-s-region"></select>
+            </label>
             <label>Video player
               <select class="app-input" id="yt-s-player">
                 <option value="youtube">YouTube (privacy-enhanced embed)</option>
@@ -643,7 +941,11 @@ export const youtubeApp = {
         panel.querySelector('#yt-s-piped').value = c.piped.join('\n');
         panel.querySelector('#yt-s-prox').value = c.proxies.join('\n');
         panel.querySelector('#yt-s-player').value = c.player;
+        panel.querySelector('#yt-s-region').value = c.region || 'auto';
       };
+      const rs = panel.querySelector('#yt-s-region');
+      rs.add(new Option(`Auto-detect (${regionName(AUTO_REGION)})`, 'auto'));
+      [...REGIONS].sort((a, b) => regionName(a).localeCompare(regionName(b))).forEach((c) => rs.add(new Option(regionName(c), c)));
       fill(cfg);
       const lines = (id) => panel.querySelector(id).value.split('\n');
       panel.querySelector('#yt-pclose').addEventListener('click', closePanel);
@@ -651,9 +953,11 @@ export const youtubeApp = {
       panel.querySelector('#yt-s-save').addEventListener('click', () => {
         cfg = {
           invidious: cleanList(lines('#yt-s-inv'), []), piped: cleanList(lines('#yt-s-piped'), []),
-          proxies: cleanList(lines('#yt-s-prox'), [], true), player: panel.querySelector('#yt-s-player').value === 'invidious' ? 'invidious' : 'youtube'
+          proxies: cleanList(lines('#yt-s-prox'), [], true), player: panel.querySelector('#yt-s-player').value === 'invidious' ? 'invidious' : 'youtube',
+          region: REGIONS.includes(rs.value) ? rs.value : 'auto'
         };
-        cooldown.clear(); cache.clear(); persist(); closePanel(); setStatus('Sources saved');
+        cooldown.clear(); cache.clear(); sugCache.clear(); persist(); closePanel(); setStatus('Sources saved');
+        if (hist[pos] && ['home', 'search', 'shorts'].includes(hist[pos].type)) show(hist[pos]);
       });
       panel.querySelector('#yt-s-reset').addEventListener('click', () => fill({ ...DEFAULTS }));
     }
@@ -748,7 +1052,7 @@ export const youtubeApp = {
     $('#yt-form').addEventListener('submit', (e) => { e.preventDefault(); const v = q.value; hideSug(); submit(v); });
     btnBack.addEventListener('click', () => step(-1));
     btnFwd.addEventListener('click', () => step(1));
-    $('#yt-brand').addEventListener('click', goHome);
+    $('#yt-brand').addEventListener('click', () => goHome());
     $('#yt-settings').addEventListener('click', () => (panel.hidden ? openSettings() : closePanel()));
     $('#yt-menu').addEventListener('click', () => {
       const mini = side.classList.toggle('mini');
@@ -759,9 +1063,10 @@ export const youtubeApp = {
       if (e.key === 'Escape' && !panel.hidden) { closePanel(); e.stopPropagation(); }
       else if (e.altKey && e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
       else if (e.altKey && e.key === 'ArrowRight') { e.preventDefault(); step(1); }
+      else if (shortNav && (e.key === 'ArrowDown' || e.key === 'ArrowUp') && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) { e.preventDefault(); (e.key === 'ArrowDown' ? shortNav.next : shortNav.prev)(); }
       else if (e.key === '/' && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) { e.preventDefault(); q.focus(); }
     });
-    ctx.onCleanup(() => { ctl?.abort(); sugCtl?.abort(); clearTimeout(sugTimer); nav++; });
+    ctx.onCleanup(() => { ctl?.abort(); sugCtl?.abort(); clearTimeout(sugTimer); shortsRO?.disconnect(); nav++; });
 
     // args: { url } or { query } so other apps/terminal can open a video
     const startId = args?.url ? parseVideoId(args.url) : null;

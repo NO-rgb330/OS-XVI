@@ -142,8 +142,36 @@ function fmtDur(s) {
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
   return h ? `${h}:${pad(m)}:${pad(s % 60)}` : `${m}:${pad(s % 60)}`;
 }
-const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
-const fmtViews = (n) => (Number.isFinite(+n) && +n >= 0 && n !== null && n !== '' ? `${compact.format(+n)} views` : '');
+// Counts are rounded DOWN like YouTube does (1,999,999 is "1.9M", never "2M").
+function short(n) {
+  n = Math.floor(+n);
+  if (!Number.isFinite(n) || n < 0) return '';
+  if (n < 1000) return String(n);
+  for (const [div_, u] of [[1e9, 'B'], [1e6, 'M'], [1e3, 'K']]) {
+    if (n >= div_) { const v = n / div_; return (v < 10 ? String(Math.floor(v * 10) / 10) : String(Math.floor(v))) + u; }
+  }
+  return String(n);
+}
+const compact = { format: short };
+const validCount = (n) => n !== null && n !== '' && n !== undefined && Number.isFinite(+n) && +n >= 0;
+const fmtViews = (n) => (validCount(n) ? `${short(n)} view${+n === 1 ? '' : 's'}` : '');
+const fmtViewsExact = (n) => (validCount(n) ? `${Math.floor(+n).toLocaleString('en-US')} view${+n === 1 ? '' : 's'}` : '');
+
+/** "3 days ago" worked out from the real upload time, so it is right now, not when the server cached it. */
+const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'always' });
+function ago(ts, now = Date.now()) {
+  if (!(ts > 0)) return '';
+  const sec = Math.floor((now - ts) / 1000);
+  if (sec < 60) return 'just now';
+  const min = Math.floor(sec / 60); if (min < 60) return rtf.format(-min, 'minute');
+  const hr = Math.floor(min / 60); if (hr < 24) return rtf.format(-hr, 'hour');
+  const day = Math.floor(hr / 24); if (day < 7) return rtf.format(-day, 'day');
+  if (day < 30) return rtf.format(-Math.floor(day / 7), 'week');
+  if (day < 365) return rtf.format(-Math.floor(day / 30.44), 'month');
+  return rtf.format(-Math.floor(day / 365.25), 'year');
+}
+const fmtDate = (ts) => (ts > 0 ? new Date(ts).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '');
+const whenOf = (v) => (v.ts ? ago(v.ts) : v.when || '');
 const htmlToText = (h) => {
   const s = String(h || '').replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n');
   return (new DOMParser().parseFromString(s, 'text/html').body.textContent || '').trim();
@@ -215,7 +243,12 @@ export const youtubeApp = {
     const cooldown = new Map();            // base → timestamp of last failure
     const hist = []; let pos = -1;
     let ctl = null, nav = 0;
-    const cache = new Map();
+    const TTL = 10 * 60 * 1000;            // cached pages expire so view counts and "x ago" don't go stale
+    const cache = new (class extends Map {
+      get(k) { const e = super.get(k); if (!e) return undefined; if (Date.now() - e.at > TTL) { super.delete(k); return undefined; } return e.v; }
+      set(k, v) { return super.set(k, { v, at: Date.now() }); }
+      has(k) { return this.get(k) !== undefined; }
+    })();
     let feedMode = 'popular';              // Popular | Latest for Home and the category pages
     const lastKind = {};                   // op name → tier that last answered
 
@@ -369,15 +402,15 @@ export const youtubeApp = {
       inv: async (b, s) => {
         const j = await getJson(`${b}/api/v1/videos/${id}`, s, 9000);
         if (!j.title) throw new Error('unexpected reply');
-        return { title: j.title, author: j.author, views: j.viewCount, likes: j.likeCount, when: j.publishedText, desc: String(j.description || ''), related: list(j.recommendedVideos, normInv) || [] };
+        return { title: j.title, author: j.author, views: j.viewCount, likes: j.likeCount, when: j.publishedText, ts: j.published > 0 ? j.published * 1000 : 0, desc: String(j.description || ''), related: list(j.recommendedVideos, normInv) || [] };
       },
       piped: async (b, s) => {
         const j = await getJson(`${b}/streams/${id}`, s, 9000);
         if (!j.title) throw new Error('unexpected reply');
-        return { title: j.title, author: j.uploader, views: j.views, likes: j.likes, when: j.uploadDate, desc: htmlToText(j.description), related: list(j.relatedStreams, normPiped) || [] };
+        return { title: j.title, author: j.uploader, views: j.views, likes: j.likes, when: j.uploadDate, ts: Date.parse(j.uploadDate) || 0, desc: htmlToText(j.description), related: list(j.relatedStreams, normPiped) || [] };
       }
     });
-    const normCommentInv = (c) => (c && (c.content || c.contentHtml) ? { author: c.author || 'Unknown', text: c.content ? String(c.content) : htmlToText(c.contentHtml), likes: +c.likeCount || 0, when: c.publishedText || '', replies: +c.replies?.replyCount || 0, pinned: !!c.isPinned } : null);
+    const normCommentInv = (c) => (c && (c.content || c.contentHtml) ? { author: c.author || 'Unknown', text: c.content ? String(c.content) : htmlToText(c.contentHtml), likes: +c.likeCount || 0, when: c.publishedText || '', ts: c.published > 0 ? c.published * 1000 : 0, replies: +c.replies?.replyCount || 0, pinned: !!c.isPinned } : null);
     const normCommentPiped = (c) => (c && c.commentText ? { author: String(c.author || 'Unknown').replace(/^@/, ''), text: htmlToText(c.commentText), likes: +c.likeCount || 0, when: c.commentedTime || '', replies: +c.replyCount || 0, pinned: !!c.pinned } : null);
     const opComments = (id) => ({
       inv: async (b, s) => {
@@ -508,6 +541,8 @@ export const youtubeApp = {
     }
     const div = (cls, text) => { const d = document.createElement('div'); d.className = cls; if (text != null) d.textContent = text; return d; };
 
+    const metaEl = (text, tip) => { const m = div('yt-meta muted', text); if (tip) m.title = tip; return m; };
+
     /** kind: 'grid' (home), 'row' (search results), 'side' (related) */
     function card(v, kind = 'grid') {
       const el = document.createElement('article');
@@ -519,18 +554,19 @@ export const youtubeApp = {
       th.append(img);
       const d = v.live ? 'LIVE' : fmtDur(v.dur);
       if (d) { const t = document.createElement('span'); t.className = 'yt-dur' + (v.live ? ' live' : ''); t.textContent = d; th.append(t); }
-      const stats = [v.viewsText || fmtViews(v.views), v.when].filter(Boolean).join(' · ');
+      const stats = [v.viewsText || fmtViews(v.views), whenOf(v)].filter(Boolean).join(' · ');
+      const exact = [fmtViewsExact(v.views), v.ts ? new Date(v.ts).toLocaleString() : ''].filter(Boolean).join(' · ');
       const info = div('yt-info');
       info.append(div('yt-title', v.title));
       if (kind === 'row') {
-        info.append(div('yt-meta muted', stats));
+        info.append(metaEl(stats, exact));
         if (v.author) { const a = div('yt-author-line'); a.append(avatar(v.author, true), div('yt-author muted', v.author)); info.append(a); }
         el.append(th, info);
       } else if (kind === 'side') {
-        info.append(div('yt-author muted', v.author || ''), div('yt-meta muted', stats));
+        info.append(div('yt-author muted', v.author || ''), metaEl(stats, exact));
         el.append(th, info);
       } else {
-        info.append(div('yt-author muted', v.author || ''), div('yt-meta muted', stats));
+        info.append(div('yt-author muted', v.author || ''), metaEl(stats, exact));
         const row = div('yt-card-body'); row.append(avatar(v.author || '?'), info);
         el.append(th, row);
       }
@@ -669,7 +705,7 @@ export const youtubeApp = {
       const img = document.createElement('img');
       img.src = thumb(v.id); img.alt = ''; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer';
       img.addEventListener('error', () => img.remove());
-      const cap = div('yt-short-cap'); cap.append(div('yt-short-title', v.title), div('yt-short-meta', v.viewsText || fmtViews(v.views)));
+      const cap = div('yt-short-cap'); cap.append(div('yt-short-title', v.title), div('yt-short-meta', [v.viewsText || fmtViews(v.views), whenOf(v)].filter(Boolean).join(' · ')));
       el.append(img, cap);
       const open = () => goShort(v.id, v.title, v.author);
       el.addEventListener('click', open);
@@ -816,7 +852,8 @@ export const youtubeApp = {
         const who = document.createElement('strong'); who.textContent = c.author;
         meta.append(who);
         if (c.pinned) meta.append(div('yt-c-pin', 'Pinned'));
-        if (c.when) meta.append(div('yt-c-when muted', c.when));
+        const cw = c.ts ? ago(c.ts) : c.when;
+        if (cw) { const w = div('yt-c-when muted', cw); if (c.ts) w.title = new Date(c.ts).toLocaleString(); meta.append(w); }
         const foot = [c.likes ? `${compact.format(c.likes)} likes` : '', c.replies ? `${c.replies} ${c.replies === 1 ? 'reply' : 'replies'}` : ''].filter(Boolean).join(' · ');
         bodyEl.append(meta, div('yt-c-text', c.text), ...(foot ? [div('yt-c-stats muted', foot)] : []));
         el.append(avatar(c.author), bodyEl);
@@ -829,7 +866,7 @@ export const youtubeApp = {
           if (stale(my)) return;
           cache.set('c:' + id, r);
           cList.innerHTML = ''; cFoot.innerHTML = '';
-          if (r.v.count) cCount.textContent = compact.format(r.v.count);
+          if (r.v.count) { cCount.textContent = Math.floor(r.v.count).toLocaleString('en-US'); cCount.title = 'Total comments'; }
           if (!r.v.items.length) { cFoot.innerHTML = '<span class="muted">No comments yet.</span>'; return; }
           r.v.items.forEach((c) => cList.append(commentEl(c)));
           let token = r.v.token;
@@ -871,9 +908,9 @@ export const youtubeApp = {
         ctx.setTitle(`${d.title} — YouTube`);
         view.querySelector('#yt-vtitle').textContent = d.title;
         setChannel(d.author);
-        if (d.likes > 0) { const l = view.querySelector('#yt-likes'); l.hidden = false; l.textContent = `${compact.format(d.likes)} likes`; }
+        if (d.likes > 0) { const l = view.querySelector('#yt-likes'); l.hidden = false; l.textContent = `${short(d.likes)} likes`; l.title = `${Math.floor(d.likes).toLocaleString('en-US')} likes`; }
         const desc = view.querySelector('#yt-desc');
-        const stats = [fmtViews(d.views), d.when].filter(Boolean).join('  ·  ');
+        const stats = [fmtViewsExact(d.views), d.ts ? `${ago(d.ts)} (${fmtDate(d.ts)})` : d.when].filter(Boolean).join('  ·  ');
         if (stats || d.desc) {
           desc.hidden = false;
           view.querySelector('#yt-desc-stats').textContent = stats;

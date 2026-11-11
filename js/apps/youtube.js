@@ -328,14 +328,14 @@ export const youtubeApp = {
     // ---------- normalisers ----------
     const normInv = (v) => {
       if (!v || (v.type && v.type !== 'video') || !ID_RE.test(v.videoId || '')) return null;
-      return { id: v.videoId, title: v.title || 'Untitled', author: v.author || '', views: v.viewCount ?? null, when: v.publishedText || '', dur: v.lengthSeconds, live: !!v.liveNow, ts: v.published > 0 ? v.published * 1000 : 0 };
+      return { id: v.videoId, title: v.title || 'Untitled', author: v.author || '', views: v.viewCount ?? null, when: v.publishedText || '', dur: v.lengthSeconds, live: !!v.liveNow, short: !!(v.isShort || v.is_short), ts: v.published > 0 ? v.published * 1000 : 0 };
     };
     const normPiped = (v) => {
       if (!v || (v.type && v.type !== 'stream')) return null;
       let id = null;
       try { id = new URL(v.url || '', 'https://x.invalid').searchParams.get('v'); } catch { /* bad url */ }
       if (!ID_RE.test(id || '')) return null;
-      return { id, title: v.title || 'Untitled', author: v.uploaderName || '', views: v.views ?? null, when: v.uploadedDate || '', dur: v.duration, live: v.duration === -1, ts: v.uploaded > 0 ? v.uploaded : 0 };
+      return { id, title: v.title || 'Untitled', author: v.uploaderName || '', views: v.views ?? null, when: v.uploadedDate || '', dur: v.duration, live: v.duration === -1, short: !!v.isShort, ts: v.uploaded > 0 ? v.uploaded : 0 };
     };
     const list = (arr, fn) => (Array.isArray(arr) ? arr.map(fn).filter(Boolean) : null);
 
@@ -365,6 +365,19 @@ export const youtubeApp = {
           const dur = txt(r.lengthText).split(':').reverse().reduce((s, p, i) => s + (+p || 0) * 60 ** i, 0);
           out.push({ id: r.videoId, title: txt(r.title) || 'Untitled', author: txt(r.ownerText) || txt(r.longBylineText), views: null, viewsText: txt(r.viewCountText), when: txt(r.publishedTimeText), dur: txt(r.lengthText) ? dur : -1, live: !r.lengthText });
         }
+        const rr = o.reelItemRenderer;                      // Shorts, older markup
+        if (rr && ID_RE.test(rr.videoId || '') && !seen.has(rr.videoId)) {
+          seen.add(rr.videoId);
+          out.push({ id: rr.videoId, title: txt(rr.headline) || 'Short', author: '', views: null, viewsText: txt(rr.viewCountText), when: '', dur: 0, live: false, short: true });
+        }
+        const sl = o.shortsLockupViewModel;                 // Shorts, current markup
+        if (sl) {
+          const sid = sl.onTap?.innertubeCommand?.reelWatchEndpoint?.videoId || /shorts-shelf-item-([\w-]{11})/.exec(sl.entityId || '')?.[1] || '';
+          if (ID_RE.test(sid) && !seen.has(sid)) {
+            seen.add(sid);
+            out.push({ id: sid, title: sl.overlayMetadata?.primaryText?.content || sl.accessibilityText || 'Short', author: '', views: null, viewsText: sl.overlayMetadata?.secondaryText?.content || '', when: '', dur: 0, live: false, short: true });
+          }
+        }
         for (const k in o) walk(o[k], d + 1);
       })(data, 0);
       return out;
@@ -385,6 +398,19 @@ export const youtubeApp = {
       piped: (o.page > 1 || o.live) ? null : async (b, s) => { const j = await getJson(`${b}/search?q=${enc(text)}&filter=videos`, s); const a = list(j.items, normPiped); if (!a) throw new Error('unexpected reply'); return sortLocal(a, o.sort); },
       scrape: o.page > 1 ? null : async (p, s) => parseResultsPage(await getText(`${p}${enc(`https://www.youtube.com/results?search_query=${enc(text)}&sp=${o.live ? 'EgJAAQ%3D%3D' : SORT_SP[o.sort || 'relevance']}&hl=en&gl=${region()}`)}`, s, 9000))
     });
+    /** Shorts search: no "videos only" filter on the YouTube page (that filter hides Shorts), two pages from Invidious. */
+    const opShorts = (text) => ({
+      inv: async (b, s) => {
+        const pages = await Promise.allSettled([1, 2].map((pg) => getJson(invSearchUrl(b, text, { page: pg }), s)));
+        const ok = pages.filter((x) => x.status === 'fulfilled');
+        if (!ok.length) throw pages[0].reason;
+        return ok.flatMap((x) => list(x.value, normInv) || []);
+      },
+      piped: async (b, s) => { const a = list((await getJson(`${b}/search?q=${enc(text)}&filter=videos`, s)).items, normPiped); if (!a) throw new Error('unexpected reply'); return a; },
+      scrape: async (p, s) => { const a = parseResultsPage(await getText(`${p}${enc(`https://www.youtube.com/results?search_query=${enc(text)}&hl=en&gl=${region()}`)}`, s, 9000)); return a; }
+    });
+    /** Instances don't agree on how to mark a Short: a flag, a short length, a length of 0 (unknown), or "#shorts" in the title. */
+    const isShortItem = (v) => !v.live && (v.short || !(v.dur > 0) || v.dur <= 60 || (v.dur <= 180 && /#shorts?\b/i.test(v.title)));
     const opSuggest = (text) => ({
       inv: async (b, s) => { const j = await getJson(`${b}/api/v1/search/suggestions?q=${enc(text)}`, s, 4000); if (!Array.isArray(j?.suggestions)) throw new Error('unexpected reply'); return j.suggestions.map(String); },
       piped: async (b, s) => { const j = await getJson(`${b}/suggestions?query=${enc(text)}`, s, 4000); if (!Array.isArray(j)) throw new Error('unexpected reply'); return j.map(String); },
@@ -552,7 +578,7 @@ export const youtubeApp = {
       img.src = thumb(v.id); img.alt = ''; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer';
       img.addEventListener('error', () => img.remove());
       th.append(img);
-      const d = v.live ? 'LIVE' : fmtDur(v.dur);
+      const d = v.live ? 'LIVE' : v.dur > 0 ? fmtDur(v.dur) : '';
       if (d) { const t = document.createElement('span'); t.className = 'yt-dur' + (v.live ? ' live' : ''); t.textContent = d; th.append(t); }
       const stats = [v.viewsText || fmtViews(v.views), whenOf(v)].filter(Boolean).join(' · ');
       const exact = [fmtViewsExact(v.views), v.ts ? new Date(v.ts).toLocaleString() : ''].filter(Boolean).join(' · ');
@@ -692,11 +718,19 @@ export const youtubeApp = {
     async function loadShorts(signal) {
       const key = 'shorts:' + region();
       if (cache.has(key)) return cache.get(key);
-      const r = await chain(opSearch('#shorts', { sort: 'popular', date: 'week' }), signal);
-      let items = r.v.filter((v) => !v.live && v.dur > 0 && v.dur <= 90);
-      if (items.length < 6) items = r.v.filter((v) => !v.live && v.dur > 0 && v.dur <= 180);
-      const out = { v: items, label: r.label };
-      cache.set(key, out);
+      const found = new Map(); let label = '';
+      const queries = ['#shorts', 'shorts', `${regionName(region())} shorts`];
+      for (let i = 0; i < queries.length && found.size < 6; i++) {
+        try {
+          const r = await chain(opShorts(queries[i]), signal);
+          label = label || r.label;
+          r.v.filter(isShortItem).forEach((v) => { if (!found.has(v.id)) found.set(v.id, v); });
+        } catch (e) {
+          if (e.aborted || i === 0) throw e;               // every source failed on the first try: say so; later tries are best-effort
+        }
+      }
+      const out = { v: [...found.values()], label };
+      if (out.v.length) cache.set(key, out);
       return out;
     }
     function shortCard(v) {

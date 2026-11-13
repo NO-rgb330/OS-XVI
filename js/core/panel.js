@@ -1,4 +1,4 @@
-import { on, listWindows, getFocused, focusWindow, minimizeWindow, openWindow } from './wm.js';
+import { on, listWindows, getFocused, focusWindow, minimizeWindow, openWindow, goHome } from './wm.js';
 import { list as listApps } from './registry.js';
 import { iconHTML } from './icons.js';
 import { esc } from './util.js';
@@ -21,6 +21,14 @@ export function initPanel() {
       showLogin(true);
     });
   }
+
+  // ---- Home button (phones only; hidden by CSS elsewhere) ----
+  const homeBtn = document.createElement('button');
+  homeBtn.id = 'home-btn'; homeBtn.type = 'button'; homeBtn.className = 'panel-btn panel-btn-icon';
+  homeBtn.title = 'Home'; homeBtn.setAttribute('aria-label', 'Home');
+  homeBtn.innerHTML = iconHTML('home', 20);
+  homeBtn.addEventListener('click', goHome);
+  tasklist.before(homeBtn);
 
   // ---- Clock (aligned to the minute boundary) ----
   function tick() {

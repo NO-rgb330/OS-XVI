@@ -28,6 +28,7 @@ import { iconHTML } from './icons.js';
 import { esc, joinPath, parentPath } from './util.js';
 import { iconFor, openItem, createEntry, renameEntry, deleteEntries, transferInto, extractArchive, isArchive } from './files.js';
 import { showMenu } from './contextmenu.js';
+import { isMobile } from './mobile.js';
 import { setClipboard, getClipboard, onClipboardChange, isCut, paste } from './clipboard.js';
 import { hasPaths, hasFiles, readDragPaths, filesFromDrop, setDragPaths } from './dnd.js';
 import { pickFiles, uploadFiles } from './upload.js';
@@ -35,9 +36,13 @@ import { pickFiles, uploadFiles } from './upload.js';
 export const DESKTOP = '/home/user/Desktop';
 
 const STORE_KEY = 'os16.desktop.v1';
-const PAD = 16;
-const CELL_W = 96, CELL_H = 104, GAP = 4;
-const STEP_X = CELL_W + GAP, STEP_Y = CELL_H + GAP;
+// Grid geometry. Phones get a tighter grid (kept in sync with css/mobile.css).
+let PAD = 16, CELL_W = 96, CELL_H = 104, GAP = 4, STEP_X = 100, STEP_Y = 108;
+function syncGrid() {
+  const m = isMobile();
+  PAD = m ? 10 : 16; CELL_W = m ? 82 : 96; CELL_H = m ? 92 : 104; GAP = 4;
+  STEP_X = CELL_W + GAP; STEP_Y = CELL_H + GAP;
+}
 const DRAG_THRESHOLD = 5;
 
 // ---------- Persistent layout ----------
@@ -101,6 +106,7 @@ const isCell = (p) => Array.isArray(p) && Number.isInteger(p[0]) && Number.isInt
 const cellXY = (c, r) => ({ x: PAD + c * STEP_X, y: PAD + r * STEP_Y });
 
 function metrics() {
+  syncGrid();
   const w = container.clientWidth, h = container.clientHeight;
   return {
     cols: Math.max(1, Math.floor((w - 2 * PAD + GAP) / STEP_X)),
@@ -616,7 +622,10 @@ export function initDesktop() {
   }, true);
   container.addEventListener('click', (e) => {
     const el = iconOf(e);
-    if (el && !additive(e)) selectOnly(el.dataset.key);
+    if (el && !additive(e)) {
+      selectOnly(el.dataset.key);
+      if (isMobile()) openIcon(itemOf(el));          // one tap opens on a phone
+    }
   });
   container.addEventListener('dblclick', (e) => { const el = iconOf(e); if (el) openIcon(itemOf(el)); });
 
@@ -685,6 +694,7 @@ export function initDesktop() {
     if (e.button !== 0) { if (!additive(e)) setSelection([]); return; }
     const base = additive(e) ? new Set(selected) : new Set();
     if (!additive(e)) setSelection([]);
+    if (isMobile()) return;                          // no rubber-band selection on a phone
     startMarquee(e, base);
   });
 
@@ -812,6 +822,17 @@ export function initDesktop() {
   });
   let resizeTimer = 0;
   window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(render, 120); });
+  // The desktop area can change size without a window resize (phone mode swaps the
+  // panel layout), so re-lay-out icons whenever the container itself changes.
+  if (typeof ResizeObserver === 'function') {
+    let lastW = container.clientWidth, lastH = container.clientHeight;
+    new ResizeObserver(() => {
+      const w = container.clientWidth, h = container.clientHeight;
+      if (w === lastW && h === lastH) return;
+      lastW = w; lastH = h;
+      clearTimeout(resizeTimer); resizeTimer = setTimeout(render, 120);
+    }).observe(container);
+  }
 
   return render();
 }

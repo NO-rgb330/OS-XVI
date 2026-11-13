@@ -1,4 +1,5 @@
 import { get as getApp } from './registry.js';
+import { isMobile, onMobileChange } from './mobile.js';
 
 const MIN_W = 280;
 const MIN_H = 160;
@@ -22,7 +23,7 @@ document.addEventListener('pointerdown', (e) => {
 }, true);
 
 const getPanelH = () =>
-  (panelH ??= parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-h'), 10) || 30);
+  parseInt(getComputedStyle(document.documentElement).getPropertyValue('--panel-h'), 10) || 30;
 
 function emit(event) { for (const fn of listeners) fn(event); }
 export function on(cb) { listeners.add(cb); return () => listeners.delete(cb); }
@@ -255,7 +256,7 @@ function buildWindowEl(rec) {
   closeBtn.addEventListener('click', (e) => { e.stopPropagation(); closeWindow(rec.id); });
 
   maxBtn.addEventListener('mouseenter', () => {
-    if (rec.state !== 'maximized') showFlyout(rec, maxBtn);
+    if (!isMobile() && rec.state !== 'maximized') showFlyout(rec, maxBtn);
   });
   maxBtn.addEventListener('mouseleave', () => {
     hideTimer = setTimeout(hideFlyout, 200);
@@ -269,7 +270,7 @@ function buildWindowEl(rec) {
   el.addEventListener('pointerdown', () => focusWindow(rec.id), true);
   const tb = el.querySelector('.window-titlebar');
   tb.addEventListener('pointerdown', (e) => startDrag(e, rec, tb));
-  tb.addEventListener('dblclick', (e) => { if (!e.target.closest('.window-btn')) toggleMaximize(rec.id); });
+  tb.addEventListener('dblclick', (e) => { if (!isMobile() && !e.target.closest('.window-btn')) toggleMaximize(rec.id); });
 
   el.querySelectorAll('.window-resize').forEach((h) => {
     h.addEventListener('pointerdown', (e) => startResize(e, rec, h));
@@ -303,7 +304,7 @@ function trackPointer(e, target, cls, rec, move, endCb) {
 }
 
 function startDrag(e, rec, tb) {
-  if (e.button !== 0 || rec.state === 'maximized' || e.target.closest('.window-btn')) return;
+  if (isMobile() || e.button !== 0 || rec.state === 'maximized' || e.target.closest('.window-btn')) return;
 
   if (rec.state === 'snapped' && rec.preSnapRect) {
     rec.state = 'normal';
@@ -335,7 +336,7 @@ function startDrag(e, rec, tb) {
 }
 
 function startResize(e, rec, handle) {
-  if (e.button !== 0 || rec.state === 'maximized') return;
+  if (isMobile() || e.button !== 0 || rec.state === 'maximized') return;
   e.stopPropagation();
   const dir = handle.dataset.dir;
   const startX = e.clientX, startY = e.clientY;
@@ -379,6 +380,22 @@ export function focusWindow(id) {
   try { rec.onFocus?.(); } catch (e) { console.error(e); }
 }
 
+/** Pull every window back inside the screen (used when the screen size class changes). */
+export function fitWindows() {
+  const availH = window.innerHeight - getPanelH();
+  for (const rec of windows.values()) {
+    if (rec.state === 'maximized') continue;
+    const w = Math.min(rec.rect.w, window.innerWidth), h = Math.min(rec.rect.h, availH);
+    rec.rect = { w, h, x: Math.max(0, Math.min(rec.rect.x, window.innerWidth - w)), y: Math.max(0, Math.min(rec.rect.y, availH - h)) };
+    if (rec.state === 'snapped') { rec.state = 'normal'; rec.preSnapRect = null; }
+    applyRect(rec);
+  }
+}
+onMobileChange((m) => { if (!m) fitWindows(); });
+
+/** Phone "home": hide every window and show the desktop. */
+export function goHome() { blurAll(); }
+
 export function blurAll() {
   if (!focusedId) return;
   windows.get(focusedId)?.el.classList.remove('focused');
@@ -394,7 +411,7 @@ export function minimizeWindow(id) {
   if (focusedId === id) {
     rec.el.classList.remove('focused');
     focusedId = null;
-    const best = topVisible();
+    const best = isMobile() ? null : topVisible();        // on a phone, minimising goes back to the home screen
     if (best) focusWindow(best.id);
     else emit({ type: 'focus', id: null });
   }

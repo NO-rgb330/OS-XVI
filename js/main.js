@@ -1,3 +1,4 @@
+import './core/mobile.js';
 import { register } from './core/registry.js';
 import { initPanel } from './core/panel.js';
 import { openWindow } from './core/wm.js';

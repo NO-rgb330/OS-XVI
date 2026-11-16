@@ -1,6 +1,6 @@
 {
-  "name": "Monochrome OS",
-  "short_name": "Mono OS",
+  "name": "OS-XVI",
+  "short_name": "OS-XVI",
   "description": "A black-and-white desktop that runs entirely in your browser.",
   "start_url": ".",
   "scope": ".",

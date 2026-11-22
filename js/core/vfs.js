@@ -75,7 +75,26 @@ export function on(event, cb) {
   set.add(cb);
   return () => set.delete(cb);
 }
+// A burst of writes (a big parallel upload) would otherwise fire one 'change'
+// per file and make every listener (file lists, desktop) re-render hundreds of
+// times. Identical (event, path) pairs inside one animation-frame-sized window
+// are merged into a single notification.
+let pendingEmits = null;
 function emit(event, path) {
+  if (event === 'change') {
+    if (!pendingEmits) {
+      pendingEmits = new Set();
+      setTimeout(() => {
+        const paths = pendingEmits; pendingEmits = null;
+        for (const pth of paths) fire('change', pth);
+      }, 120);
+    }
+    pendingEmits.add(path);
+    return;
+  }
+  fire(event, path);
+}
+function fire(event, path) {
   for (const cb of listeners.get(event) ?? []) cb(path);
   for (const cb of listeners.get('*') ?? []) cb(path);
 }
@@ -144,6 +163,34 @@ async function readBlob(node) {
   }
 }
 
+// ---- Bulk writes (used inside batch()) ----
+// IndexedDB records are committed in groups instead of one transaction per file.
+let commitQueue = [], commitTimer = 0;
+function commitNode(node) {
+  return new Promise((resolve, reject) => {
+    commitQueue.push({ node, resolve, reject });
+    if (commitQueue.length >= 128) flushCommits();
+    else if (!commitTimer) commitTimer = setTimeout(flushCommits, 8);
+  });
+}
+async function flushCommits() {
+  clearTimeout(commitTimer); commitTimer = 0;
+  const group = commitQueue; commitQueue = [];
+  if (!group.length) return;
+  try {
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NODES, 'readwrite');
+      const store = tx.objectStore(STORE_NODES);
+      for (const g of group) store.put(g.node);
+      tx.oncomplete = resolve; tx.onerror = tx.onabort = () => reject(tx.error);
+    });
+    for (const g of group) g.resolve();
+  } catch {
+    // One bad record aborts the whole transaction: redo individually so each caller gets its own result.
+    for (const g of group) { try { await idbPut(g.node); g.resolve(); } catch (e) { g.reject(e); } }
+  }
+}
+
 // ---- Core API ----
 export async function exists(path) {
   return (await getNode(path)) !== null;
@@ -185,25 +232,46 @@ export async function mkdir(path, { protected: isProtected = false } = {}) {
   return id;
 }
 
-export async function write(path, data) {
+// During batch(), parent-folder lookups are remembered so N parallel writes into the
+// same folder don't each re-walk the path through IndexedDB.
+let batchDepth = 0, parentCache = null;
+export async function batch(fn) {
+  if (!batchDepth++) parentCache = new Map();
+  try { return await fn(); }
+  finally { if (!--batchDepth) parentCache = null; }
+}
+function parentOf(path) {
+  if (!parentCache) return getNode(path);
+  let hit = parentCache.get(path);
+  if (!hit) parentCache.set(path, hit = getNode(path));
+  return hit;
+}
+
+export async function write(path, data, { fresh = false } = {}) {
   const { parent, name } = splitPath(path);
   assertName(name);
-  const pid = await dirId(parent);
-  const parentNode = await getNode(parent);
-  if (parentNode?.protected) throw new Error('EPERM: ' + parent + ' is read-only');
+  const parentNode = await parentOf(parent);              // one lookup serves the checks and the id
+  if (!parentNode) throw new Error('ENOENT: ' + parent);
+  if (parentNode.kind !== 'dir') throw new Error('ENOTDIR: ' + parent);
+  if (parentNode.protected) throw new Error('EPERM: ' + parent + ' is read-only');
+  const pid = parentNode.id;
   const blob = data instanceof Blob ? data : new Blob([data]);
 
-  let node = await idbIndexGet('pid_name', [pid, name]);
+  // `fresh`: the caller has already picked a name that doesn't exist (bulk upload) —
+  // skip the lookup; the unique index still rejects a genuine clash.
+  let node = fresh && batchDepth ? null : await idbIndexGet('pid_name', [pid, name]);
   if (node?.kind === 'dir') throw new Error('EISDIR: ' + path);
   if (node?.kind === 'app') throw new Error('EEXIST: ' + path + ' (app shortcut exists)');
   if (node?.protected) throw new Error('EPERM: cannot overwrite protected entry');
 
-  await assertSpace(blob.size - (node?.size || 0));
+  const oldSize = node?.size || 0;
+  await assertSpace(blob.size - oldSize);
 
   node = node
     ? { ...node, size: blob.size, mtime: Date.now() }
     : { id: crypto.randomUUID(), pid, name, kind: 'file', size: blob.size, mtime: Date.now() };
 
+  const bulk = batchDepth > 0;
   try {
     await writeBlob(node.id, blob);
   } catch (err) {
@@ -213,7 +281,9 @@ export async function write(path, data) {
     throw err;
   }
 
-  await idbPut(node);
+  try { await (bulk ? commitNode(node) : idbPut(node)); }
+  catch (err) { if (bulk) opfsBlobs.removeEntry(node.id).catch(() => {}); throw err; }   // don't leave an orphan blob
+  bumpUsed(blob.size - oldSize);
   emit('change', parent);
   return node.id;
 }
@@ -262,6 +332,16 @@ export async function read(path) {
   return readBlob(node);
 }
 
+/**
+ * Reads a file given the node object returned by list(). Skips the path walk
+ * (several IndexedDB lookups) that read() does, and never touches IndexedDB
+ * at all when the blob is in OPFS, so viewers stay snappy during heavy writes.
+ */
+export async function readNode(node) {
+  if (!node || node.kind !== 'file') throw new Error('EINVAL: not a file');
+  return readBlob(node);
+}
+
 async function removeNode(node) {
   if (node.protected) throw new Error('EPERM: cannot delete protected entry');
   if (node.kind === 'dir') {
@@ -274,6 +354,7 @@ async function removeNode(node) {
   }
   // app entries have no blob
   await idbDel(node.id);
+  if (node.kind === 'file') bumpUsed(-(node.size || 0));
 }
 
 export async function rm(path) {
@@ -331,6 +412,7 @@ async function copyNode(node, pid, name) {
     const blob = await readBlob(node);
     await writeBlob(id, blob);
     await idbPut({ id, pid, name, kind: 'file', size: blob.size, mtime: Date.now() });
+    bumpUsed(blob.size);
   }
 }
 
@@ -384,6 +466,19 @@ async function diskCapacity() {
   return actual;
 }
 
+/*
+   Bytes in use are tracked incrementally. usage() walks every node, and write()
+   used to call it for each file, which made a big upload O(n²) and froze the UI.
+   The counter is re-measured from scratch at most every 30 s, so any drift
+   (e.g. two tabs writing at once) corrects itself.
+*/
+let usedCache = { t: 0, v: 0 };
+const bumpUsed = (delta) => { if (usedCache.t) usedCache.v = Math.max(0, usedCache.v + delta); };
+async function usedBytes() {
+  if (usedCache.t && Date.now() - usedCache.t < 30000) return usedCache.v;
+  return (await usage()).used;                           // usage() refreshes the cache
+}
+
 /** Totals for the whole virtual disk: { used, free, capacity, files, dirs } (bytes / counts). */
 export async function usage() {
   let used = 0, files = 0, dirs = 0;
@@ -393,6 +488,7 @@ export async function usage() {
     else if (n.kind === 'file') { files++; used += n.size || 0; }
     // app entries take up no disk space and are not counted as files
   }
+  usedCache = { t: Date.now(), v: used };
   const capacity = await diskCapacity();
   return { used, files, dirs, capacity, free: Math.max(0, capacity - used) };
 }
@@ -427,9 +523,12 @@ async function treeSize(node) {
   return t;
 }
 
+/** Throws ENOSPC if `extra` more bytes would not fit on the virtual disk. */
+export const ensureSpace = (extra) => assertSpace(extra);
+
 async function assertSpace(extra) {
   if (extra <= 0) return;
-  const { free } = await usage();
+  const free = Math.max(0, (await diskCapacity()) - (await usedBytes()));
   if (extra > free) {
     throw new Error(`ENOSPC: Not enough disk space (need ${formatBytes(extra)}, ${formatBytes(free)} left)`);
   }

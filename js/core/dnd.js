@@ -59,22 +59,33 @@ function readAllEntries(dirReader) {
  * Recursively collect files from a FileSystemEntry (File or Directory).
  * Attaches `relativePath` (path *including* filename, forward-slashed) to each.
  */
-async function collectFromEntry(entry, prefix, files) {
+// Browsers answer entry.file()/readEntries() one callback at a time, so a big dropped
+// tree is walked with a bounded number of requests in flight instead of strictly serially.
+let walkSlots = 0; const walkWaiters = [];
+async function walkLimit(fn) {
+  if (walkSlots >= 48) await new Promise((r) => walkWaiters.push(r));
+  walkSlots++;
+  try { return await fn(); }
+  finally { walkSlots--; walkWaiters.shift()?.(); }
+}
+
+async function collectFromEntry(entry, prefix) {
   if (entry.isFile) {
     try {
-      const file = await new Promise((res, rej) => entry.file(res, rej));
+      const file = await walkLimit(() => new Promise((res, rej) => entry.file(res, rej)));
       file.relativePath = prefix ? `${prefix}/${file.name}` : file.name;
-      files.push(file);
-    } catch { /* read error on a single file: skip it */ }
-    return;
+      return [file];
+    } catch { return []; /* read error on a single file: skip it */ }
   }
   if (entry.isDirectory) {
     let children = [];
-    try { children = await readAllEntries(entry.createReader()); }
+    try { children = await walkLimit(() => readAllEntries(entry.createReader())); }
     catch { /* unreadable folder: skip it */ }
     const nextPrefix = prefix ? `${prefix}/${entry.name}` : entry.name;
-    for (const child of children) await collectFromEntry(child, nextPrefix, files);
+    // Sibling subtrees are walked concurrently; results are joined in listing order.
+    return (await Promise.all(children.map((c) => collectFromEntry(c, nextPrefix)))).flat();
   }
+  return [];
 }
 
 /**
@@ -106,10 +117,11 @@ export async function filesFromDrop(e) {
   const files = [...inlineFiles, ...fallbackFiles];
   let skippedFolders = 0;
 
-  for (const entry of entries) {
-    try { await collectFromEntry(entry, '', files); }
-    catch { if (entry.isDirectory) skippedFolders++; }
-  }
+  const walked = await Promise.all(entries.map(async (entry) => {
+    try { return await collectFromEntry(entry, ''); }
+    catch { if (entry.isDirectory) skippedFolders++; return []; }
+  }));
+  for (const list of walked) files.push(...list);
 
   return { files, skippedFolders };
 }

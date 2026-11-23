@@ -1,0 +1,166 @@
+/* ============================================================
+   CODE SCANNER
+   ============================================================ */
+
+.cs-app {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-window);
+}
+
+.cs-split {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+}
+
+/* Editor Side */
+.cs-editor-pane {
+  flex: 1 1 55%;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--bd-soft);
+  min-width: 0;
+}
+
+.cs-lang-select {
+  padding: 4px 8px;
+  font-size: 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--bd-inset);
+  color: var(--tx);
+  border-radius: var(--radius-sm);
+  outline: none;
+  cursor: pointer;
+}
+
+/* Results Side */
+.cs-results-pane {
+  flex: 1 1 45%;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  min-width: 0;
+}
+
+.cs-results-header {
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  border-bottom: 1px solid var(--bd-soft);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cs-results-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cs-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--tx-muted);
+  font-size: 13px;
+  gap: 8px;
+}
+
+.cs-empty .icon {
+  width: 32px;
+  height: 32px;
+  opacity: 0.5;
+}
+
+/* Issue Cards */
+.cs-issue {
+  background: var(--paper);
+  border: 1px solid var(--bd-soft);
+  border-left: 4px solid var(--bd);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cs-issue.high { border-left-color: var(--ink); }
+.cs-issue.medium { border-left-color: var(--shade-60); }
+
+.cs-issue-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.cs-issue-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx);
+}
+
+.cs-issue-line {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  background: var(--surface-2);
+  padding: 1px 6px;
+  border-radius: 3px;
+  color: var(--tx-muted);
+  white-space: nowrap;
+}
+
+.cs-issue-desc {
+  font-size: 12px;
+  color: var(--tx-muted);
+  line-height: 1.4;
+}
+
+.cs-issue-code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--surface-2);
+  padding: 6px 8px;
+  border-radius: 2px;
+  color: var(--tx);
+  overflow-x: auto;
+  white-space: pre;
+  border: 1px solid var(--bd-soft);
+}
+
+/* Severity Badges */
+.cs-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 2px;
+  letter-spacing: 0.5px;
+}
+
+.cs-badge.high {
+  background: var(--ink);
+  color: var(--ink-inv);
+}
+
+.cs-badge.medium {
+  background: var(--shade-40);
+  color: var(--ink-inv);
+}
+
+.cs-badge.low {
+  background: var(--surface-2);
+  color: var(--tx);
+  border: 1px solid var(--bd);
+}

@@ -415,7 +415,7 @@ export const terminalApp = {
         io.out(`
    .--.       user@monochrome
   |o_o |      ----------------
-  |:_/ |      OS: Monochrome OS 1.0
+  |:_/ |      OS: OS-XVI 1.0
  //   \\ \\     Kernel: WebKit/Blink
 (|     | )    Uptime: ${Math.floor(performance.now() / 60000)} mins
 /'\\_   _/\`\\   Shell: os-sh
@@ -554,7 +554,7 @@ export const terminalApp = {
     ctx.onCleanup(() => { /* cleanup */ });
 
     updatePrompt();
-    print('Welcome to Monochrome OS Terminal (os-sh)', 'stdout');
+    print('Welcome to OS-XVI Terminal (os-sh)', 'stdout');
     print('Type "help" for a list of commands.\n', 'stdout');
     focusInput();
   }
